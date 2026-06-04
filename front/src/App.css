@@ -1,0 +1,9 @@
+.App {
+  background-image: url('./poessaImage.png');
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  margin: 0;
+}
+
+

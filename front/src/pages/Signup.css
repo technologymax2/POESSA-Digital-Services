@@ -1,0 +1,77 @@
+/* የገጹ ዳራ */
+.signup-page-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+  background: url('../poessaImage.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  position: relative;
+}
+
+/* የፎርም ሳጥን */
+.signup-form-wrapper {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  color: white;
+}
+
+.signup-title { margin-bottom: 20px; text-align: center; color: white; }
+
+/* የኢንፑት ግሩፕ */
+.signup-input-group { margin-bottom: 20px; }
+.signup-input-group label { display: block; margin-bottom: 8px; font-weight: 500; }
+.signup-input-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  box-sizing: border-box;
+}
+
+/* ቁልፎች */
+.signup-submit-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #0056b3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* የዳሽቦርድ መመለሻ ቁልፍ */
+.signup-nav-btn-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+}
+
+.signup-back-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 10px 25px;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.signup-back-btn:hover { background: rgba(255, 255, 255, 0.3); }
+
+/* የግርጌ ጽሁፍ */
+.signup-footer-text { margin-top: 20px; text-align: center; font-size: 14px; }
+.signup-footer-text a { color: #80caff; font-weight: bold; text-decoration: none; }

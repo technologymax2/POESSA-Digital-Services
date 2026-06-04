@@ -1,0 +1,84 @@
+/* 1. የገጹ ሙሉ ዳራ - ጨለማ ንብርብር (Overlay) በመጨመር ምስሉን እና ጽሁፉን ማጋራት */
+.login-container {
+  display: flex;
+  flex-direction: column; /* ለዳሽቦርድ መመለሻ ቁልፍ እንዲመች */
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background:  url('../poessaImage.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+/* 2. ዋናው ሳጥን */
+.login-box {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  width: 90%; /* በሞባይል ስክሪን ላይ እንዲመች */
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* 3. ፎርም እና ጽሁፎች */
+.login-form h2, .login-form p, .input-group label {
+  color: white; 
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1); /* ግልጽነት ያለው ዳራ */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white; /* ተጠቃሚው የሚጽፈው ጽሁፍ */
+  box-sizing: border-box;
+  margin-top: 5px;
+}
+
+/* 4. አዝራር እና ፉተር */
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #0056b3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.login-footer { margin-top: 20px; color: white; font-size: 14px; }
+.login-footer a { color: #80caff; font-weight: bold; text-decoration: none; }
+/* ለቁልፉ መያዣ (Container) */
+.dashboard-btn {
+  margin-top: 30px; /* ከ login-box እንዲርቅ */
+  display: flex;
+  justify-content: center;
+}
+
+.dashboard-btn {
+  margin-bottom: 30px; /* ከሳጥኑ በላይ ክፍተት እንዲኖረው */
+  display: flex;
+  justify-content: center;
+}
+
+.back-to-dashboard-btn {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 12px 30px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.back-to-dashboard-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
