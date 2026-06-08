@@ -1,0 +1,126 @@
+/* DashboardContent.css - ዘመናዊ እና ሳቢ ዲዛይን */
+
+body {
+  background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%); /* አዲስ የጀርባ ቀለም */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  color: #334e68;
+}
+
+.dashboard-content {
+  padding: 40px;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Action Cards Grid */
+.action-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive */
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+/* Action Card - Glassmorphism style */
+.action-card {
+  background: rgba(255, 255, 255, 0.7); /* በከፊል ግልጽ */
+  backdrop-filter: blur(10px); /* የጀርባውን ብዥታ ያደርገዋል */
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.action-card:hover {
+  transform: translateY(-10px); /* ወደ ላይ ከፍ ይላል */
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+}
+
+.icon-box {
+  background: rgba(0, 123, 255, 0.1); /* ለአዶው የጀርባ ቀለም */
+  color: #007bff;
+  font-size: 3rem;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.action-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  color: #102a43;
+}
+
+.action-card p {
+  color: #627d98;
+  margin-bottom: 25px;
+}
+
+.action-card button {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+  transition: background 0.3s ease;
+}
+
+.action-card button:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+}
+
+/* Floating Banner - የተቀናጀ እና ሳቢ */
+.floating-banner {
+  background: rgba(255, 152, 0, 0.9); /* በከፊል ግልጽ ብርቱካናማ */
+  backdrop-filter: blur(5px);
+  padding: 25px;
+  border-radius: 20px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 10px 30px rgba(255, 152, 0, 0.3);
+  margin-top: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.floating-banner h3 {
+  margin-top: 15px;
+  font-size: 1.4rem;
+}
+
+.video-btn {
+  background: #28a745;
+  border: none;
+  padding: 14px;
+  border-radius: 30px;
+  width: 100%;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 15px;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  transition: background 0.3s ease;
+}
+
+.video-btn:hover {
+  background: #218838;
+}
+
+/* Responsive adjustments for the banner */
+@media (min-width: 768px) {
+  .floating-banner {
+    position: fixed; /* በስክሪኑ ላይ እንዲንሳፈፍ */
+    bottom: 30px;
+    right: 30px;
+    width: 320px;
+    margin-top: 0;
+  }
+}
