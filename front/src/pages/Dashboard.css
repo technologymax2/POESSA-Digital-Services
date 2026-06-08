@@ -1,14 +1,16 @@
 .dashboard-page {
   min-height: 100vh;
-  background: #f5f7fb;
-   text-align: center;
- background:  url('../poessaImage.png');
-  background-size: cover;
-  background-position: center;
-  height: 100vh;
+  width: 100%;
   margin: 0;
-
+  padding: 0;
   
+  /* ምስሉን ብቻ ነው የምንጠቀመው */
+  background-image: url('../poessaImage.png');
+              
+  background-size: cover;          /* ምስሉ ስክሪኑን ሙሉ በሙሉ እንዲሸፍን */
+  background-position: center;     /* ምስሉ መሃል ላይ እንዲሆን */
+  background-repeat: no-repeat;    /* ምስሉ እንዳይደገም */
+  background-attachment: fixed;    /* ስክሪኑ ቢንቀሳቀስም ምስሉ ቦታው ላይ እንዲቆይ */
 }
 
 .main-content {
