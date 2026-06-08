@@ -1,0 +1,137 @@
+:root {
+  --bg-card: #161b22;
+  --primary-gold: #ffd700;
+  --text-muted: #8b949e;
+  --border-color: #30363d;
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-premium-footer {
+  margin-top: 50px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.footer-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+  margin-bottom: 25px;
+}
+
+.footer-content-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 25px;
+  background: linear-gradient(135deg, #11151a, var(--bg-card));
+  padding: 20px 35px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.3);
+}
+
+.footer-profile-box {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.footer-avatar-container {
+  position: relative;
+  width: 50px;
+  height: 50px;
+}
+
+.footer-profile-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary-gold);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+}
+
+.profile-active-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background-color: #238636;
+  border: 2px solid #11151a;
+  border-radius: 50%;
+}
+
+.footer-profile-text h4 {
+  margin: 0 0 4px 0;
+  font-size: 15px;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.footer-profile-text p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.footer-contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.contact-item a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: var(--transition-smooth);
+}
+
+.contact-item a:hover {
+  color: var(--primary-gold);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+.footer-copyright-box {
+  text-align: right;
+}
+
+.footer-copyright-box p {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.footer-copyright-box p span {
+  color: var(--primary-gold);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.footer-version {
+  margin: 0;
+  font-size: 11px;
+  color: #58a6ff !important;
+}
+
+@media (max-width: 768px) {
+  .footer-content-wrapper {
+    flex-direction: column;
+    text-align: center;
+    padding: 25px;
+  }
+  .footer-profile-box {
+    flex-direction: column;
+  }
+  .footer-copyright-box {
+    text-align: center;
+  }
+}

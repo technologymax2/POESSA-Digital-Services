@@ -16,7 +16,7 @@ body {
 /* Action Cards Grid */
 .action-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive */
   gap: 30px;
   margin-bottom: 40px;
 }
