@@ -1,0 +1,66 @@
+/* የቪዲዮ ጥሪ መግቢያ ገጽ ስታይል */
+.access-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* ከዳሽቦርዱ ጋር ወጥ የሆነ የጀርባ ቀለም */
+  background: linear-gradient(135deg, #002244 0%, #003366 100%);
+  padding: 20px;
+}
+
+.access-card {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.access-card h2 {
+  color: #003366;
+  margin-bottom: 15px;
+  font-size: 1.8rem;
+}
+
+.access-card p {
+  color: #666;
+  margin-bottom: 25px;
+}
+
+.access-card input {
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 2px solid #e1e1e1;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: border 0.3s ease;
+}
+
+.access-card input:focus {
+  outline: none;
+  border-color: #003366;
+}
+
+.access-card button {
+  width: 100%;
+  padding: 15px;
+  background: #ffd700; /* Gold */
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #003366;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.access-card button:hover {
+  background: #ffc107;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 193, 7, 0.4);
+}

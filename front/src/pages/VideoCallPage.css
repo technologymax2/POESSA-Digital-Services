@@ -1,0 +1,29 @@
+.video-page-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #002244;
+}
+
+.video-header {
+  padding: 15px 25px;
+  background: #003366;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.video-header button {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.video-stream {
+  flex-grow: 1; /* የቪዲዮውን ቦታ ሙሉ በሙሉ እንዲወስድ */
+  width: 100%;
+}

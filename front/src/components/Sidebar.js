@@ -1,30 +1,24 @@
 import React, { useRef, useEffect } from 'react';
-import { Dashboard, Description, VerifiedUser, Assessment, People, Settings, Menu, Close } from "@mui/icons-material";
+import { useNavigate } from 'react-router-dom';
+import { Dashboard, Description, VerifiedUser, Assessment, Videocam, Settings, Menu, Close } from "@mui/icons-material";
 import LanguageSwitcher from "./LanguageSwitcher";
 import "./Sidebar.css";
 
 const Sidebar = ({ currentLang, toggleLanguage, collapsed, setCollapsed }) => {
   const sidebarRef = useRef();
+  const navigate = useNavigate();
 
-  // በሞባይል ስክሪን ከውጭ ሲጫን sidebar እንዲዘጋ
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (window.innerWidth <= 768 && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
         setCollapsed(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [setCollapsed]);
 
-  // ስክሪኑን ለይቶ ተገቢውን CSS class መምረጥ
-  const getSidebarClass = () => {
-    if (window.innerWidth <= 768) {
-      return collapsed ? "mobile-open" : ""; // ለሞባይል
-    }
-    return collapsed ? "desktop-collapsed" : ""; // ለዴስክቶፕ
-  };
+  const getSidebarClass = () => (window.innerWidth <= 768 ? (collapsed ? "mobile-open" : "") : (collapsed ? "desktop-collapsed" : ""));
 
   return (
     <>
@@ -42,11 +36,11 @@ const Sidebar = ({ currentLang, toggleLanguage, collapsed, setCollapsed }) => {
         </div>
 
         <nav className="menu-list">
-          <div className="menu-item active"><Dashboard /> <span>{currentLang === "am" ? "ዳሽቦርድ" : "Dashboard"}</span></div>
-          <div className="menu-item"><Description /> <span>{currentLang === "am" ? "ውክልናዎች" : "Delegations"}</span></div>
-          <div className="menu-item"><VerifiedUser /> <span>{currentLang === "am" ? "የህይወት ማረጋገጫ" : "Life Verification"}</span></div>
-          <div className="menu-item"><Assessment /> <span>{currentLang === "am" ? "ሪፖርቶች" : "Reports"}</span></div>
-          <div className="menu-item"><People /> <span>{currentLang === "am" ? "ተጠቃሚዎች" : "Users"}</span></div>
+          <div className="menu-item" onClick={() => navigate('/dashboard')}><Dashboard /> <span>{currentLang === "am" ? "ዳሽቦርድ" : "Dashboard"}</span></div>
+          <div className="menu-item" onClick={() => navigate('/delegations')}><Description /> <span>{currentLang === "am" ? "ውክልናዎች" : "Delegations"}</span></div>
+          <div className="menu-item" onClick={() => navigate('/verification')}><VerifiedUser /> <span>{currentLang === "am" ? "የህይወት ማረጋገጫ" : "Life Verification"}</span></div>
+          <div className="menu-item" onClick={() => navigate('/reports')}><Assessment /> <span>{currentLang === "am" ? "ሪፖርቶች" : "Reports"}</span></div>
+          <div className="menu-item" onClick={() => navigate('/agent-call-center')}><Videocam /> <span>{currentLang === "am" ? "የጥሪ ማስተናገጃ" : "Call Management"}</span></div>
         </nav>
 
         <div className="sidebar-footer">

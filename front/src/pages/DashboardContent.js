@@ -1,11 +1,31 @@
 import React from 'react';
 import { Videocam } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom'; // ለማገናኘት አስፈላጊ
 import './DashboardContent.css';
 
 const DashboardContent = () => {
+  const navigate = useNavigate(); // የገጽ መቀያየሪያ hook
+
   return (
     <div className="dashboard-content">
-     
+      {/* የቪዲዮ ጥሪ ባነር - ወደ VideoCallAccess ያገናኛል */}
+      <div className="floating-banner">
+        <div style={{ color: '#ffd700', marginBottom: '10px' }}>
+          <Videocam style={{ fontSize: 50 }} />
+        </div>
+        <h3 style={{ color: 'white', marginBottom: '5px' }}>የቪዲዮ ጥሪ ድጋፍ</h3>
+        <p style={{ color: '#dbe6f3', fontSize: '0.9rem' }}>
+          ለጤና እና ለልዩ ድጋፍ ለሚፈልጉ ወገኖች
+        </p>
+        <button 
+          className="video-btn" 
+          onClick={() => navigate('/video-call')} // ወደ ተፈላጊው ገጽ ይወስዳል
+        >
+          ቪዲዮ ጥሪ ይጀምሩ
+        </button>
+      </div>
+      
+      {/* ሌሎች የዳሽቦርድ አገልግሎት ካርዶች */}
       <div className="action-cards-grid">
         <div className="action-card">
           <div className="icon-box">👤</div>
@@ -25,14 +45,6 @@ const DashboardContent = () => {
           <p>Case Tracking</p>
           <button>Action now</button>
         </div>
-      </div>
-
-      {/* Floating Video Call Banner */}
-      <div className="floating-banner">
-        <Videocam style={{ fontSize: 40 }} />
-        <h3>ለታማሚ እና ለአእምሮ ሁኔታ ላላቸው ሰዎች</h3>
-        <p>(For sick and mentally challenged people - call here directly)</p>
-        <button className="video-btn">Start Video Call</button>
       </div>
     </div>
   );
