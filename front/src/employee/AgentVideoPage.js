@@ -3,7 +3,12 @@ import Peer from "simple-peer";
 import io from "socket.io-client";
 import "./AgentVideoPage.css";
 
-const socket = io("http://localhost:5000");
+const socket = io(
+  "https://poessa-digital-services-1.onrender.com",
+  {
+    transports: ["websocket", "polling"],
+  }
+);
 
 const AgentVideoPage = () => {
   const myVideo = useRef(null);

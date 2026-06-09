@@ -4,8 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import VideoCallAccess from './customer/VideoCallAccess'; 
-import VideoCallPage from './pages/VideoCallPage';
+import VideoCallAccess from './customer/VideoCallAccess';
 import AgentVideoPage from './employee/AgentVideoPage' ;    
 import './App.css';
 
@@ -19,7 +18,6 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/video-call" element={<VideoCallAccess />} />
-          <Route path="/video-call-room/:tin" element={<VideoCallPage />} />
           <Route path="/agent-call-center" element={<AgentVideoPage />} />
         </Routes>
       </div>
