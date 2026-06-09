@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, CallEnd, Person } from '@mui/icons-material';
+import { CheckCircle, CallEnd, Person, Warning } from '@mui/icons-material';
 import './AgentVideoPage.css';
 
 const AgentVideoPage = () => {
@@ -22,21 +22,32 @@ const AgentVideoPage = () => {
   }, [tin]);
 
   const handleVerification = () => {
-    // እዚህ ላይ Backend API በመጠቀም ዳታቤዙን ያዘምኑ
     setIsVerified(true);
-    alert(`TIN: ${tin} - በህይወት መኖራቸው ተረጋግጧል!`);
+    alert(`የጡረተኛው (TIN: ${tin}) ህልውና በስኬት ተረጋግጧል!`);
   };
 
   return (
     <div className="agent-interface">
       <aside className="client-info-panel">
-        <h2><Person /> የጡረተኛው መረጃ</h2>
+        <div className="info-header">
+          <h2><Person /> የጡረተኛው መረጃ</h2>
+        </div>
         <p><strong>TIN ቁጥር:</strong> {tin}</p>
-        <button className="verify-btn" onClick={handleVerification} disabled={isVerified}>
+        <p><strong>ሁኔታ:</strong> <Warning /> ጽኑ ታማሚ</p>
+        
+        <button 
+          className="action-btn-approve" 
+          onClick={handleVerification}
+          disabled={isVerified}
+        >
           <CheckCircle /> {isVerified ? 'ተረጋግጧል' : 'በህይወት እንዳሉ ያረጋግጡ'}
         </button>
-        <button className="close-btn" onClick={() => navigate('/dashboard')}>ጥሪውን ይዝጉ</button>
+
+        <button className="action-btn-close" onClick={() => navigate('/dashboard')}>
+          <CallEnd /> ጥሪውን ይዝጉ
+        </button>
       </aside>
+      
       <main className="video-main-panel">
         <div ref={jitsiContainer} className="video-stream" />
       </main>

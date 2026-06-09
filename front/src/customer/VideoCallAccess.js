@@ -11,12 +11,12 @@ const VideoCallAccess = () => {
   const handleStartCall = async () => {
     if (tin.length >= 10) {
       setLoading(true);
-      // እዚህ ጋር Backend API በመጠቀም ጡረተኛው ትክክለኛ መሆኑን ያረጋግጡ
+      // Backend integration here
       await new Promise(resolve => setTimeout(resolve, 1000));
       setLoading(false);
       navigate(`/video-call-room/${tin}`);
     } else {
-      alert('እባክዎ ትክክለኛ የTIN ቁጥር ያስገቡ።');
+      alert('እባክዎ ትክክለኛ የTIN ቁጥር ያስገቡ (ቢያንስ 10 አሃዝ)።');
     }
   };
 
@@ -29,13 +29,16 @@ const VideoCallAccess = () => {
         </div>
         <input 
           type="text" 
-          placeholder="TIN ቁጥር ያስገቡ" 
+          placeholder="TIN ቁጥር (ለምሳሌ: 0001234567)" 
           value={tin}
           onChange={(e) => setTin(e.target.value)}
           className="tin-input"
         />
         <button onClick={handleStartCall} className="action-btn" disabled={loading}>
           {loading ? 'እያገናኘን ነው...' : 'ጥሪ ይጀምሩ'}
+        </button>
+        <button onClick={() => navigate('/login')} className="action-btn logout-btn">
+          <ExitToApp style={{ marginRight: '8px' }} /> መውጫ (Logout)
         </button>
       </div>
     </div>
