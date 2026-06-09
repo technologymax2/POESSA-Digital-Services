@@ -1,38 +1,67 @@
-.agent-interface {
-  display: grid;
-  grid-template-columns: 350px 1fr; /* ግራ 350px, ቀኝ የቀረው ስክሪን */
-  height: 100vh;
-  background: #f4f7f6;
+.agent-page{
+ display:flex;
+ min-height:100vh;
+ background:#f5f7fb;
 }
 
-.client-info-panel {
-  background: #003366; /* ለሰራተኛው የሚያረጋጋ ጥቁር ሰማያዊ */
-  color: white;
-  padding: 25px;
-  overflow-y: auto;
+.queue-panel{
+ width:350px;
+ background:white;
+ padding:20px;
+ border-right:1px solid #ddd;
+ overflow-y:auto;
 }
 
-.video-main-panel {
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.queue-panel h2{
+ margin-bottom:15px;
 }
 
-.video-container {
-  width: 100%;
-  height: 90vh;
-  background: #000;
-  border-radius: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
+.badge{
+ background:red;
+ color:white;
+ padding:5px 10px;
+ border-radius:20px;
 }
 
-.info-header { margin-bottom: 20px; }
-.status-live { color: #4caf50; font-weight: bold; }
-.action-btn { 
-  width: 100%; padding: 15px; margin-top: 20px; 
-  background: #ffd700; border: none; cursor: pointer; font-weight: bold;
+.call-card{
+ background:#f8fafc;
+ padding:15px;
+ margin-top:10px;
+ border-radius:10px;
+}
+
+.call-card button{
+ width:100%;
+ padding:10px;
+ border:none;
+ background:#16a34a;
+ color:white;
+ border-radius:8px;
+ cursor:pointer;
+}
+
+.video-panel{
+ flex:1;
+ padding:20px;
+}
+
+.video-box{
+ margin-bottom:20px;
+}
+
+.video-box video{
+ width:100%;
+ max-width:600px;
+ height:350px;
+ background:black;
+ border-radius:10px;
+}
+
+.end-btn{
+ background:#dc2626;
+ color:white;
+ border:none;
+ padding:15px 30px;
+ border-radius:10px;
+ cursor:pointer;
 }

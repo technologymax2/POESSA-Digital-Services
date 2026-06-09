@@ -1,45 +1,199 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ExitToApp, Videocam } from '@mui/icons-material';
-import './VideoCallAccess.css';
+import React, { useEffect, useRef, useState } from "react";
+import Peer from "simple-peer";
+import io from "socket.io-client";
+import "./VideoCallAccess.css";
+
+const socket = io("http://localhost:5000");
 
 const VideoCallAccess = () => {
-  const [tin, setTin] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const myVideo = useRef(null);
+  const remoteVideo = useRef(null);
+  const peerRef = useRef(null);
 
-  const handleStartCall = async () => {
-    if (tin.length >= 10) {
-      setLoading(true);
-      // Backend integration here
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setLoading(false);
-      navigate(`/video-call-room/${tin}`);
-    } else {
-      alert('እባክዎ ትክክለኛ የTIN ቁጥር ያስገቡ (ቢያንስ 10 አሃዝ)።');
+  const [stream, setStream] = useState(null);
+  const [callStatus, setCallStatus] = useState("idle");
+  const [myId, setMyId] = useState("");
+  const [agentId, setAgentId] = useState("");
+
+  useEffect(() => {
+    const initializeMedia = async () => {
+      try {
+        const mediaStream =
+          await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
+
+        setStream(mediaStream);
+
+        if (myVideo.current) {
+          myVideo.current.srcObject = mediaStream;
+        }
+      } catch (error) {
+        console.error("Camera Error:", error);
+        alert("Camera access denied");
+      }
+    };
+
+    const handleAgentAccepted = (data) => {
+      setAgentId(data.agentId);
+      setCallStatus("connected");
+
+      if (peerRef.current) {
+        peerRef.current.signal(data.signal);
+      }
+    };
+
+    const handleCallEnded = () => {
+      if (peerRef.current) {
+        peerRef.current.destroy();
+        peerRef.current = null;
+      }
+
+      if (remoteVideo.current) {
+        remoteVideo.current.srcObject = null;
+      }
+
+      setCallStatus("idle");
+      setAgentId("");
+    };
+
+    initializeMedia();
+
+    const pensionerId =
+      localStorage.getItem("userId") ||
+      `PENSIONER_${Date.now()}`;
+
+    setMyId(pensionerId);
+
+    socket.emit("register-user", {
+      userId: pensionerId,
+      role: "pensioner",
+    });
+
+    socket.on("agent-accepted", handleAgentAccepted);
+    socket.on("call-ended", handleCallEnded);
+
+    return () => {
+      socket.off("agent-accepted", handleAgentAccepted);
+      socket.off("call-ended", handleCallEnded);
+
+      if (peerRef.current) {
+        peerRef.current.destroy();
+      }
+    };
+  }, []);
+
+  const startCall = () => {
+    if (!stream) {
+      alert("Camera not ready");
+      return;
     }
+
+    setCallStatus("waiting");
+
+    const peer = new Peer({
+      initiator: true,
+      trickle: false,
+      stream,
+    });
+
+    peer.on("signal", (signalData) => {
+      socket.emit("request-agent-call", {
+        pensionerId: myId,
+        signalData,
+      });
+    });
+
+    peer.on("stream", (remoteStream) => {
+      if (remoteVideo.current) {
+        remoteVideo.current.srcObject = remoteStream;
+      }
+    });
+
+    peerRef.current = peer;
+  };
+
+  const endCall = (notifyServer = true) => {
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+
+    if (notifyServer) {
+      socket.emit("end-call", {
+        pensionerId: myId,
+        agentId,
+      });
+    }
+
+    if (remoteVideo.current) {
+      remoteVideo.current.srcObject = null;
+    }
+
+    setCallStatus("idle");
+    setAgentId("");
   };
 
   return (
-    <div className="access-container">
-      <div className="access-card">
-        <div className="card-header">
-          <Videocam style={{ fontSize: 60, color: '#003366' }} />
-          <h2>የቪዲዮ ጥሪ ድጋፍ</h2>
+    <div className="video-call-page">
+      <div className="video-call-container">
+        <h1 className="page-title">
+          የቀጥታ ቪዲዮ ጥሪ
+        </h1>
+
+        <div className="status-box">
+          {callStatus === "idle" && "ዝግጁ"}
+          {callStatus === "waiting" &&
+            "ለሰራተኛ በመደወል ላይ..."}
+          {callStatus === "connected" &&
+            "ጥሪው ተገናኝቷል"}
         </div>
-        <input 
-          type="text" 
-          placeholder="TIN ቁጥር (ለምሳሌ: 0001234567)" 
-          value={tin}
-          onChange={(e) => setTin(e.target.value)}
-          className="tin-input"
-        />
-        <button onClick={handleStartCall} className="action-btn" disabled={loading}>
-          {loading ? 'እያገናኘን ነው...' : 'ጥሪ ይጀምሩ'}
-        </button>
-        <button onClick={() => navigate('/login')} className="action-btn logout-btn">
-          <ExitToApp style={{ marginRight: '8px' }} /> መውጫ (Logout)
-        </button>
+
+        <div className="video-grid">
+          <div className="video-card">
+            <h3>የእርስዎ ካሜራ</h3>
+
+            <video
+              ref={myVideo}
+              autoPlay
+              muted
+              playsInline
+              className="video-box"
+            />
+          </div>
+
+          <div className="video-card">
+            <h3>የሰራተኛው ቪዲዮ</h3>
+
+            <video
+              ref={remoteVideo}
+              autoPlay
+              playsInline
+              className="video-box"
+            />
+          </div>
+        </div>
+
+        <div className="button-group">
+          {callStatus === "idle" && (
+            <button
+              className="call-btn"
+              onClick={startCall}
+            >
+              📞 ደውል
+            </button>
+          )}
+
+          {callStatus !== "idle" && (
+            <button
+              className="end-btn"
+              onClick={() => endCall(true)}
+            >
+              ❌ ጥሪ ዝጋ
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

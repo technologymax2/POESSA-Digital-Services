@@ -1,56 +1,247 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, CallEnd, Person, Warning } from '@mui/icons-material';
-import './AgentVideoPage.css';
+import React, { useEffect, useRef, useState } from "react";
+import Peer from "simple-peer";
+import io from "socket.io-client";
+import "./AgentVideoPage.css";
+
+const socket = io("http://localhost:5000");
 
 const AgentVideoPage = () => {
-  const { tin } = useParams();
-  const navigate = useNavigate();
-  const jitsiContainer = useRef(null);
-  const [isVerified, setIsVerified] = useState(false);
+  const myVideo = useRef(null);
+  const remoteVideo = useRef(null);
+  const peerRef = useRef(null);
+
+  const [stream, setStream] = useState(null);
+  const [incomingCalls, setIncomingCalls] = useState([]);
+  const [activeCall, setActiveCall] = useState(null);
+  const [callConnected, setCallConnected] = useState(false);
 
   useEffect(() => {
-    const domain = 'meet.jit.si';
-    const options = {
-      roomName: `POESSA-Call-${tin}`,
-      width: '100%',
-      height: '100%',
-      parentNode: jitsiContainer.current
-    };
-    const api = new window.JitsiMeetExternalAPI(domain, options);
-    return () => api.dispose();
-  }, [tin]);
+    const initializeMedia = async () => {
+      try {
+        const mediaStream =
+          await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
 
-  const handleVerification = () => {
-    setIsVerified(true);
-    alert(`የጡረተኛው (TIN: ${tin}) ህልውና በስኬት ተረጋግጧል!`);
+        setStream(mediaStream);
+
+        if (myVideo.current) {
+          myVideo.current.srcObject = mediaStream;
+        }
+      } catch (error) {
+        console.error("Camera Error:", error);
+        alert("Camera access denied");
+      }
+    };
+
+    const handleIncomingCall = (callData) => {
+      setIncomingCalls((prev) => {
+        const exists = prev.find(
+          (item) =>
+            item.pensionerId === callData.pensionerId
+        );
+
+        if (exists) return prev;
+
+        return [...prev, callData];
+      });
+    };
+
+    const handleRemoteEnd = () => {
+      if (peerRef.current) {
+        peerRef.current.destroy();
+        peerRef.current = null;
+      }
+
+      if (remoteVideo.current) {
+        remoteVideo.current.srcObject = null;
+      }
+
+      setCallConnected(false);
+      setActiveCall(null);
+    };
+
+    initializeMedia();
+
+    const agentId =
+      localStorage.getItem("agentId") ||
+      `AGENT_${Date.now()}`;
+
+    socket.emit("register-user", {
+      userId: agentId,
+      role: "agent",
+    });
+
+    socket.on("incoming-call", handleIncomingCall);
+    socket.on("call-ended", handleRemoteEnd);
+
+    return () => {
+      socket.off("incoming-call", handleIncomingCall);
+      socket.off("call-ended", handleRemoteEnd);
+
+      if (peerRef.current) {
+        peerRef.current.destroy();
+      }
+    };
+  }, []);
+
+  const answerCall = (callData) => {
+    if (!stream) {
+      alert("Camera not ready");
+      return;
+    }
+
+    setActiveCall(callData);
+    setCallConnected(true);
+
+    const peer = new Peer({
+      initiator: false,
+      trickle: false,
+      stream,
+    });
+
+    peer.on("signal", (signal) => {
+      socket.emit("answer-call", {
+        signal,
+        pensionerId: callData.pensionerId,
+        agentId: callData.agentId,
+      });
+    });
+
+    peer.on("stream", (remoteStream) => {
+      if (remoteVideo.current) {
+        remoteVideo.current.srcObject =
+          remoteStream;
+      }
+    });
+
+    peer.signal(callData.signalData);
+
+    peerRef.current = peer;
+
+    setIncomingCalls((prev) =>
+      prev.filter(
+        (item) =>
+          item.pensionerId !== callData.pensionerId
+      )
+    );
+  };
+
+  const rejectCall = (callData) => {
+    socket.emit("reject-call", {
+      pensionerId: callData.pensionerId,
+    });
+
+    setIncomingCalls((prev) =>
+      prev.filter(
+        (item) =>
+          item.pensionerId !== callData.pensionerId
+      )
+    );
+  };
+
+  const endCall = () => {
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+
+    socket.emit("end-call", {
+      pensionerId: activeCall?.pensionerId,
+    });
+
+    if (remoteVideo.current) {
+      remoteVideo.current.srcObject = null;
+    }
+
+    setCallConnected(false);
+    setActiveCall(null);
   };
 
   return (
-    <div className="agent-interface">
-      <aside className="client-info-panel">
-        <div className="info-header">
-          <h2><Person /> የጡረተኛው መረጃ</h2>
-        </div>
-        <p><strong>TIN ቁጥር:</strong> {tin}</p>
-        <p><strong>ሁኔታ:</strong> <Warning /> ጽኑ ታማሚ</p>
-        
-        <button 
-          className="action-btn-approve" 
-          onClick={handleVerification}
-          disabled={isVerified}
-        >
-          <CheckCircle /> {isVerified ? 'ተረጋግጧል' : 'በህይወት እንዳሉ ያረጋግጡ'}
-        </button>
+    <div className="agent-page">
+      <div className="queue-panel">
+        <h2>Incoming Calls</h2>
 
-        <button className="action-btn-close" onClick={() => navigate('/dashboard')}>
-          <CallEnd /> ጥሪውን ይዝጉ
-        </button>
-      </aside>
-      
-      <main className="video-main-panel">
-        <div ref={jitsiContainer} className="video-stream" />
-      </main>
+        <div className="call-count">
+          {incomingCalls.length} Call(s)
+        </div>
+
+        {incomingCalls.map((call) => (
+          <div
+            key={call.pensionerId}
+            className="call-card"
+          >
+            <h4>
+              {call.pensionerName ||
+                call.pensionerId}
+            </h4>
+
+            <div className="call-actions">
+              <button
+                className="answer-btn"
+                onClick={() => answerCall(call)}
+              >
+                Answer
+              </button>
+
+              <button
+                className="reject-btn"
+                onClick={() => rejectCall(call)}
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="video-section">
+        <h2>Agent Call Center</h2>
+
+        {activeCall && (
+          <div className="active-user">
+            Current Call:{" "}
+            {activeCall.pensionerName ||
+              activeCall.pensionerId}
+          </div>
+        )}
+
+        <div className="video-grid">
+          <div className="video-card">
+            <h3>Agent Camera</h3>
+
+            <video
+              ref={myVideo}
+              autoPlay
+              muted
+              playsInline
+              className="video-box"
+            />
+          </div>
+
+          <div className="video-card">
+            <h3>Pensioner</h3>
+
+            <video
+              ref={remoteVideo}
+              autoPlay
+              playsInline
+              className="video-box"
+            />
+          </div>
+        </div>
+
+        {callConnected && (
+          <button
+            className="end-btn"
+            onClick={endCall}
+          >
+            End Call
+          </button>
+        )}
+      </div>
     </div>
   );
 };
