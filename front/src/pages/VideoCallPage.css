@@ -1,29 +1,65 @@
+/* የገጹ አጠቃላይ መያዣ */
 .video-page-container {
-  height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #002244;
+  height: 100vh;
+  width: 100%;
+  background-color: #1a1a1a;
+  font-family: 'Arial', sans-serif;
 }
 
+/* የራስጌ (Header) ክፍል */
 .video-header {
-  padding: 15px 25px;
-  background: #003366;
-  color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 15px 25px;
+  background-color: #003366;
+  color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-.video-header button {
-  background: #ff4d4d;
+.video-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* የቪዲዮ ዥረት የሚታይበት ክፍል */
+.video-stream {
+  flex-grow: 1; /* ሙሉ ስክሪኑን እንዲይዝ */
+  width: 100%;
+  background-color: #000;
+}
+
+/* ቁልፎች ዲዛይን */
+.verify-btn {
+  background-color: #28a745;
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 10px 20px;
   border-radius: 6px;
   cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: 0.3s;
 }
 
-.video-stream {
-  flex-grow: 1; /* የቪዲዮውን ቦታ ሙሉ በሙሉ እንዲወስድ */
-  width: 100%;
+.verify-btn:hover {
+  background-color: #218838;
+}
+
+.close-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.close-btn:hover {
+  background-color: #c82333;
 }

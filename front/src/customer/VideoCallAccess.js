@@ -1,25 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ExitToApp, Videocam } from '@mui/icons-material'; // አስፈላጊ አይኮኖች
+import { ExitToApp, Videocam } from '@mui/icons-material';
 import './VideoCallAccess.css';
 
 const VideoCallAccess = () => {
   const [tin, setTin] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleStartCall = () => {
-    // TIN ቁጥር 10 አሃዝ መሆኑን ማረጋገጥ
+  const handleStartCall = async () => {
     if (tin.length >= 10) {
+      setLoading(true);
+      // እዚህ ጋር Backend API በመጠቀም ጡረተኛው ትክክለኛ መሆኑን ያረጋግጡ
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLoading(false);
       navigate(`/video-call-room/${tin}`);
     } else {
-      alert('እባክዎ ትክክለኛ የTIN ቁጥር ያስገቡ። የ Tin አሃዝ ከ10 አያንስም');
+      alert('እባክዎ ትክክለኛ የTIN ቁጥር ያስገቡ።');
     }
-  };
-
-  const handleLogout = () => {
-    // እዚህ ቦታ ላይ የAuth Token (እንደ JWT) ማጥፊያ ኮድ ይገባል
-    // localStorage.removeItem('userToken');
-    navigate('/login'); // ወደ መግቢያ ገጽ መመለሻ
   };
 
   return (
@@ -28,23 +26,16 @@ const VideoCallAccess = () => {
         <div className="card-header">
           <Videocam style={{ fontSize: 60, color: '#003366' }} />
           <h2>የቪዲዮ ጥሪ ድጋፍ</h2>
-          <p>እባክዎ ለመጀመር የTIN ቁጥርዎን ያስገቡ</p>
         </div>
-
         <input 
           type="text" 
-          placeholder="TIN ቁጥር (ለምሳሌ: 0001234567)" 
+          placeholder="TIN ቁጥር ያስገቡ" 
           value={tin}
           onChange={(e) => setTin(e.target.value)}
           className="tin-input"
         />
-        
-        <button onClick={handleStartCall} className="action-btn call-btn">
-          ጥሪ ይጀምሩ
-        </button>
-        
-        <button onClick={handleLogout} className="action-btn logout-btn">
-          <ExitToApp style={{ marginRight: '8px' }} /> Logout
+        <button onClick={handleStartCall} className="action-btn" disabled={loading}>
+          {loading ? 'እያገናኘን ነው...' : 'ጥሪ ይጀምሩ'}
         </button>
       </div>
     </div>

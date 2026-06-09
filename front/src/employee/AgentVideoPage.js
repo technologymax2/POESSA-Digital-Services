@@ -1,59 +1,44 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ExitToApp, CheckCircle, Person } from '@mui/icons-material';
+import { CheckCircle, CallEnd, Person } from '@mui/icons-material';
 import './AgentVideoPage.css';
 
 const AgentVideoPage = () => {
   const { tin } = useParams();
   const navigate = useNavigate();
   const jitsiContainer = useRef(null);
+  const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
-    // Jitsi Meet ውቅር
     const domain = 'meet.jit.si';
     const options = {
       roomName: `POESSA-Call-${tin}`,
       width: '100%',
       height: '100%',
-      parentNode: jitsiContainer.current,
-      userInfo: { displayName: 'የደንበኛ ድጋፍ ኦፊሰር' }
+      parentNode: jitsiContainer.current
     };
     const api = new window.JitsiMeetExternalAPI(domain, options);
     return () => api.dispose();
   }, [tin]);
 
-  const handleLogout = () => {
-    // የAuth መረጃዎችን ማጽዳት (ለምሳሌ: localStorage.removeItem('token'))
-    navigate('/login');
+  const handleVerification = () => {
+    // እዚህ ላይ Backend API በመጠቀም ዳታቤዙን ያዘምኑ
+    setIsVerified(true);
+    alert(`TIN: ${tin} - በህይወት መኖራቸው ተረጋግጧል!`);
   };
 
   return (
     <div className="agent-interface">
-      {/* 1. የደንበኛ መረጃ ፓነል */}
       <aside className="client-info-panel">
-        <div className="info-header">
-          <h2><Person /> ደንበኛ</h2>
-          <span className="status-live">በመስመር ላይ</span>
-        </div>
-        
-        <div className="info-body">
-          <p><strong>TIN ቁጥር:</strong> {tin}</p>
-          <p><strong>ስም:</strong> አበበ በለው</p>
-          <p><strong>አገልግሎት:</strong> የህይወት ማረጋገጫ</p>
-          <hr />
-          <h3>የጉዳይ ታሪክ</h3>
-          <ul>
-            <li>የመጀመሪያ ጥሪ - 2026/05/20</li>
-          </ul>
-        </div>
-        
-        <button className="action-btn-approve"><CheckCircle /> ሰነዱን ያጽድቁ</button>
-        <button className="action-btn-logout" onClick={handleLogout}><ExitToApp /> ውጣ (Logout)</button>
+        <h2><Person /> የጡረተኛው መረጃ</h2>
+        <p><strong>TIN ቁጥር:</strong> {tin}</p>
+        <button className="verify-btn" onClick={handleVerification} disabled={isVerified}>
+          <CheckCircle /> {isVerified ? 'ተረጋግጧል' : 'በህይወት እንዳሉ ያረጋግጡ'}
+        </button>
+        <button className="close-btn" onClick={() => navigate('/dashboard')}>ጥሪውን ይዝጉ</button>
       </aside>
-
-      {/* 2. የቪዲዮ ጥሪ ፓነል */}
       <main className="video-main-panel">
-        <div ref={jitsiContainer} className="video-container" />
+        <div ref={jitsiContainer} className="video-stream" />
       </main>
     </div>
   );

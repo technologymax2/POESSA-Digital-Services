@@ -3,36 +3,29 @@ import { useParams, useNavigate } from 'react-router-dom';
 import './VideoCallPage.css';
 
 const VideoCallPage = () => {
-  const { tin } = useParams(); // ከURL የመጣውን TIN ቁጥር ይይዛል
+  const { tin } = useParams();
   const navigate = useNavigate();
   const jitsiContainer = useRef(null);
 
   useEffect(() => {
-    // Jitsi Meet API ውቅር
     const domain = 'meet.jit.si';
     const options = {
-      roomName: `POESSA-Call-${tin}`, // ለእያንዳንዱ ደንበኛ ልዩ የጥሪ ክፍል
+      roomName: `POESSA-Call-${tin}`,
       width: '100%',
       height: '100%',
       parentNode: jitsiContainer.current,
-      userInfo: {
-        displayName: `Customer TIN: ${tin}`
-      }
+      configOverwrite: { prejoinPageEnabled: false }
     };
-
     const api = new window.JitsiMeetExternalAPI(domain, options);
-
-    return () => api.dispose(); // ገጹ ሲዘጋ ጥሪውን ይዘጋል
+    return () => api.dispose();
   }, [tin]);
 
   return (
     <div className="video-page-container">
       <div className="video-header">
-        <h3>ለደንበኛ TIN: {tin} ድጋፍ እየሰጡ ነው</h3>
-        <button onClick={() => navigate('/dashboard')}>ጥሪውን ይዝጉ</button>
+        <h3>የቪዲዮ ድጋፍ - TIN: {tin}</h3>
+        <button className="close-btn" onClick={() => navigate('/')}>ጥሪውን ይዝጉ</button>
       </div>
-      
-      {/* የቪዲዮ ጥሪው እዚህ ነው የሚታየው */}
       <div ref={jitsiContainer} className="video-stream" />
     </div>
   );
