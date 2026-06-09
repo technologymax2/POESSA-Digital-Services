@@ -8,6 +8,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("POESSA Video Call Server Running");
+});
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -17,85 +21,77 @@ const io = new Server(server, {
   },
 });
 
-/*
-=================================================
-Connected Users
-=================================================
-*/
-
 const users = new Map();
 
 /*
-=================================================
-Register User
-=================================================
+userId -> {
+ socketId,
+ role
+}
 */
 
+const activeCalls = new Map();
+
+/*
+pensionerId -> {
+ pensionerId,
+ agentId
+}
+*/
+
+const busyAgents = new Set();
+
 io.on("connection", (socket) => {
-  console.log(
-    "Connected:",
-    socket.id
-  );
+  console.log("Connected:", socket.id);
 
-  socket.on(
-    "register-user",
-    (data) => {
+  socket.on("register-user", (data) => {
+    users.set(data.userId, {
+      socketId: socket.id,
+      role: data.role,
+    });
 
-      users.set(
-        data.userId,
-        {
-          socketId:
-            socket.id,
-          role:
-            data.role
-        }
-      );
-
-      console.log(
-        `${data.role} Registered`,
-        data.userId
-      );
-
-    }
-  );
+    console.log(
+      `${data.role} Registered`,
+      data.userId
+    );
+  });
 
   /*
-  ==========================================
-  Pensioner Calling Agent
-  ==========================================
+  =========================================
+  REQUEST CALL
+  =========================================
   */
 
   socket.on(
     "request-agent-call",
     (data) => {
-
-      const agents =
+      const availableAgents =
         Array.from(
           users.entries()
         ).filter(
-          ([, user]) =>
-            user.role ===
-            "agent"
+          ([agentId, user]) =>
+            user.role === "agent" &&
+            !busyAgents.has(
+              agentId
+            )
         );
 
       if (
-        agents.length === 0
+        availableAgents.length === 0
       ) {
-
         socket.emit(
-          "no-agent-online",
+          "all-agents-busy",
           {
             message:
-              "No agent online"
+              "ሁሉም ሰራተኞች በሥራ ላይ ናቸው። እባክዎ ቆይተው እንደገና ይደውሉ።",
           }
         );
 
         return;
       }
 
-      agents.forEach(
+      availableAgents.forEach(
         ([agentId, agent]) => {
-
           io.to(
             agent.socketId
           ).emit(
@@ -107,25 +103,45 @@ io.on("connection", (socket) => {
               signalData:
                 data.signalData,
 
-              agentId
+              agentId,
             }
           );
-
         }
       );
-
     }
   );
 
   /*
-  ==========================================
-  Agent Answers
-  ==========================================
+  =========================================
+  ANSWER CALL
+  =========================================
   */
 
   socket.on(
     "answer-call",
     (data) => {
+      if (
+        busyAgents.has(
+          data.agentId
+        )
+      ) {
+        return;
+      }
+
+      busyAgents.add(
+        data.agentId
+      );
+
+      activeCalls.set(
+        data.pensionerId,
+        {
+          pensionerId:
+            data.pensionerId,
+
+          agentId:
+            data.agentId,
+        }
+      );
 
       const pensioner =
         users.get(
@@ -135,7 +151,6 @@ io.on("connection", (socket) => {
       if (
         pensioner
       ) {
-
         io.to(
           pensioner.socketId
         ).emit(
@@ -145,25 +160,22 @@ io.on("connection", (socket) => {
               data.signal,
 
             agentId:
-              data.agentId
+              data.agentId,
           }
         );
-
       }
-
     }
   );
 
   /*
-  ==========================================
-  Reject Call
-  ==========================================
+  =========================================
+  REJECT CALL
+  =========================================
   */
 
   socket.on(
     "reject-call",
     (data) => {
-
       const pensioner =
         users.get(
           data.pensionerId
@@ -172,69 +184,98 @@ io.on("connection", (socket) => {
       if (
         pensioner
       ) {
-
         io.to(
           pensioner.socketId
         ).emit(
           "call-rejected"
         );
-
       }
-
     }
   );
 
   /*
-  ==========================================
-  End Call
-  ==========================================
+  =========================================
+  END CALL
+  =========================================
   */
 
   socket.on(
     "end-call",
     (data) => {
+      const call =
+        activeCalls.get(
+          data.pensionerId
+        );
+
+      if (!call) return;
 
       const pensioner =
         users.get(
-          data.pensionerId
+          call.pensionerId
+        );
+
+      const agent =
+        users.get(
+          call.agentId
         );
 
       if (
         pensioner
       ) {
-
         io.to(
           pensioner.socketId
         ).emit(
           "call-ended"
         );
-
       }
 
+      if (
+        agent
+      ) {
+        io.to(
+          agent.socketId
+        ).emit(
+          "call-ended"
+        );
+      }
+
+      busyAgents.delete(
+        call.agentId
+      );
+
+      activeCalls.delete(
+        call.pensionerId
+      );
+
+      console.log(
+        "Call Ended:",
+        call.pensionerId
+      );
     }
   );
 
   /*
-  ==========================================
-  Disconnect
-  ==========================================
+  =========================================
+  DISCONNECT
+  =========================================
   */
 
   socket.on(
     "disconnect",
     () => {
+      let disconnectedUser =
+        null;
 
-      for (
-        const [
-          userId,
-          user
-        ] of users
-      ) {
-
+      for (const [
+        userId,
+        user,
+      ] of users) {
         if (
           user.socketId ===
           socket.id
         ) {
+          disconnectedUser =
+            userId;
 
           users.delete(
             userId
@@ -242,26 +283,78 @@ io.on("connection", (socket) => {
 
           break;
         }
+      }
 
+      if (
+        disconnectedUser
+      ) {
+        for (const [
+          pensionerId,
+          call,
+        ] of activeCalls) {
+          if (
+            call.pensionerId ===
+              disconnectedUser ||
+            call.agentId ===
+              disconnectedUser
+          ) {
+            const pensioner =
+              users.get(
+                call.pensionerId
+              );
+
+            const agent =
+              users.get(
+                call.agentId
+              );
+
+            if (
+              pensioner
+            ) {
+              io.to(
+                pensioner.socketId
+              ).emit(
+                "call-ended"
+              );
+            }
+
+            if (
+              agent
+            ) {
+              io.to(
+                agent.socketId
+              ).emit(
+                "call-ended"
+              );
+            }
+
+            busyAgents.delete(
+              call.agentId
+            );
+
+            activeCalls.delete(
+              pensionerId
+            );
+          }
+        }
       }
 
       console.log(
-        "Disconnected",
+        "Disconnected:",
         socket.id
       );
-
     }
   );
-
 });
 
+const PORT =
+  process.env.PORT || 5000;
+
 server.listen(
-  5000,
+  PORT,
   () => {
-
     console.log(
-      "Server Running On Port 5000"
+      `Server Running On Port ${PORT}`
     );
-
   }
 );

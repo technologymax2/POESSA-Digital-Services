@@ -19,6 +19,7 @@ const AgentVideoPage = () => {
   const [incomingCalls, setIncomingCalls] = useState([]);
   const [activeCall, setActiveCall] = useState(null);
   const [callConnected, setCallConnected] = useState(false);
+  const [agentId, setAgentId] = useState("");
 
   useEffect(() => {
     const initializeMedia = async () => {
@@ -35,7 +36,7 @@ const AgentVideoPage = () => {
           myVideo.current.srcObject = mediaStream;
         }
       } catch (error) {
-        console.error("Camera Error:", error);
+        console.error(error);
         alert("Camera access denied");
       }
     };
@@ -47,7 +48,9 @@ const AgentVideoPage = () => {
             item.pensionerId === callData.pensionerId
         );
 
-        if (exists) return prev;
+        if (exists) {
+          return prev;
+        }
 
         return [...prev, callData];
       });
@@ -69,21 +72,37 @@ const AgentVideoPage = () => {
 
     initializeMedia();
 
-    const agentId =
+    const savedAgentId =
       localStorage.getItem("agentId") ||
       `AGENT_${Date.now()}`;
 
+    setAgentId(savedAgentId);
+
     socket.emit("register-user", {
-      userId: agentId,
+      userId: savedAgentId,
       role: "agent",
     });
 
-    socket.on("incoming-call", handleIncomingCall);
-    socket.on("call-ended", handleRemoteEnd);
+    socket.on(
+      "incoming-call",
+      handleIncomingCall
+    );
+
+    socket.on(
+      "call-ended",
+      handleRemoteEnd
+    );
 
     return () => {
-      socket.off("incoming-call", handleIncomingCall);
-      socket.off("call-ended", handleRemoteEnd);
+      socket.off(
+        "incoming-call",
+        handleIncomingCall
+      );
+
+      socket.off(
+        "call-ended",
+        handleRemoteEnd
+      );
 
       if (peerRef.current) {
         peerRef.current.destroy();
@@ -92,6 +111,13 @@ const AgentVideoPage = () => {
   }, []);
 
   const answerCall = (callData) => {
+    if (callConnected) {
+      alert(
+        "አሁን በሌላ ጥሪ ላይ ነዎት"
+      );
+      return;
+    }
+
     if (!stream) {
       alert("Camera not ready");
       return;
@@ -109,8 +135,9 @@ const AgentVideoPage = () => {
     peer.on("signal", (signal) => {
       socket.emit("answer-call", {
         signal,
-        pensionerId: callData.pensionerId,
-        agentId: callData.agentId,
+        pensionerId:
+          callData.pensionerId,
+        agentId,
       });
     });
 
@@ -128,20 +155,23 @@ const AgentVideoPage = () => {
     setIncomingCalls((prev) =>
       prev.filter(
         (item) =>
-          item.pensionerId !== callData.pensionerId
+          item.pensionerId !==
+          callData.pensionerId
       )
     );
   };
 
   const rejectCall = (callData) => {
     socket.emit("reject-call", {
-      pensionerId: callData.pensionerId,
+      pensionerId:
+        callData.pensionerId,
     });
 
     setIncomingCalls((prev) =>
       prev.filter(
         (item) =>
-          item.pensionerId !== callData.pensionerId
+          item.pensionerId !==
+          callData.pensionerId
       )
     );
   };
@@ -153,7 +183,8 @@ const AgentVideoPage = () => {
     }
 
     socket.emit("end-call", {
-      pensionerId: activeCall?.pensionerId,
+      pensionerId:
+        activeCall?.pensionerId,
     });
 
     if (remoteVideo.current) {
@@ -186,14 +217,20 @@ const AgentVideoPage = () => {
             <div className="call-actions">
               <button
                 className="answer-btn"
-                onClick={() => answerCall(call)}
+                disabled={callConnected}
+                onClick={() =>
+                  answerCall(call)
+                }
               >
                 Answer
               </button>
 
               <button
                 className="reject-btn"
-                onClick={() => rejectCall(call)}
+                disabled={callConnected}
+                onClick={() =>
+                  rejectCall(call)
+                }
               >
                 Reject
               </button>
@@ -207,7 +244,8 @@ const AgentVideoPage = () => {
 
         {activeCall && (
           <div className="active-user">
-            Current Call:{" "}
+            Current Call :
+            {" "}
             {activeCall.pensionerName ||
               activeCall.pensionerId}
           </div>

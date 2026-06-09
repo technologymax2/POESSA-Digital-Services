@@ -13,16 +13,11 @@ const Dashboard = () => {
     setLang(prev => (prev === 'am' ? 'en' : 'am'));
   };
 
-  const employees = [
-    { id: 1, name: 'አቶ አበበ በለ', pensionId: '1220056', match: '95%' },
-    { id: 2, name: 'ወ/ሮ አልማዝ ታደሰ', pensionId: '1220057', match: '98%' },
-    { id: 3, name: 'አቶ ተስፋዬ አለሙ', pensionId: '1220058', match: '92%' },
-    { id: 4, name: 'ወ/ሮ ሰላማዊት አየለ', pensionId: '1220059', match: '97%' }
-  ];
+ 
 
   return (
     <div className="dashboard-page">
-      {/* Sidebar ላይ props ማለፍ */}
+      
       <Sidebar 
   currentLang={lang} 
   toggleLanguage={toggleLanguage}
