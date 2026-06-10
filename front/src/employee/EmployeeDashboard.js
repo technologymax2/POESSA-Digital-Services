@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import DashboardContent from './DashboardContent'
-import './Dashboard.css';
+import './EmployeeDashboard.css';
 
-const Dashboard = () => {
+const EmployeeDashboard = () => {
   // የቋንቋ ስቴት
   const [lang, setLang] = useState('am');
   const [collapsed, setCollapsed] = useState(false);
@@ -29,9 +28,6 @@ const Dashboard = () => {
         <Header title={lang === 'am' ? "POESSA | ዲጂታል  አገልግሎቶች" : "POESSA | Digital Services"} />
 
         <main className="dashboard-body">
-
-
-          <DashboardContent />
           <div className="stats-grid">
             <div className="stat-card">
               <h3>{lang === 'am' ? 'ያለፉ የህይወት ማረጋገጫ' : 'Expired Life Verifications'}</h3>
@@ -52,23 +48,11 @@ const Dashboard = () => {
             <h2>{lang === 'am' ? 'በቅርብ ጊዜ የተረጋገጡ ጡረተኞች' : 'Recently Verified Pensioners'}</h2>
           </div>
 
-          <div className="employees-grid">
-            {employees.map((employee) => (
-              <div key={employee.id} className="employee-card">
-                <div className="employee-avatar">{employee.name.charAt(0)}</div>
-                <h4>{employee.name}</h4>
-                <p className="employee-id">Pension ID: {employee.pensionId}</p>
-                <span className="status-badge">{employee.match} MATCH</span>
-                <button className="details-btn">
-                  {lang === 'am' ? 'ዝርዝር ይመልከቱ' : 'View Details'}
-                </button>
-              </div>
-            ))}
-          </div>
+          
         </main>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default EmployeeDashboard;
