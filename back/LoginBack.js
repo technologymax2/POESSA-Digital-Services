@@ -1,386 +1,201 @@
-```javascript
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose");
+const User = require("./models/User");
 
 const router = express.Router();
 
-/*
-=========================================
-USER MODEL
-=========================================
-*/
+router.post("/register", async (req, res) => {
+  try {
+    const {
+      username,
+      password,
+      role,
+      tinNumber,
+      email,
+      phoneNumber,
+    } = req.body;
 
-const userSchema = new mongoose.Schema(
-  {
-    username: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
+    if (!username || !password || !role) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
 
-    password: {
-      type: String,
-      required: true,
-    },
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-])[A-Za-z\d@$!%*?&.#_-]{8,}$/;
 
-    role: {
-      type: String,
-      enum: [
-        "admin",
-        "employee",
-        "pensioner",
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must contain at least 8 characters, uppercase, lowercase, number and symbol",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      $or: [
+        { username },
+        ...(email ? [{ email }] : []),
+        ...(tinNumber ? [{ tinNumber }] : []),
       ],
-      required: true,
-    },
+    });
 
-    tinNumber: {
-      type: String,
-      unique: true,
-      sparse: true,
-    },
-
-    isBlocked: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-const User =
-  mongoose.models.User ||
-  mongoose.model(
-    "User",
-    userSchema
-  );
-
-/*
-=========================================
-REGISTER
-=========================================
-*/
-
-router.post(
-  "/register",
-  async (req, res) => {
-    try {
-      const {
-        username,
-        password,
-        role,
-        tinNumber,
-      } = req.body;
-
-      if (
-        !username ||
-        !password ||
-        !role
-      ) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "All fields are required",
-        });
-      }
-
-      /*
-      =========================================
-      PASSWORD VALIDATION
-      =========================================
-      */
-
-      const passwordRegex =
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-])[A-Za-z\d@$!%*?&.#_-]{8,}$/;
-
-      if (
-        !passwordRegex.test(
-          password
-        )
-      ) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Password must contain at least 8 characters, uppercase, lowercase, number and symbol",
-        });
-      }
-
-      /*
-      =========================================
-      CHECK EXISTING USER
-      =========================================
-      */
-
-      const existingUser =
-        await User.findOne({
-          $or: [
-            {
-              username,
-            },
-            ...(tinNumber
-              ? [
-                  {
-                    tinNumber,
-                  },
-                ]
-              : []),
-          ],
-        });
-
-      if (
-        existingUser
-      ) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "User already exists",
-        });
-      }
-
-      const hashedPassword =
-        await bcrypt.hash(
-          password,
-          10
-        );
-
-      const user =
-        new User({
-          username,
-          password:
-            hashedPassword,
-          role,
-          tinNumber:
-            tinNumber || null,
-        });
-
-      await user.save();
-
-      res.status(201).json({
-        success: true,
-        message:
-          "Registration successful",
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists",
       });
+    }
 
-    } catch (error) {
+    const hashedPassword = await bcrypt.hash(
+      password,
+      10
+    );
 
-      console.error(error);
+    const user = new User({
+      username,
+      password: hashedPassword,
+      role,
+      tinNumber: tinNumber || null,
+      email: email || null,
+      phoneNumber: phoneNumber || null,
+      isBlocked: false,
+    });
 
-      res.status(500).json({
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Registration successful",
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+});
+
+router.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({
         success: false,
         message:
-          "Server Error",
+          "Username and Password required",
       });
-
     }
-  }
-);
 
-/*
-=========================================
-LOGIN
-=========================================
-*/
+    const user = await User.findOne({
+      $or: [
+        { username },
+        { email: username },
+        { tinNumber: username },
+      ],
+    });
 
-router.post(
-  "/login",
-  async (req, res) => {
-    try {
-
-      const {
-        username,
-        password,
-      } = req.body;
-
-      if (
-        !username ||
-        !password
-      ) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Username and Password required",
-        });
-      }
-
-      /*
-      =========================================
-      LOGIN USING
-      EMAIL / USERNAME / TIN
-      =========================================
-      */
-
-      const user =
-        await User.findOne({
-          $or: [
-            {
-              username,
-            },
-            {
-              tinNumber:
-                username,
-            },
-          ],
-        });
-
-      if (
-        !user
-      ) {
-        return res.status(404).json({
-          success: false,
-          message:
-            "User not found",
-        });
-      }
-
-      /*
-      =========================================
-      BLOCKED ACCOUNT
-      =========================================
-      */
-
-      if (
-        user.isBlocked
-      ) {
-        return res.status(403).json({
-          success: false,
-          message:
-            "Your account has been blocked by administrator",
-        });
-      }
-
-      /*
-      =========================================
-      PASSWORD CHECK
-      =========================================
-      */
-
-      const isMatch =
-        await bcrypt.compare(
-          password,
-          user.password
-        );
-
-      if (
-        !isMatch
-      ) {
-        return res.status(401).json({
-          success: false,
-          message:
-            "Invalid Password",
-        });
-      }
-
-      /*
-      =========================================
-      JWT TOKEN
-      =========================================
-      */
-
-      const token =
-        jwt.sign(
-          {
-            id: user._id,
-            username:
-              user.username,
-            role:
-              user.role,
-          },
-          process.env.JWT_SECRET,
-          {
-            expiresIn:
-              "1d",
-          }
-        );
-
-      /*
-      =========================================
-      RESPONSE
-      =========================================
-      */
-
-      res.json({
-        success: true,
-
-        token,
-
-        user: {
-          id: user._id,
-          username:
-            user.username,
-          role:
-            user.role,
-          tinNumber:
-            user.tinNumber,
-        },
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
       });
+    }
 
-    } catch (error) {
-
-      console.error(error);
-
-      res.status(500).json({
+    if (user.isBlocked) {
+      return res.status(403).json({
         success: false,
         message:
-          "Server Error",
+          "Your account has been blocked by administrator",
       });
-
     }
-  }
-);
 
-/*
-=========================================
-VERIFY TOKEN
-=========================================
-*/
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
 
-router.get(
-  "/verify",
-  async (req, res) => {
-    try {
-
-      const authHeader =
-        req.headers.authorization;
-
-      if (
-        !authHeader
-      ) {
-        return res.status(401).json({
-          success: false,
-        });
-      }
-
-      const token =
-        authHeader.split(
-          " "
-        )[1];
-
-      const decoded =
-        jwt.verify(
-          token,
-          process.env.JWT_SECRET
-        );
-
-      res.json({
-        success: true,
-        user: decoded,
-      });
-
-    } catch (error) {
-
-      res.status(401).json({
+    if (!isMatch) {
+      return res.status(401).json({
         success: false,
-        message:
-          "Invalid Token",
+        message: "Invalid Password",
       });
-
     }
+
+    user.lastLogin = new Date();
+    await user.save();
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        username: user.username,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        role: user.role,
+        tinNumber: user.tinNumber,
+        email: user.email,
+      },
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
   }
-);
+});
+
+router.get("/verify", async (req, res) => {
+  try {
+    const authHeader =
+      req.headers.authorization;
+
+    if (!authHeader) {
+      return res.status(401).json({
+        success: false,
+        message: "Token required",
+      });
+    }
+
+    const token =
+      authHeader.split(" ")[1];
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
+
+    res.json({
+      success: true,
+      user: decoded,
+    });
+
+  } catch (error) {
+    res.status(401).json({
+      success: false,
+      message: "Invalid Token",
+    });
+  }
+});
 
 module.exports = router;
-```

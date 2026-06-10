@@ -1,9 +1,6 @@
-```javascript
 const express = require("express");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const router = express.Router();
-
 const User = require("./models/User");
 
 module.exports = (
@@ -13,18 +10,10 @@ module.exports = (
   forceDisconnectUser
 ) => {
 
-  /*
-  =====================================
-  GET ALL USERS
-  =====================================
-  */
-
   router.get(
     "/users",
     async (req, res) => {
-
       try {
-
         const users =
           await User.find(
             {},
@@ -39,7 +28,6 @@ module.exports = (
         });
 
       } catch (error) {
-
         console.error(error);
 
         res.status(500).json({
@@ -47,24 +35,14 @@ module.exports = (
           message:
             "Failed to fetch users",
         });
-
       }
-
     }
   );
-
-  /*
-  =====================================
-  CREATE USER
-  =====================================
-  */
 
   router.post(
     "/create-user",
     async (req, res) => {
-
       try {
-
         const {
           username,
           password,
@@ -131,7 +109,6 @@ module.exports = (
         });
 
       } catch (error) {
-
         console.error(error);
 
         res.status(500).json({
@@ -139,24 +116,14 @@ module.exports = (
           message:
             "Failed to create user",
         });
-
       }
-
     }
   );
-
-  /*
-  =====================================
-  BLOCK USER
-  =====================================
-  */
 
   router.put(
     "/block/:id",
     async (req, res) => {
-
       try {
-
         const user =
           await User.findById(
             req.params.id
@@ -185,7 +152,6 @@ module.exports = (
         });
 
       } catch (error) {
-
         console.error(error);
 
         res.status(500).json({
@@ -193,24 +159,14 @@ module.exports = (
           message:
             "Failed to block user",
         });
-
       }
-
     }
   );
-
-  /*
-  =====================================
-  UNBLOCK USER
-  =====================================
-  */
 
   router.put(
     "/unblock/:id",
     async (req, res) => {
-
       try {
-
         const user =
           await User.findById(
             req.params.id
@@ -236,7 +192,6 @@ module.exports = (
         });
 
       } catch (error) {
-
         console.error(error);
 
         res.status(500).json({
@@ -244,24 +199,14 @@ module.exports = (
           message:
             "Failed to unblock user",
         });
-
       }
-
     }
   );
-
-  /*
-  =====================================
-  RESET PASSWORD
-  =====================================
-  */
 
   router.put(
     "/reset-password/:id",
     async (req, res) => {
-
       try {
-
         const {
           newPassword,
         } = req.body;
@@ -297,7 +242,6 @@ module.exports = (
         });
 
       } catch (error) {
-
         console.error(error);
 
         res.status(500).json({
@@ -305,24 +249,14 @@ module.exports = (
           message:
             "Failed to update password",
         });
-
       }
-
     }
   );
-
-  /*
-  =====================================
-  DELETE USER
-  =====================================
-  */
 
   router.delete(
     "/delete/:id",
     async (req, res) => {
-
       try {
-
         const user =
           await User.findById(
             req.params.id
@@ -351,7 +285,6 @@ module.exports = (
         });
 
       } catch (error) {
-
         console.error(error);
 
         res.status(500).json({
@@ -359,22 +292,13 @@ module.exports = (
           message:
             "Failed to delete user",
         });
-
       }
-
     }
   );
-
-  /*
-  =====================================
-  SYSTEM STATISTICS
-  =====================================
-  */
 
   router.get(
     "/statistics",
     async (req, res) => {
-
       try {
 
         const totalUsers =
@@ -392,14 +316,12 @@ module.exports = (
 
         const totalPensioners =
           await User.countDocuments({
-            role:
-              "pensioner",
+            role: "pensioner",
           });
 
         const blockedUsers =
           await User.countDocuments({
-            isBlocked:
-              true,
+            isBlocked: true,
           });
 
         res.json({
@@ -418,7 +340,6 @@ module.exports = (
         });
 
       } catch (error) {
-
         console.error(error);
 
         res.status(500).json({
@@ -426,12 +347,9 @@ module.exports = (
           message:
             "Failed to fetch statistics",
         });
-
       }
-
     }
   );
 
   return router;
 };
-```
