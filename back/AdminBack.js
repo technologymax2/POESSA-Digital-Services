@@ -1,64 +1,437 @@
+```javascript
 const express = require("express");
-const router = express.Router();
 const bcrypt = require("bcryptjs");
-const User = require("./models/User"); // የእርስዎ MongoDB Schema
+const jwt = require("jsonwebtoken");
+const router = express.Router();
 
-module.exports = (io, usersMap, busyAgentsMap, forceDisconnectUser) => {
+const User = require("./models/User");
 
-    // 1. Fetch all users
-    router.get('/users', async (req, res) => {
-        try {
-            const users = await User.find({}, 'username role isBlocked');
-            res.json({ users });
-        } catch (err) {
-            res.status(500).json({ error: "Failed to fetch users" });
+module.exports = (
+  io,
+  usersMap,
+  busyAgents,
+  forceDisconnectUser
+) => {
+
+  /*
+  =====================================
+  GET ALL USERS
+  =====================================
+  */
+
+  router.get(
+    "/users",
+    async (req, res) => {
+
+      try {
+
+        const users =
+          await User.find(
+            {},
+            "-password"
+          ).sort({
+            createdAt: -1,
+          });
+
+        res.json({
+          success: true,
+          users,
+        });
+
+      } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+          success: false,
+          message:
+            "Failed to fetch users",
+        });
+
+      }
+
+    }
+  );
+
+  /*
+  =====================================
+  CREATE USER
+  =====================================
+  */
+
+  router.post(
+    "/create-user",
+    async (req, res) => {
+
+      try {
+
+        const {
+          username,
+          password,
+          role,
+          tinNumber,
+        } = req.body;
+
+        if (
+          !username ||
+          !password ||
+          !role
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "All fields are required",
+          });
         }
-    });
 
-    // 2. Create a new user (Admin/Employee)
-    router.post('/create-user', async (req, res) => {
-        const { username, password, role } = req.body;
-        try {
-            const hashedPassword = await bcrypt.hash(password, 10);
-            const newUser = new User({ username, password: hashedPassword, role, isBlocked: false });
-            await newUser.save();
-            res.status(201).json({ message: "User created successfully" });
-        } catch (err) {
-            res.status(500).json({ error: "User creation failed" });
+        const existingUser =
+          await User.findOne({
+            $or: [
+              { username },
+              ...(tinNumber
+                ? [{ tinNumber }]
+                : []),
+            ],
+          });
+
+        if (
+          existingUser
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "User already exists",
+          });
         }
-    });
 
-    // 3. Block/Unblock User and Force Disconnect
-    router.put('/block/:id', async (req, res) => {
-        try {
-            const user = await User.findById(req.params.id);
-            if (!user) return res.status(404).json({ error: "User not found" });
+        const hashedPassword =
+          await bcrypt.hash(
+            password,
+            10
+          );
 
-            user.isBlocked = !user.isBlocked;
-            await user.save();
+        const newUser =
+          new User({
+            username,
+            password:
+              hashedPassword,
+            role,
+            tinNumber:
+              tinNumber || "",
+            isBlocked:
+              false,
+          });
 
-            // ተጠቃሚው ሲታገድ ከሶኬት ግንኙነት እንዲቋረጥ ማድረግ
-            if (user.isBlocked) {
-                forceDisconnectUser(req.params.id);
-            }
+        await newUser.save();
 
-            res.json({ message: `User status updated to ${user.isBlocked ? 'Blocked' : 'Active'}` });
-        } catch (err) {
-            res.status(500).json({ error: "Database update failed" });
+        res.status(201).json({
+          success: true,
+          message:
+            "User created successfully",
+        });
+
+      } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+          success: false,
+          message:
+            "Failed to create user",
+        });
+
+      }
+
+    }
+  );
+
+  /*
+  =====================================
+  BLOCK USER
+  =====================================
+  */
+
+  router.put(
+    "/block/:id",
+    async (req, res) => {
+
+      try {
+
+        const user =
+          await User.findById(
+            req.params.id
+          );
+
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message:
+              "User not found",
+          });
         }
-    });
 
-    // 4. Reset Password
-    router.put('/reset-password/:id', async (req, res) => {
-        const { newPassword } = req.body;
-        try {
-            const hashedPassword = await bcrypt.hash(newPassword, 10);
-            await User.findByIdAndUpdate(req.params.id, { password: hashedPassword });
-            res.json({ message: "Password updated successfully" });
-        } catch (err) {
-            res.status(500).json({ error: "Password reset failed" });
+        user.isBlocked = true;
+
+        await user.save();
+
+        forceDisconnectUser(
+          user._id.toString()
+        );
+
+        res.json({
+          success: true,
+          message:
+            "User blocked successfully",
+        });
+
+      } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+          success: false,
+          message:
+            "Failed to block user",
+        });
+
+      }
+
+    }
+  );
+
+  /*
+  =====================================
+  UNBLOCK USER
+  =====================================
+  */
+
+  router.put(
+    "/unblock/:id",
+    async (req, res) => {
+
+      try {
+
+        const user =
+          await User.findById(
+            req.params.id
+          );
+
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message:
+              "User not found",
+          });
         }
-    });
 
-    return router;
+        user.isBlocked =
+          false;
+
+        await user.save();
+
+        res.json({
+          success: true,
+          message:
+            "User unblocked successfully",
+        });
+
+      } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+          success: false,
+          message:
+            "Failed to unblock user",
+        });
+
+      }
+
+    }
+  );
+
+  /*
+  =====================================
+  RESET PASSWORD
+  =====================================
+  */
+
+  router.put(
+    "/reset-password/:id",
+    async (req, res) => {
+
+      try {
+
+        const {
+          newPassword,
+        } = req.body;
+
+        if (
+          !newPassword
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "New password required",
+          });
+        }
+
+        const hashedPassword =
+          await bcrypt.hash(
+            newPassword,
+            10
+          );
+
+        await User.findByIdAndUpdate(
+          req.params.id,
+          {
+            password:
+              hashedPassword,
+          }
+        );
+
+        res.json({
+          success: true,
+          message:
+            "Password updated successfully",
+        });
+
+      } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+          success: false,
+          message:
+            "Failed to update password",
+        });
+
+      }
+
+    }
+  );
+
+  /*
+  =====================================
+  DELETE USER
+  =====================================
+  */
+
+  router.delete(
+    "/delete/:id",
+    async (req, res) => {
+
+      try {
+
+        const user =
+          await User.findById(
+            req.params.id
+          );
+
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message:
+              "User not found",
+          });
+        }
+
+        forceDisconnectUser(
+          user._id.toString()
+        );
+
+        await User.findByIdAndDelete(
+          req.params.id
+        );
+
+        res.json({
+          success: true,
+          message:
+            "User deleted successfully",
+        });
+
+      } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+          success: false,
+          message:
+            "Failed to delete user",
+        });
+
+      }
+
+    }
+  );
+
+  /*
+  =====================================
+  SYSTEM STATISTICS
+  =====================================
+  */
+
+  router.get(
+    "/statistics",
+    async (req, res) => {
+
+      try {
+
+        const totalUsers =
+          await User.countDocuments();
+
+        const totalAdmins =
+          await User.countDocuments({
+            role: "admin",
+          });
+
+        const totalEmployees =
+          await User.countDocuments({
+            role: "employee",
+          });
+
+        const totalPensioners =
+          await User.countDocuments({
+            role:
+              "pensioner",
+          });
+
+        const blockedUsers =
+          await User.countDocuments({
+            isBlocked:
+              true,
+          });
+
+        res.json({
+          success: true,
+          statistics: {
+            totalUsers,
+            totalAdmins,
+            totalEmployees,
+            totalPensioners,
+            blockedUsers,
+            onlineUsers:
+              usersMap.size,
+            busyAgents:
+              busyAgents.size,
+          },
+        });
+
+      } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+          success: false,
+          message:
+            "Failed to fetch statistics",
+        });
+
+      }
+
+    }
+  );
+
+  return router;
 };
+```
