@@ -25,18 +25,24 @@ const AgentVideoPage = () => {
   useEffect(() => {
     initializeMedia();
 
-    const user =
-      JSON.parse(localStorage.getItem("user")) || {};
+const storedUser = localStorage.getItem("user");
 
-    const loggedEmployeeId =
-      user._id ||
-      user.id ||
-      localStorage.getItem("userId");
+if (!storedUser) {
+  alert("Please login first");
+  window.location.href = "/login";
+  return;
+}
 
-    if (!loggedEmployeeId) {
-      alert("Employee ID not found");
-      return;
-    }
+const user = JSON.parse(storedUser);
+
+const loggedEmployeeId = user.id;
+
+console.log(
+  "Employee ID:",
+  loggedEmployeeId
+);
+
+setEmployeeId(loggedEmployeeId);
 
     setEmployeeId(loggedEmployeeId);
 

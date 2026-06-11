@@ -28,15 +28,21 @@ const VideoCallAccess = () => {
     const user =
       JSON.parse(localStorage.getItem("user")) || {};
 
-    const pensionerId =
-      user._id ||
-      user.id ||
-      localStorage.getItem("userId");
+    const storedUser = localStorage.getItem("user");
 
-    if (!pensionerId) {
-      alert("User ID not found");
-      return;
-    }
+if (!storedUser) {
+  alert("Please login first");
+  window.location.href = "/login";
+  return;
+}
+
+const user = JSON.parse(storedUser);
+
+const pensionerId = user.id;
+
+console.log("Pensioner ID:", pensionerId);
+
+setMyId(pensionerId);
 
     setMyId(pensionerId);
 
