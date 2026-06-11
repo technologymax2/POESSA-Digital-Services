@@ -25,24 +25,25 @@ const VideoCallAccess = () => {
   useEffect(() => {
     initializeMedia();
 
-    const user =
-      JSON.parse(localStorage.getItem("user")) || {};
-
     const storedUser = localStorage.getItem("user");
 
-if (!storedUser) {
-  alert("Please login first");
-  window.location.href = "/login";
-  return;
-}
+    if (!storedUser) {
+      alert("Please login first");
+      window.location.href = "/login";
+      return;
+    }
 
-const user = JSON.parse(storedUser);
+    const currentUser = JSON.parse(storedUser);
 
-const pensionerId = user.id;
+    const pensionerId = currentUser.id;
 
-console.log("Pensioner ID:", pensionerId);
+    if (!pensionerId) {
+      alert("User ID not found");
+      return;
+    }
 
-setMyId(pensionerId);
+    console.log("Pensioner User:", currentUser);
+    console.log("Pensioner ID:", pensionerId);
 
     setMyId(pensionerId);
 
@@ -51,30 +52,12 @@ setMyId(pensionerId);
       role: "pensioner",
     });
 
-    console.log(
-      "Pensioner Registered:",
-      pensionerId
-    );
+    console.log("Pensioner Registered:", pensionerId);
 
-    socket.on(
-      "agent-accepted",
-      handleEmployeeAccepted
-    );
-
-    socket.on(
-      "call-ended",
-      handleCallEnded
-    );
-
-    socket.on(
-      "all-agents-busy",
-      handleBusyEmployees
-    );
-
-    socket.on(
-      "call-rejected",
-      handleRejected
-    );
+    socket.on("agent-accepted", handleEmployeeAccepted);
+    socket.on("call-ended", handleCallEnded);
+    socket.on("all-agents-busy", handleBusyEmployees);
+    socket.on("call-rejected", handleRejected);
 
     return () => {
       socket.off("agent-accepted");
@@ -99,8 +82,7 @@ setMyId(pensionerId);
       setStream(mediaStream);
 
       if (myVideo.current) {
-        myVideo.current.srcObject =
-          mediaStream;
+        myVideo.current.srcObject = mediaStream;
       }
     } catch (error) {
       console.error(error);
@@ -108,22 +90,15 @@ setMyId(pensionerId);
     }
   };
 
-  const handleEmployeeAccepted = (
-    data
-  ) => {
-    console.log(
-      "Employee Accepted:",
-      data
-    );
+  const handleEmployeeAccepted = (data) => {
+    console.log("Employee Accepted:", data);
 
     setEmployeeId(data.agentId);
     setCallStatus("connected");
     setStatusMessage("");
 
     if (peerRef.current) {
-      peerRef.current.signal(
-        data.signal
-      );
+      peerRef.current.signal(data.signal);
     }
   };
 
@@ -136,8 +111,7 @@ setMyId(pensionerId);
     }
 
     if (remoteVideo.current) {
-      remoteVideo.current.srcObject =
-        null;
+      remoteVideo.current.srcObject = null;
     }
 
     setCallStatus("idle");
@@ -145,9 +119,7 @@ setMyId(pensionerId);
     setStatusMessage("");
   };
 
-  const handleBusyEmployees = (
-    data
-  ) => {
+  const handleBusyEmployees = (data) => {
     console.log("No Employees Available");
 
     if (peerRef.current) {
@@ -178,6 +150,11 @@ setMyId(pensionerId);
       return;
     }
 
+    if (!myId) {
+      alert("User ID Missing");
+      return;
+    }
+
     if (callStatus !== "idle") {
       return;
     }
@@ -192,36 +169,22 @@ setMyId(pensionerId);
     });
 
     peer.on("signal", (signalData) => {
-      console.log(
-        "Sending Call Request"
-      );
+      console.log("Sending Call Request");
 
-      socket.emit(
-        "request-agent-call",
-        {
-          pensionerId: myId,
-          signalData,
-        }
-      );
+      socket.emit("request-agent-call", {
+        pensionerId: myId,
+        signalData,
+      });
     });
 
-    peer.on(
-      "stream",
-      (remoteStream) => {
-        if (
-          remoteVideo.current
-        ) {
-          remoteVideo.current.srcObject =
-            remoteStream;
-        }
+    peer.on("stream", (remoteStream) => {
+      if (remoteVideo.current) {
+        remoteVideo.current.srcObject = remoteStream;
       }
-    );
+    });
 
     peer.on("error", (err) => {
-      console.error(
-        "Peer Error:",
-        err
-      );
+      console.error("Peer Error:", err);
     });
 
     peerRef.current = peer;
@@ -239,8 +202,7 @@ setMyId(pensionerId);
     });
 
     if (remoteVideo.current) {
-      remoteVideo.current.srcObject =
-        null;
+      remoteVideo.current.srcObject = null;
     }
 
     setCallStatus("idle");
@@ -259,17 +221,14 @@ setMyId(pensionerId);
           {statusMessage ||
             (callStatus === "idle"
               ? "ዝግጁ"
-              : callStatus ===
-                "waiting"
+              : callStatus === "waiting"
               ? "ለሰራተኛ በመደወል ላይ..."
               : "ጥሪው ተገናኝቷል")}
         </div>
 
         <div className="video-grid">
           <div className="video-card">
-            <h3>
-              የእርስዎ ካሜራ
-            </h3>
+            <h3>የእርስዎ ካሜራ</h3>
 
             <video
               ref={myVideo}
@@ -281,9 +240,7 @@ setMyId(pensionerId);
           </div>
 
           <div className="video-card">
-            <h3>
-              የሰራተኛው ቪዲዮ
-            </h3>
+            <h3>የሰራተኛው ቪዲዮ</h3>
 
             <video
               ref={remoteVideo}
@@ -295,8 +252,7 @@ setMyId(pensionerId);
         </div>
 
         <div className="button-group">
-          {callStatus ===
-            "idle" && (
+          {callStatus === "idle" && (
             <button
               className="call-btn"
               onClick={startCall}
@@ -305,8 +261,7 @@ setMyId(pensionerId);
             </button>
           )}
 
-          {callStatus !==
-            "idle" && (
+          {callStatus !== "idle" && (
             <button
               className="end-btn"
               onClick={endCall}
