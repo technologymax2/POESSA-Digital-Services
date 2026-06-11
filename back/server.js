@@ -7,38 +7,81 @@ require("dotenv").config();
 
 const app = express();
 
+/* =========================
+   CORS CONFIGURATION
+========================= */
+const allowedOrigins = [
+  "https://poessa-digital-services.vercel.app",
+  "http://localhost:3000"
+];
 
-// ይህን ኮድ በ express() እና በ route መሃል ላይ ያድርጉት
-app.use(cors({
-    origin: "*", // ለሙከራ ጊዜ "*" ጥሩ ነው፣ ለምርት (Production) ሲደርስ የ Frontend URLዎን ብቻ ይጥቀሱ
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization"
+    ]
+  })
+);
 
 app.use(express.json());
 
+/* =========================
+   HOME ROUTE
+========================= */
 app.get("/", (req, res) => {
   res.send("POESSA Server Running");
 });
 
+/* =========================
+   DATABASE CONNECTION
+========================= */
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => console.log(err));
+  .then(() => {
+    console.log("MongoDB Connected");
+  })
+  .catch((err) => {
+    console.error("MongoDB Error:", err);
+  });
 
+/* =========================
+   HTTP SERVER
+========================= */
 const server = http.createServer(app);
 
+/* =========================
+   SOCKET.IO
+========================= */
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
-  },
+    credentials: true
+  }
 });
 
+/* =========================
+   MEMORY STORAGE
+========================= */
 const users = new Map();
 const busyAgents = new Set();
 const activeCalls = new Map();
 
+/* =========================
+   FORCE DISCONNECT
+========================= */
 const forceDisconnectUser = (userId) => {
   const user = users.get(userId);
 
@@ -54,128 +97,254 @@ const forceDisconnectUser = (userId) => {
   busyAgents.delete(userId);
 };
 
+/* =========================
+   SOCKET EVENTS
+========================= */
 io.on("connection", (socket) => {
   console.log("Connected:", socket.id);
 
   socket.on("register-user", ({ userId, role }) => {
     users.set(userId, {
       socketId: socket.id,
-      role,
+      role
     });
+
+    console.log("User Registered:", userId);
   });
 
   socket.on("request-agent-call", (data) => {
     const availableAgents = Array.from(users.entries()).filter(
       ([agentId, user]) =>
-        user.role === "agent" &&
+        user.role === "employee" &&
         !busyAgents.has(agentId)
     );
 
     if (availableAgents.length === 0) {
       socket.emit("all-agents-busy", {
         message:
-          "ሁሉም ሰራተኞች በስራ ላይ ናቸው። እባክዎ ቆይተው በኋላ ይሞክሩ።",
+          "ሁሉም ሰራተኞች በስራ ላይ ናቸው።"
       });
       return;
     }
 
     availableAgents.forEach(([agentId, agent]) => {
-      io.to(agent.socketId).emit("incoming-call", {
-        pensionerId: data.pensionerId,
-        signalData: data.signalData,
-        agentId,
-      });
+      io.to(agent.socketId).emit(
+        "incoming-call",
+        {
+          pensionerId:
+            data.pensionerId,
+          signalData:
+            data.signalData,
+          agentId
+        }
+      );
     });
   });
 
   socket.on("answer-call", (data) => {
-    if (busyAgents.has(data.agentId)) return;
+    if (
+      busyAgents.has(
+        data.agentId
+      )
+    ) {
+      return;
+    }
 
-    busyAgents.add(data.agentId);
+    busyAgents.add(
+      data.agentId
+    );
 
-    activeCalls.set(data.pensionerId, {
-      pensionerId: data.pensionerId,
-      agentId: data.agentId,
-    });
+    activeCalls.set(
+      data.pensionerId,
+      {
+        pensionerId:
+          data.pensionerId,
+        agentId:
+          data.agentId
+      }
+    );
 
-    const pensioner = users.get(data.pensionerId);
+    const pensioner =
+      users.get(
+        data.pensionerId
+      );
 
     if (pensioner) {
-      io.to(pensioner.socketId).emit("agent-accepted", {
-        signal: data.signal,
-        agentId: data.agentId,
-      });
+      io.to(
+        pensioner.socketId
+      ).emit(
+        "agent-accepted",
+        {
+          signal:
+            data.signal,
+          agentId:
+            data.agentId
+        }
+      );
     }
   });
 
-  socket.on("reject-call", (data) => {
-    const pensioner = users.get(data.pensionerId);
+  socket.on(
+    "reject-call",
+    (data) => {
+      const pensioner =
+        users.get(
+          data.pensionerId
+        );
 
-    if (pensioner) {
-      io.to(pensioner.socketId).emit("call-rejected");
-    }
-  });
-
-  socket.on("end-call", (data) => {
-    const call = activeCalls.get(data.pensionerId);
-
-    if (!call) return;
-
-    const pensioner = users.get(call.pensionerId);
-    const agent = users.get(call.agentId);
-
-    if (pensioner) {
-      io.to(pensioner.socketId).emit("call-ended");
-    }
-
-    if (agent) {
-      io.to(agent.socketId).emit("call-ended");
-    }
-
-    busyAgents.delete(call.agentId);
-    activeCalls.delete(call.pensionerId);
-  });
-
-  socket.on("disconnect", () => {
-    let disconnectedUser = null;
-
-    for (const [userId, user] of users.entries()) {
-      if (user.socketId === socket.id) {
-        disconnectedUser = userId;
-        users.delete(userId);
-        busyAgents.delete(userId);
-        break;
+      if (pensioner) {
+        io.to(
+          pensioner.socketId
+        ).emit(
+          "call-rejected"
+        );
       }
     }
+  );
 
-    if (disconnectedUser) {
-      for (const [pensionerId, call] of activeCalls.entries()) {
+  socket.on(
+    "end-call",
+    (data) => {
+      const call =
+        activeCalls.get(
+          data.pensionerId
+        );
+
+      if (!call) return;
+
+      const pensioner =
+        users.get(
+          call.pensionerId
+        );
+
+      const agent =
+        users.get(
+          call.agentId
+        );
+
+      if (pensioner) {
+        io.to(
+          pensioner.socketId
+        ).emit(
+          "call-ended"
+        );
+      }
+
+      if (agent) {
+        io.to(
+          agent.socketId
+        ).emit(
+          "call-ended"
+        );
+      }
+
+      busyAgents.delete(
+        call.agentId
+      );
+
+      activeCalls.delete(
+        call.pensionerId
+      );
+    }
+  );
+
+  socket.on(
+    "disconnect",
+    () => {
+      let disconnectedUser =
+        null;
+
+      for (const [
+        userId,
+        user
+      ] of users.entries()) {
         if (
-          call.pensionerId === disconnectedUser ||
-          call.agentId === disconnectedUser
+          user.socketId ===
+          socket.id
         ) {
-          const pensioner = users.get(call.pensionerId);
-          const agent = users.get(call.agentId);
+          disconnectedUser =
+            userId;
 
-          if (pensioner) {
-            io.to(pensioner.socketId).emit("call-ended");
-          }
+          users.delete(
+            userId
+          );
 
-          if (agent) {
-            io.to(agent.socketId).emit("call-ended");
-          }
+          busyAgents.delete(
+            userId
+          );
 
-          busyAgents.delete(call.agentId);
-          activeCalls.delete(pensionerId);
+          break;
         }
       }
-    }
 
-    console.log("Disconnected:", socket.id);
-  });
+      if (
+        disconnectedUser
+      ) {
+        for (const [
+          pensionerId,
+          call
+        ] of activeCalls.entries()) {
+          if (
+            call.pensionerId ===
+              disconnectedUser ||
+            call.agentId ===
+              disconnectedUser
+          ) {
+            const pensioner =
+              users.get(
+                call.pensionerId
+              );
+
+            const agent =
+              users.get(
+                call.agentId
+              );
+
+            if (
+              pensioner
+            ) {
+              io.to(
+                pensioner.socketId
+              ).emit(
+                "call-ended"
+              );
+            }
+
+            if (agent) {
+              io.to(
+                agent.socketId
+              ).emit(
+                "call-ended"
+              );
+            }
+
+            busyAgents.delete(
+              call.agentId
+            );
+
+            activeCalls.delete(
+              pensionerId
+            );
+          }
+        }
+      }
+
+      console.log(
+        "Disconnected:",
+        socket.id
+      );
+    }
+  );
 });
 
-app.use("/api/auth", require("./LoginBack"));
+/* =========================
+   ROUTES
+========================= */
+
+app.use(
+  "/api/auth",
+  require("./LoginBack")
+);
 
 app.use(
   "/api/admin",
@@ -187,8 +356,18 @@ app.use(
   )
 );
 
-const PORT = process.env.PORT || 10000;
+/* =========================
+   PORT
+========================= */
+const PORT =
+  process.env.PORT ||
+  10000;
 
-server.listen(PORT, () => {
-  console.log(`Server Running On Port ${PORT}`);
-});
+server.listen(
+  PORT,
+  () => {
+    console.log(
+      `Server Running On Port ${PORT}`
+    );
+  }
+);
