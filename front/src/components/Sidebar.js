@@ -39,7 +39,7 @@ const Sidebar = ({ currentLang, toggleLanguage, collapsed, setCollapsed }) => {
           <div className="menu-item" onClick={() => navigate('/dashboard')}><Dashboard /> <span>{currentLang === "am" ? "ዳሽቦርድ" : "Dashboard"}</span></div>
           <div className="menu-item" onClick={() => navigate('/delegations')}><Description /> <span>{currentLang === "am" ? "ውክልናዎች" : "Delegations"}</span></div>
           <div className="menu-item" onClick={() => navigate('/verification')}><VerifiedUser /> <span>{currentLang === "am" ? "የህይወት ማረጋገጫ" : "Life Verification"}</span></div>
-          <div className="menu-item" onClick={() => navigate('/reports')}><Assessment /> <span>{currentLang === "am" ? "ሪፖርቶች" : "Reports"}</span></div>
+          <div className="menu-item" onClick={() => navigate('/AdminDashboard')}><Assessment /> <span>{currentLang === "am" ? "ሪፖርቶች" : "Reports"}</span></div>
           <div className="menu-item" onClick={() => navigate('/agent-call-center')}><Videocam /> <span>{currentLang === "am" ? "የጥሪ ማስተናገጃ" : "Call Management"}</span></div>
         </nav>
 
