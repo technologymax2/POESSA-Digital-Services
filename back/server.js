@@ -112,34 +112,35 @@ io.on("connection", (socket) => {
     console.log("User Registered:", userId);
   });
 
-  socket.on("request-agent-call", (data) => {
-    const availableAgents = Array.from(users.entries()).filter(
-      ([agentId, user]) =>
-        user.role === "employee" &&
-        !busyAgents.has(agentId)
-    );
+socket.on("request-agent-call", (data) => {
+  console.log("Incoming Call:", data.pensionerId);
 
-    if (availableAgents.length === 0) {
-      socket.emit("all-agents-busy", {
-        message:
-          "ሁሉም ሰራተኞች በስራ ላይ ናቸው።"
-      });
-      return;
-    }
+  const availableAgents = Array.from(users.entries()).filter(
+    ([userId, user]) =>
+      user.role === "employee" &&
+      !busyAgents.has(userId)
+  );
 
-    availableAgents.forEach(([agentId, agent]) => {
-      io.to(agent.socketId).emit(
-        "incoming-call",
-        {
-          pensionerId:
-            data.pensionerId,
-          signalData:
-            data.signalData,
-          agentId
-        }
-      );
+  console.log(
+    "Available Employees:",
+    availableAgents.length
+  );
+
+  if (availableAgents.length === 0) {
+    socket.emit("all-agents-busy", {
+      message: "ሁሉም ሰራተኞች በስራ ላይ ናቸው።"
+    });
+    return;
+  }
+
+  availableAgents.forEach(([agentId, agent]) => {
+    io.to(agent.socketId).emit("incoming-call", {
+      pensionerId: data.pensionerId,
+      signalData: data.signalData,
+      agentId
     });
   });
+});
 
   socket.on("answer-call", (data) => {
     if (

@@ -1,67 +1,196 @@
-.agent-page{
- display:flex;
- min-height:100vh;
- background:#f5f7fb;
+:root {
+  --primary: #0f172a;
+  --secondary: #1e293b;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --success: #10b981;
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --white: #ffffff;
+  --light: #f8fafc;
+  --border: rgba(255,255,255,0.12);
+  --shadow: 0 15px 35px rgba(0,0,0,0.35);
 }
 
-.queue-panel{
- width:350px;
- background:white;
- padding:20px;
- border-right:1px solid #ddd;
- overflow-y:auto;
+.agent-page {
+  min-height: 100vh;
+  display: flex;
+  background: linear-gradient(
+    135deg,
+    #020617,
+    #0f172a,
+    #1e293b
+  );
+  color: var(--white);
+  padding: 25px;
+  gap: 25px;
 }
 
-.queue-panel h2{
- margin-bottom:15px;
+.queue-panel {
+  width: 340px;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  padding: 25px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
 }
 
-.badge{
- background:red;
- color:white;
- padding:5px 10px;
- border-radius:20px;
+.queue-panel h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: white;
 }
 
-.call-card{
- background:#f8fafc;
- padding:15px;
- margin-top:10px;
- border-radius:10px;
+.call-count {
+  background: var(--accent);
+  text-align: center;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  margin-bottom: 20px;
 }
 
-.call-card button{
- width:100%;
- padding:10px;
- border:none;
- background:#16a34a;
- color:white;
- border-radius:8px;
- cursor:pointer;
+.no-calls {
+  text-align: center;
+  opacity: .7;
+  padding: 20px;
 }
 
-.video-panel{
- flex:1;
- padding:20px;
+.call-card {
+  background: rgba(255,255,255,0.08);
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 15px;
+  transition: .3s;
 }
 
-.video-box{
- margin-bottom:20px;
+.call-card:hover {
+  transform: translateY(-3px);
 }
 
-.video-box video{
- width:100%;
- max-width:600px;
- height:350px;
- background:black;
- border-radius:10px;
+.call-card h4 {
+  margin-bottom: 15px;
+  text-align: center;
 }
 
-.end-btn{
- background:#dc2626;
- color:white;
- border:none;
- padding:15px 30px;
- border-radius:10px;
- cursor:pointer;
+.call-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.answer-btn,
+.reject-btn {
+  flex: 1;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: .3s;
+}
+
+.answer-btn {
+  background: var(--success);
+  color: white;
+}
+
+.answer-btn:hover {
+  transform: scale(1.05);
+}
+
+.reject-btn {
+  background: var(--danger);
+  color: white;
+}
+
+.reject-btn:hover {
+  background: var(--danger-hover);
+}
+
+.video-section {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border-radius: 20px;
+  padding: 25px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.video-section h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.active-user {
+  text-align: center;
+  margin-bottom: 20px;
+  background: rgba(37,99,235,.15);
+  border: 1px solid rgba(37,99,235,.4);
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 25px;
+}
+
+.video-card {
+  background: rgba(255,255,255,.06);
+  border-radius: 18px;
+  padding: 15px;
+}
+
+.video-card h3 {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.video-box {
+  width: 100%;
+  height: 380px;
+  object-fit: cover;
+  border-radius: 15px;
+  background: #000;
+  border: 3px solid rgba(37,99,235,.5);
+}
+
+.end-btn {
+  display: block;
+  margin: 25px auto 0;
+  border: none;
+  background: var(--danger);
+  color: white;
+  padding: 14px 35px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .3s;
+}
+
+.end-btn:hover {
+  background: var(--danger-hover);
+  transform: translateY(-2px);
+}
+
+@media(max-width:992px){
+  .agent-page{
+    flex-direction:column;
+  }
+
+  .queue-panel{
+    width:100%;
+  }
+
+  .video-grid{
+    grid-template-columns:1fr;
+  }
+
+  .video-box{
+    height:300px;
+  }
 }

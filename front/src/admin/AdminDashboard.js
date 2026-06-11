@@ -1,42 +1,52 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-
 import "./AdminDashboard.css";
 
-const API_URL = "https://poessa-digital-services-1.onrender.com";
+const API_URL =
+  "https://poessa-digital-services-1.onrender.com";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
-  // --- STATE DEFINITIONS ---
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [collapsed, setCollapsed] = useState(false); // Added for Sidebar control
-  const [currentLang, setCurrentLang] = useState("am"); // Added for Language control
+  const [collapsed, setCollapsed] = useState(false);
+  const [currentLang, setCurrentLang] =
+    useState("am");
+
   const [newUser, setNewUser] = useState({
     username: "",
     password: "",
-    role: "employee"
+    role: "employee",
   });
 
-  const getAuthConfig = () => {
-    const token = localStorage.getItem("token");
-    return { headers: { Authorization: `Bearer ${token}` } };
-  };
+  const getAuthConfig = () => ({
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem(
+        "token"
+      )}`,
+    },
+  });
 
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/admin/users`, getAuthConfig());
+      const res = await axios.get(
+        `${API_URL}/api/admin/users`,
+        getAuthConfig()
+      );
+
       setUsers(res.data.users || []);
     } catch (err) {
-      console.error("Fetch Users Error:", err);
       if (err.response?.status === 401) {
-        localStorage.removeItem("token");
         navigate("/login");
       }
     }
@@ -46,115 +56,317 @@ const AdminDashboard = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Handler for language switching
-  const toggleLanguage = () => {
-    setCurrentLang((prev) => (prev === "am" ? "en" : "am"));
-  };
-
-  const handleCreate = async () => {
-    if (!newUser.username.trim() || !newUser.password.trim()) {
-      alert("እባክዎ ሁሉንም መረጃ ያስገቡ");
+  const createUser = async () => {
+    if (
+      !newUser.username ||
+      !newUser.password
+    ) {
+      alert("Fill all fields");
       return;
     }
+
+    setLoading(true);
+
     try {
-      setLoading(true);
-      await axios.post(`${API_URL}/api/admin/create-user`, newUser, getAuthConfig());
-      alert("ተጠቃሚው በተሳካ ሁኔታ ተፈጥሯል");
-      setNewUser({ username: "", password: "", role: "employee" });
+      await axios.post(
+        `${API_URL}/api/admin/create-user`,
+        newUser,
+        getAuthConfig()
+      );
+
+      setNewUser({
+        username: "",
+        password: "",
+        role: "employee",
+      });
+
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.message || "ተጠቃሚ መፍጠር አልተቻለም");
+      alert(
+        err.response?.data?.message ||
+          "Failed"
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleBlock = async (userId, isBlocked) => {
+  const toggleBlock = async (
+    id,
+    blocked
+  ) => {
     try {
-      const endpoint = isBlocked ? "unblock" : "block";
-      await axios.put(`${API_URL}/api/admin/${endpoint}/${userId}`, {}, getAuthConfig());
+      await axios.put(
+        `${API_URL}/api/admin/${
+          blocked ? "unblock" : "block"
+        }/${id}`,
+        {},
+        getAuthConfig()
+      );
+
       fetchUsers();
-    } catch (err) {
-      alert("ተግባሩን ማከናወን አልተቻለም");
+    } catch {
+      alert("Operation failed");
     }
   };
 
-  const deleteUser = async (userId) => {
-    if (window.confirm("ይህን ተጠቃሚ መሰረዝ ይፈልጋሉ?")) {
-      try {
-        await axios.delete(`${API_URL}/api/admin/delete/${userId}`, getAuthConfig());
-        alert("ተጠቃሚው ተሰርዟል");
-        fetchUsers();
-      } catch (err) {
-        alert("መሰረዝ አልተቻለም");
-      }
+  const deleteUser = async (id) => {
+    if (
+      !window.confirm(
+        "Delete this user?"
+      )
+    )
+      return;
+
+    try {
+      await axios.delete(
+        `${API_URL}/api/admin/delete/${id}`,
+        getAuthConfig()
+      );
+
+      fetchUsers();
+    } catch {
+      alert("Delete failed");
     }
   };
+
+  const resetPassword = async (id) => {
+    const password = prompt(
+      "Enter new password"
+    );
+
+    if (!password) return;
+
+    try {
+      await axios.put(
+        `${API_URL}/api/admin/reset-password/${id}`,
+        { newPassword: password },
+        getAuthConfig()
+      );
+
+      alert("Password Updated");
+    } catch {
+      alert("Failed");
+    }
+  };
+
+  const admins = useMemo(
+    () =>
+      users.filter(
+        (u) => u.role === "admin"
+      ),
+    [users]
+  );
+
+  const employees = useMemo(
+    () =>
+      users.filter(
+        (u) => u.role === "employee"
+      ),
+    [users]
+  );
 
   return (
-    <div className="Admin-dashboard-page">
-      {/* --- SIDEBAR WITH PROPS --- */}
-      <Sidebar 
-        collapsed={collapsed} 
-        setCollapsed={setCollapsed} 
-        currentLang={currentLang} 
-        toggleLanguage={toggleLanguage} 
+    <div className="dashboard-layout">
+      <Sidebar
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+        currentLang={currentLang}
+        toggleLanguage={() =>
+          setCurrentLang((prev) =>
+            prev === "am"
+              ? "en"
+              : "am"
+          )
+        }
       />
 
-      <div className="Admin-main-content">
-        <Header title="POESSA | አስተዳደር ፓነል" />
+      <main className="dashboard-main">
+        <Header title="POESSA Admin Dashboard" />
 
-        <section className="admin-actions">
-          <h3>አዲስ ተጠቃሚ መመዝገቢያ</h3>
-          <input type="text" placeholder="Username" value={newUser.username} onChange={(e) => setNewUser({...newUser, username: e.target.value})} />
-          <input type="password" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser({...newUser, password: e.target.value})} />
-          <select value={newUser.role} onChange={(e) => setNewUser({...newUser, role: e.target.value})}>
-            <option value="employee">Employee</option>
-            <option value="admin">Admin</option>
-            <option value="pensioner">Pensioner</option>
-          </select>
-          <button onClick={handleCreate} disabled={loading}>
-            {loading ? "በማስመዝገብ ላይ..." : "ተጠቃሚ ያክሉ"}
-          </button>
+        <div className="stats-grid">
+          <div className="stat-card">
+            <h2>{users.length}</h2>
+            <p>Total Users</p>
+          </div>
+
+          <div className="stat-card">
+            <h2>{admins.length}</h2>
+            <p>Admins</p>
+          </div>
+
+          <div className="stat-card">
+            <h2>{employees.length}</h2>
+            <p>Employees</p>
+          </div>
+
+          <div className="stat-card">
+            <h2>
+              {
+                users.filter(
+                  (u) => !u.isBlocked
+                ).length
+              }
+            </h2>
+            <p>Active Users</p>
+          </div>
+        </div>
+
+        <section className="user-form-card">
+          <h3>Create User</h3>
+
+          <div className="form-grid">
+            <input
+              type="text"
+              placeholder="Username"
+              value={newUser.username}
+              onChange={(e) =>
+                setNewUser({
+                  ...newUser,
+                  username:
+                    e.target.value,
+                })
+              }
+            />
+
+            <input
+              type="password"
+              placeholder="Password"
+              value={newUser.password}
+              onChange={(e) =>
+                setNewUser({
+                  ...newUser,
+                  password:
+                    e.target.value,
+                })
+              }
+            />
+
+            <select
+              value={newUser.role}
+              onChange={(e) =>
+                setNewUser({
+                  ...newUser,
+                  role: e.target.value,
+                })
+              }
+            >
+              <option value="employee">
+                Employee
+              </option>
+              <option value="admin">
+                Admin
+              </option>
+              <option value="pensioner">
+                Pensioner
+              </option>
+            </select>
+
+            <button
+              onClick={createUser}
+            >
+              {loading
+                ? "Creating..."
+                : "Create User"}
+            </button>
+          </div>
         </section>
 
-        <section className="admin-users">
-          <h3>የተጠቃሚዎች ዝርዝር</h3>
-          <table className="admin-user-table">
-            <thead>
-              <tr>
-                <th>Username</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.length > 0 ? (
-                users.map((user) => (
-                  <tr key={user._id}>
-                    <td>{user.username}</td>
-                    <td>{user.role}</td>
-                    <td>{user.isBlocked ? "ታግዷል" : "ንቁ"}</td>
-                    <td>
-                      <button className={user.isBlocked ? "btn-unblock" : "btn-block"} onClick={() => toggleBlock(user._id, user.isBlocked)}>
-                        {user.isBlocked ? "ክፈት" : "አግድ"}
-                      </button>
-                      <button className="btn-delete" onClick={() => deleteUser(user._id)}>ሰርዝ</button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr><td colSpan="4" style={{ textAlign: "center" }}>ምንም ተጠቃሚ አልተገኘም</td></tr>
-              )}
-            </tbody>
-          </table>
-        </section>
+        <h3 className="section-title">
+          Administrators
+        </h3>
+
+        <UserTable
+          users={admins}
+          toggleBlock={toggleBlock}
+          deleteUser={deleteUser}
+          resetPassword={resetPassword}
+        />
+
+        <h3 className="section-title">
+          Employees
+        </h3>
+
+        <UserTable
+          users={employees}
+          toggleBlock={toggleBlock}
+          deleteUser={deleteUser}
+          resetPassword={resetPassword}
+        />
 
         <Footer />
-      </div>
+      </main>
     </div>
   );
 };
+
+const UserTable = ({
+  users,
+  toggleBlock,
+  deleteUser,
+  resetPassword,
+}) => (
+  <div className="table-wrapper">
+    <table className="admin-table">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {users.map((user) => (
+          <tr key={user._id}>
+            <td>{user.username}</td>
+
+            <td>
+              {user.isBlocked
+                ? "Blocked"
+                : "Active"}
+            </td>
+
+            <td>
+              <button
+                className="danger-btn"
+                onClick={() =>
+                  toggleBlock(
+                    user._id,
+                    user.isBlocked
+                  )
+                }
+              >
+                {user.isBlocked
+                  ? "Unblock"
+                  : "Block"}
+              </button>
+
+              <button
+                className="warning-btn"
+                onClick={() =>
+                  resetPassword(
+                    user._id
+                  )
+                }
+              >
+                Reset Password
+              </button>
+
+              <button
+                className="dark-btn"
+                onClick={() =>
+                  deleteUser(user._id)
+                }
+              >
+                Delete
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
 
 export default AdminDashboard;

@@ -4,7 +4,8 @@ import io from "socket.io-client";
 import "./AgentVideoPage.css";
 
 const socket = io(
-  "https://poessa-digital-services-1.onrender.com",
+  process.env.REACT_APP_BACKEND_URL ||
+    "https://poessa-digital-services-1.onrender.com",
   {
     transports: ["websocket", "polling"],
   }
@@ -19,90 +20,42 @@ const AgentVideoPage = () => {
   const [incomingCalls, setIncomingCalls] = useState([]);
   const [activeCall, setActiveCall] = useState(null);
   const [callConnected, setCallConnected] = useState(false);
-  const [agentId, setAgentId] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
 
   useEffect(() => {
-    const initializeMedia = async () => {
-      try {
-        const mediaStream =
-          await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true,
-          });
-
-        setStream(mediaStream);
-
-        if (myVideo.current) {
-          myVideo.current.srcObject = mediaStream;
-        }
-      } catch (error) {
-        console.error(error);
-        alert("Camera access denied");
-      }
-    };
-
-    const handleIncomingCall = (callData) => {
-      setIncomingCalls((prev) => {
-        const exists = prev.find(
-          (item) =>
-            item.pensionerId === callData.pensionerId
-        );
-
-        if (exists) {
-          return prev;
-        }
-
-        return [...prev, callData];
-      });
-    };
-
-    const handleRemoteEnd = () => {
-      if (peerRef.current) {
-        peerRef.current.destroy();
-        peerRef.current = null;
-      }
-
-      if (remoteVideo.current) {
-        remoteVideo.current.srcObject = null;
-      }
-
-      setCallConnected(false);
-      setActiveCall(null);
-    };
-
     initializeMedia();
 
-    const savedAgentId =
-      localStorage.getItem("agentId") ||
-      `AGENT_${Date.now()}`;
+    const user =
+      JSON.parse(localStorage.getItem("user")) || {};
 
-    setAgentId(savedAgentId);
+    const loggedEmployeeId =
+      user._id ||
+      user.id ||
+      localStorage.getItem("userId");
+
+    if (!loggedEmployeeId) {
+      alert("Employee ID not found");
+      return;
+    }
+
+    setEmployeeId(loggedEmployeeId);
 
     socket.emit("register-user", {
-      userId: savedAgentId,
-      role: "agent",
+      userId: loggedEmployeeId,
+      role: "employee",
     });
 
-    socket.on(
-      "incoming-call",
-      handleIncomingCall
+    console.log(
+      "Employee Registered:",
+      loggedEmployeeId
     );
 
-    socket.on(
-      "call-ended",
-      handleRemoteEnd
-    );
+    socket.on("incoming-call", handleIncomingCall);
+    socket.on("call-ended", handleRemoteEnd);
 
     return () => {
-      socket.off(
-        "incoming-call",
-        handleIncomingCall
-      );
-
-      socket.off(
-        "call-ended",
-        handleRemoteEnd
-      );
+      socket.off("incoming-call");
+      socket.off("call-ended");
 
       if (peerRef.current) {
         peerRef.current.destroy();
@@ -110,16 +63,65 @@ const AgentVideoPage = () => {
     };
   }, []);
 
-  const answerCall = (callData) => {
-    if (callConnected) {
-      alert(
-        "አሁን በሌላ ጥሪ ላይ ነዎት"
+  const initializeMedia = async () => {
+    try {
+      const mediaStream =
+        await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+
+      setStream(mediaStream);
+
+      if (myVideo.current) {
+        myVideo.current.srcObject = mediaStream;
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Camera Access Denied");
+    }
+  };
+
+  const handleIncomingCall = (callData) => {
+    console.log("Incoming Call:", callData);
+
+    setIncomingCalls((prev) => {
+      const exists = prev.find(
+        (call) =>
+          call.pensionerId ===
+          callData.pensionerId
       );
+
+      if (exists) return prev;
+
+      return [...prev, callData];
+    });
+  };
+
+  const handleRemoteEnd = () => {
+    console.log("Call Ended");
+
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+
+    if (remoteVideo.current) {
+      remoteVideo.current.srcObject = null;
+    }
+
+    setCallConnected(false);
+    setActiveCall(null);
+  };
+
+  const answerCall = (callData) => {
+    if (!stream) {
+      alert("Camera not ready");
       return;
     }
 
-    if (!stream) {
-      alert("Camera not ready");
+    if (callConnected) {
+      alert("You are already in a call");
       return;
     }
 
@@ -135,9 +137,8 @@ const AgentVideoPage = () => {
     peer.on("signal", (signal) => {
       socket.emit("answer-call", {
         signal,
-        pensionerId:
-          callData.pensionerId,
-        agentId,
+        pensionerId: callData.pensionerId,
+        agentId: employeeId,
       });
     });
 
@@ -148,14 +149,18 @@ const AgentVideoPage = () => {
       }
     });
 
+    peer.on("error", (err) => {
+      console.error("Peer Error:", err);
+    });
+
     peer.signal(callData.signalData);
 
     peerRef.current = peer;
 
     setIncomingCalls((prev) =>
       prev.filter(
-        (item) =>
-          item.pensionerId !==
+        (call) =>
+          call.pensionerId !==
           callData.pensionerId
       )
     );
@@ -163,14 +168,13 @@ const AgentVideoPage = () => {
 
   const rejectCall = (callData) => {
     socket.emit("reject-call", {
-      pensionerId:
-        callData.pensionerId,
+      pensionerId: callData.pensionerId,
     });
 
     setIncomingCalls((prev) =>
       prev.filter(
-        (item) =>
-          item.pensionerId !==
+        (call) =>
+          call.pensionerId !==
           callData.pensionerId
       )
     );
@@ -203,6 +207,12 @@ const AgentVideoPage = () => {
         <div className="call-count">
           {incomingCalls.length} Call(s)
         </div>
+
+        {incomingCalls.length === 0 && (
+          <div className="no-calls">
+            No Incoming Calls
+          </div>
+        )}
 
         {incomingCalls.map((call) => (
           <div
@@ -240,7 +250,7 @@ const AgentVideoPage = () => {
       </div>
 
       <div className="video-section">
-        <h2>Agent Call Center</h2>
+        <h2>Employee Call Center</h2>
 
         {activeCall && (
           <div className="active-user">
@@ -253,7 +263,7 @@ const AgentVideoPage = () => {
 
         <div className="video-grid">
           <div className="video-card">
-            <h3>Agent Camera</h3>
+            <h3>Your Camera</h3>
 
             <video
               ref={myVideo}
@@ -265,7 +275,7 @@ const AgentVideoPage = () => {
           </div>
 
           <div className="video-card">
-            <h3>Pensioner</h3>
+            <h3>Pensioner Video</h3>
 
             <video
               ref={remoteVideo}

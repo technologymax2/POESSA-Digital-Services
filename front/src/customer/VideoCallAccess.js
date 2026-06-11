@@ -4,7 +4,8 @@ import io from "socket.io-client";
 import "./VideoCallAccess.css";
 
 const socket = io(
-  "https://poessa-digital-services-1.onrender.com",
+  process.env.REACT_APP_BACKEND_URL ||
+    "https://poessa-digital-services-1.onrender.com",
   {
     transports: ["websocket", "polling"],
   }
@@ -19,79 +20,23 @@ const VideoCallAccess = () => {
   const [callStatus, setCallStatus] = useState("idle");
   const [statusMessage, setStatusMessage] = useState("");
   const [myId, setMyId] = useState("");
-  const [agentId, setAgentId] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
 
   useEffect(() => {
-    const initializeMedia = async () => {
-      try {
-        const mediaStream =
-          await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true,
-          });
-
-        setStream(mediaStream);
-
-        if (myVideo.current) {
-          myVideo.current.srcObject = mediaStream;
-        }
-      } catch (error) {
-        console.error(error);
-        alert("Camera access denied");
-      }
-    };
-
-    const handleAgentAccepted = (data) => {
-      setAgentId(data.agentId);
-      setCallStatus("connected");
-      setStatusMessage("");
-
-      if (peerRef.current) {
-        peerRef.current.signal(data.signal);
-      }
-    };
-
-    const handleCallEnded = () => {
-      if (peerRef.current) {
-        peerRef.current.destroy();
-        peerRef.current = null;
-      }
-
-      if (remoteVideo.current) {
-        remoteVideo.current.srcObject = null;
-      }
-
-      setCallStatus("idle");
-      setAgentId("");
-      setStatusMessage("");
-    };
-
-    const handleBusyAgents = (data) => {
-      if (peerRef.current) {
-        peerRef.current.destroy();
-        peerRef.current = null;
-      }
-
-      setCallStatus("idle");
-      setStatusMessage(data.message);
-    };
-
-    const handleRejected = () => {
-      if (peerRef.current) {
-        peerRef.current.destroy();
-        peerRef.current = null;
-      }
-
-      setCallStatus("idle");
-
-      alert("ጥሪዎ ውድቅ ተደርጓል");
-    };
-
     initializeMedia();
 
+    const user =
+      JSON.parse(localStorage.getItem("user")) || {};
+
     const pensionerId =
-      localStorage.getItem("userId") ||
-      `PENSIONER_${Date.now()}`;
+      user._id ||
+      user.id ||
+      localStorage.getItem("userId");
+
+    if (!pensionerId) {
+      alert("User ID not found");
+      return;
+    }
 
     setMyId(pensionerId);
 
@@ -100,16 +45,36 @@ const VideoCallAccess = () => {
       role: "pensioner",
     });
 
-    socket.on("agent-accepted", handleAgentAccepted);
-    socket.on("call-ended", handleCallEnded);
-    socket.on("all-agents-busy", handleBusyAgents);
-    socket.on("call-rejected", handleRejected);
+    console.log(
+      "Pensioner Registered:",
+      pensionerId
+    );
+
+    socket.on(
+      "agent-accepted",
+      handleEmployeeAccepted
+    );
+
+    socket.on(
+      "call-ended",
+      handleCallEnded
+    );
+
+    socket.on(
+      "all-agents-busy",
+      handleBusyEmployees
+    );
+
+    socket.on(
+      "call-rejected",
+      handleRejected
+    );
 
     return () => {
-      socket.off("agent-accepted", handleAgentAccepted);
-      socket.off("call-ended", handleCallEnded);
-      socket.off("all-agents-busy", handleBusyAgents);
-      socket.off("call-rejected", handleRejected);
+      socket.off("agent-accepted");
+      socket.off("call-ended");
+      socket.off("all-agents-busy");
+      socket.off("call-rejected");
 
       if (peerRef.current) {
         peerRef.current.destroy();
@@ -117,18 +82,102 @@ const VideoCallAccess = () => {
     };
   }, []);
 
+  const initializeMedia = async () => {
+    try {
+      const mediaStream =
+        await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+
+      setStream(mediaStream);
+
+      if (myVideo.current) {
+        myVideo.current.srcObject =
+          mediaStream;
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Camera Access Denied");
+    }
+  };
+
+  const handleEmployeeAccepted = (
+    data
+  ) => {
+    console.log(
+      "Employee Accepted:",
+      data
+    );
+
+    setEmployeeId(data.agentId);
+    setCallStatus("connected");
+    setStatusMessage("");
+
+    if (peerRef.current) {
+      peerRef.current.signal(
+        data.signal
+      );
+    }
+  };
+
+  const handleCallEnded = () => {
+    console.log("Call Ended");
+
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+
+    if (remoteVideo.current) {
+      remoteVideo.current.srcObject =
+        null;
+    }
+
+    setCallStatus("idle");
+    setEmployeeId("");
+    setStatusMessage("");
+  };
+
+  const handleBusyEmployees = (
+    data
+  ) => {
+    console.log("No Employees Available");
+
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+
+    setCallStatus("idle");
+    setStatusMessage(data.message);
+  };
+
+  const handleRejected = () => {
+    console.log("Call Rejected");
+
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+
+    setCallStatus("idle");
+
+    alert("ጥሪዎ ውድቅ ተደርጓል");
+  };
+
   const startCall = () => {
+    if (!stream) {
+      alert("Camera Not Ready");
+      return;
+    }
+
     if (callStatus !== "idle") {
       return;
     }
 
-    if (!stream) {
-      alert("Camera not ready");
-      return;
-    }
-
-    setStatusMessage("");
     setCallStatus("waiting");
+    setStatusMessage("");
 
     const peer = new Peer({
       initiator: true,
@@ -137,44 +186,59 @@ const VideoCallAccess = () => {
     });
 
     peer.on("signal", (signalData) => {
-      socket.emit("request-agent-call", {
-        pensionerId: myId,
-        signalData,
-      });
+      console.log(
+        "Sending Call Request"
+      );
+
+      socket.emit(
+        "request-agent-call",
+        {
+          pensionerId: myId,
+          signalData,
+        }
+      );
     });
 
-    peer.on("stream", (remoteStream) => {
-      if (remoteVideo.current) {
-        remoteVideo.current.srcObject = remoteStream;
+    peer.on(
+      "stream",
+      (remoteStream) => {
+        if (
+          remoteVideo.current
+        ) {
+          remoteVideo.current.srcObject =
+            remoteStream;
+        }
       }
+    );
+
+    peer.on("error", (err) => {
+      console.error(
+        "Peer Error:",
+        err
+      );
     });
 
     peerRef.current = peer;
   };
 
-  const endCall = (notifyServer = true) => {
+  const endCall = () => {
     if (peerRef.current) {
       peerRef.current.destroy();
       peerRef.current = null;
     }
 
-    if (notifyServer) {
-      socket.emit("end-call", {
-        pensionerId: myId,
-        agentId,
-      });
-    }
+    socket.emit("end-call", {
+      pensionerId: myId,
+      agentId: employeeId,
+    });
 
     if (remoteVideo.current) {
-      remoteVideo.current.srcObject = null;
-    }
-
-    if (myVideo.current) {
-      myVideo.current.srcObject = stream;
+      remoteVideo.current.srcObject =
+        null;
     }
 
     setCallStatus("idle");
-    setAgentId("");
+    setEmployeeId("");
     setStatusMessage("");
   };
 
@@ -189,14 +253,17 @@ const VideoCallAccess = () => {
           {statusMessage ||
             (callStatus === "idle"
               ? "ዝግጁ"
-              : callStatus === "waiting"
+              : callStatus ===
+                "waiting"
               ? "ለሰራተኛ በመደወል ላይ..."
               : "ጥሪው ተገናኝቷል")}
         </div>
 
         <div className="video-grid">
           <div className="video-card">
-            <h3>የእርስዎ ካሜራ</h3>
+            <h3>
+              የእርስዎ ካሜራ
+            </h3>
 
             <video
               ref={myVideo}
@@ -208,7 +275,9 @@ const VideoCallAccess = () => {
           </div>
 
           <div className="video-card">
-            <h3>የሰራተኛው ቪዲዮ</h3>
+            <h3>
+              የሰራተኛው ቪዲዮ
+            </h3>
 
             <video
               ref={remoteVideo}
@@ -220,7 +289,8 @@ const VideoCallAccess = () => {
         </div>
 
         <div className="button-group">
-          {callStatus === "idle" && (
+          {callStatus ===
+            "idle" && (
             <button
               className="call-btn"
               onClick={startCall}
@@ -229,10 +299,11 @@ const VideoCallAccess = () => {
             </button>
           )}
 
-          {callStatus !== "idle" && (
+          {callStatus !==
+            "idle" && (
             <button
               className="end-btn"
-              onClick={() => endCall(true)}
+              onClick={endCall}
             >
               ❌ ጥሪ ዝጋ
             </button>

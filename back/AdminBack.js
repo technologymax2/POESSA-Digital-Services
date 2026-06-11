@@ -174,43 +174,6 @@ module.exports = (
     }
   });
 
-  router.put("/reset-password/:id", async (req, res) => {
-    try {
-      const { newPassword } = req.body;
-
-      if (!newPassword) {
-        return res.status(400).json({
-          success: false,
-          message: "New password required",
-        });
-      }
-
-      const hashedPassword = await bcrypt.hash(
-        newPassword,
-        10
-      );
-
-      await User.findByIdAndUpdate(
-        req.params.id,
-        {
-          password: hashedPassword,
-        }
-      );
-
-      res.json({
-        success: true,
-        message: "Password updated successfully",
-      });
-
-    } catch (error) {
-      console.error(error);
-
-      res.status(500).json({
-        success: false,
-        message: "Failed to update password",
-      });
-    }
-  });
 
   router.delete("/delete/:id", async (req, res) => {
     try {
@@ -247,6 +210,20 @@ module.exports = (
       });
     }
   });
+  // Keep only one instance of this route
+router.put("/reset-password/:id", async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    if (!newPassword) return res.status(400).json({ success: false, message: "New password required" });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await User.findByIdAndUpdate(req.params.id, { password: hashedPassword });
+
+    res.json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to update password" });
+  }
+});
 
   router.get("/statistics", async (req, res) => {
     try {
