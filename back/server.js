@@ -103,17 +103,33 @@ const forceDisconnectUser = (userId) => {
 io.on("connection", (socket) => {
   console.log("Connected:", socket.id);
 
-  socket.on("register-user", ({ userId, role }) => {
-    users.set(userId, {
-      socketId: socket.id,
-      role
-    });
+socket.on("register-user", ({ userId, role }) => {
+  console.log("REGISTER:", userId, role);
 
-    console.log("User Registered:", userId);
+  users.set(userId, {
+    socketId: socket.id,
+    role
   });
 
+  console.log("USERS:", [...users.entries()]);
+});
+
 socket.on("request-agent-call", (data) => {
-  console.log("Incoming Call:", data.pensionerId);
+
+  console.log("========== NEW CALL ==========");
+  console.log("Pensioner:", data.pensionerId);
+
+  console.log("Current Users:");
+  console.log([...users.entries()]);
+
+  const availableAgents = Array.from(users.entries()).filter(
+    ([userId, user]) =>
+      user.role === "employee" &&
+      !busyAgents.has(userId)
+  );
+
+  console.log("Available Employees:");
+  console.log(availableAgents);
 
   const availableAgents = Array.from(users.entries()).filter(
     ([userId, user]) =>
