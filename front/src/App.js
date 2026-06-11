@@ -22,9 +22,9 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/video-call" element={<VideoCallAccess />} />
           <Route path="/agent-call-center" element={<AgentVideoPage />} />
-           <Route path="/EmployeeDashboard" element={<EmployeeDashboard />} />
-           <Route path="/AdminDashboard" element={<AdminDashboard />} />
-           <Route path="/CustomerDashboard" element={<CustomerDashboard />} />
+           <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
+           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+           <Route path="/customer-dashboard" element={<CustomerDashboard />} />
         </Routes>
       </div>
     </Router>
