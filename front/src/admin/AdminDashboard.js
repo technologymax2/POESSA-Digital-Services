@@ -49,7 +49,7 @@ const AdminDashboard = () => {
   const toggleBlock = async (id, isBlocked) => {
     try {
       const endpoint = isBlocked ? 'unblock' : 'block';
-      await axios.put(`https://your-backend-url.onrender.com/api/admin/${endpoint}/${id}`);
+      await axios.put(`https://poessa-digital-services-1.onrender.com/api/admin/${endpoint}/${id}`);
       fetchUsers();
     } catch (err) {
       alert("ተግባሩን ማከናወን አልተቻለም");
