@@ -237,6 +237,9 @@ if (timeoutRef.current) {
   );
 
   setTimeout(() => {
+    socket.emit("cancel-call", {
+  pensionerId: myId,
+});
     navigate("/");
   }, 10000);
 };

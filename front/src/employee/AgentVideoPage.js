@@ -58,10 +58,20 @@ setEmployeeId(loggedEmployeeId);
 
     socket.on("incoming-call", handleIncomingCall);
     socket.on("call-ended", handleRemoteEnd);
+    socket.on("remove-call", ({ pensionerId }) => {
+
+  setIncomingCalls((prev) =>
+    prev.filter(
+      (call) => call.pensionerId !== pensionerId
+    )
+  );
+
+});
 
     return () => {
       socket.off("incoming-call");
       socket.off("call-ended");
+      socket.off("remove-call");
 
       if (peerRef.current) {
         peerRef.current.destroy();

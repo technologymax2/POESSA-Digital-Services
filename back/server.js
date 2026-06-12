@@ -102,6 +102,13 @@ const forceDisconnectUser = (userId) => {
 ========================= */
 io.on("connection", (socket) => {
   console.log("Connected:", socket.id);
+  socket.on("cancel-call", ({ pensionerId }) => {
+
+  io.emit("remove-call", {
+    pensionerId,
+  });
+
+});
 
 socket.on("register-user", ({ userId, role }) => {
   console.log("REGISTER:", userId, role);
