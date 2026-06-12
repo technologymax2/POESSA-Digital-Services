@@ -226,6 +226,15 @@ const endCall = () => {
               ? "ለሰራተኛ በመደወል ላይ..."
               : "ጥሪው ተገናኝቷል")}
         </div>
+        {callStatus === "idle" && statusMessage && (
+  <button
+    type="button"
+    onClick={() => navigate("/")}
+    className="back-to-dashboard-btn"
+  >
+    <strong>← ወደ ዋና ማውጫ</strong>
+  </button>
+)}
 
         <div className="video-grid">
           <div className="video-card">
