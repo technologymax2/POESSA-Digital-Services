@@ -16,7 +16,7 @@ const VideoCallAccess = () => {
   const myVideo = useRef(null);
   const remoteVideo = useRef(null);
   const peerRef = useRef(null);
-
+  const timeoutRef = useRef(null);
   const [stream, setStream] = useState(null);
   const [callStatus, setCallStatus] = useState("idle");
   const [statusMessage, setStatusMessage] = useState("");
@@ -47,6 +47,9 @@ const VideoCallAccess = () => {
     console.log("Employee Accepted:", data);
 
     setEmployeeId(data.agentId);
+    if (timeoutRef.current) {
+  clearTimeout(timeoutRef.current);
+}
     setCallStatus("connected");
     setStatusMessage("");
 
@@ -66,6 +69,9 @@ const handleCallEnded = useCallback(() => {
   if (remoteVideo.current) {
     remoteVideo.current.srcObject = null;
   }
+  if (timeoutRef.current) {
+  clearTimeout(timeoutRef.current);
+}
 
   setCallStatus("idle");
   setEmployeeId("");
@@ -165,7 +171,26 @@ useEffect(() => {
     });
 
     peerRef.current = peer;
+    timeoutRef.current = setTimeout(() => {
+  if (callStatus === "waiting" || employeeId === "") {
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+
+    setCallStatus("idle");
+
+    setStatusMessage(
+      " ምንም ነጻ ሰራተኛ አልተገኘም። ወደ ዋና ማውጫ በመመለስ ላይ..."
+    );
+
+    setTimeout(() => {
+      navigate("/");
+    }, 5000);
+  }
+}, 80000);
   };
+
 
   const startCallWithoutTin = () => {
     if (!socket.id) {
@@ -192,7 +217,9 @@ const endCall = () => {
     peerRef.current.destroy();
     peerRef.current = null;
   }
-
+if (timeoutRef.current) {
+  clearTimeout(timeoutRef.current);
+}
   socket.emit("end-call", {
     pensionerId: myId,
     agentId: employeeId,
