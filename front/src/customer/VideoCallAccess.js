@@ -21,38 +21,10 @@ const VideoCallAccess = () => {
   const [statusMessage, setStatusMessage] = useState("");
   const [myId, setMyId] = useState("");
   const [employeeId, setEmployeeId] = useState("");
+  const [tin, setTin] = useState("");
 
   useEffect(() => {
     initializeMedia();
-
-    const storedUser = localStorage.getItem("user");
-
-    if (!storedUser) {
-      alert("Please login first");
-      window.location.href = "/login";
-      return;
-    }
-
-    const currentUser = JSON.parse(storedUser);
-
-    const pensionerId = currentUser.id;
-
-    if (!pensionerId) {
-      alert("User ID not found");
-      return;
-    }
-
-    console.log("Pensioner User:", currentUser);
-    console.log("Pensioner ID:", pensionerId);
-
-    setMyId(pensionerId);
-
-    socket.emit("register-user", {
-      userId: pensionerId,
-      role: "pensioner",
-    });
-
-    console.log("Pensioner Registered:", pensionerId);
 
     socket.on("agent-accepted", handleEmployeeAccepted);
     socket.on("call-ended", handleCallEnded);
@@ -73,11 +45,10 @@ const VideoCallAccess = () => {
 
   const initializeMedia = async () => {
     try {
-      const mediaStream =
-        await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        });
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
 
       setStream(mediaStream);
 
@@ -86,7 +57,7 @@ const VideoCallAccess = () => {
       }
     } catch (error) {
       console.error(error);
-      alert("Camera Access Denied");
+      alert("Camera access denied");
     }
   };
 
@@ -128,7 +99,7 @@ const VideoCallAccess = () => {
     }
 
     setCallStatus("idle");
-    setStatusMessage(data.message);
+    setStatusMessage(data.message || "No employees available.");
   };
 
   const handleRejected = () => {
@@ -144,14 +115,14 @@ const VideoCallAccess = () => {
     alert("ጥሪዎ ውድቅ ተደርጓል");
   };
 
-  const startCall = () => {
+  const startCall = (pensionerId) => {
     if (!stream) {
-      alert("Camera Not Ready");
+      alert("Camera not ready");
       return;
     }
 
-    if (!myId) {
-      alert("User ID Missing");
+    if (!pensionerId) {
+      alert("User ID missing");
       return;
     }
 
@@ -172,7 +143,7 @@ const VideoCallAccess = () => {
       console.log("Sending Call Request");
 
       socket.emit("request-agent-call", {
-        pensionerId: myId,
+        pensionerId,
         signalData,
       });
     });
@@ -188,6 +159,45 @@ const VideoCallAccess = () => {
     });
 
     peerRef.current = peer;
+  };
+
+  const checkTinAndCall = async () => {
+    if (!tin.trim()) {
+      alert("Please enter your TIN");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${
+          process.env.REACT_APP_BACKEND_URL ||
+          "https://poessa-digital-services-1.onrender.com"
+        }/api/pensioners/tin/${tin}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data) {
+        alert("You are not registered. Please register first.");
+        return;
+      }
+
+      const pensionerId = data._id;
+
+      setMyId(pensionerId);
+
+      socket.emit("register-user", {
+        userId: pensionerId,
+        role: "pensioner",
+      });
+
+      console.log("Pensioner Registered:", pensionerId);
+
+      startCall(pensionerId);
+    } catch (error) {
+      console.error(error);
+      alert("Server connection failed");
+    }
   };
 
   const endCall = () => {
@@ -213,9 +223,17 @@ const VideoCallAccess = () => {
   return (
     <div className="video-call-page">
       <div className="video-call-container">
-        <h1 className="page-title">
-          የቀጥታ ቪዲዮ ጥሪ
-        </h1>
+        <h1 className="page-title">የቀጥታ ቪዲዮ ጥሪ</h1>
+
+        <div className="tin-input-container">
+          <input
+            type="text"
+            value={tin}
+            onChange={(e) => setTin(e.target.value)}
+            placeholder="Enter TIN Number"
+            className="tin-input"
+          />
+        </div>
 
         <div className="status-box">
           {statusMessage ||
@@ -253,19 +271,13 @@ const VideoCallAccess = () => {
 
         <div className="button-group">
           {callStatus === "idle" && (
-            <button
-              className="call-btn"
-              onClick={startCall}
-            >
+            <button className="call-btn" onClick={checkTinAndCall}>
               📞 ደውል
             </button>
           )}
 
           {callStatus !== "idle" && (
-            <button
-              className="end-btn"
-              onClick={endCall}
-            >
+            <button className="end-btn" onClick={endCall}>
               ❌ ጥሪ ዝጋ
             </button>
           )}

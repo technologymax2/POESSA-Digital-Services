@@ -122,26 +122,21 @@ socket.on("request-agent-call", (data) => {
   console.log("Current Users:");
   console.log([...users.entries()]);
 
-  const availableAgents = Array.from(users.entries()).filter(
+const availableAgents = Array.from(users.entries()).filter(
     ([userId, user]) =>
       user.role === "employee" &&
       !busyAgents.has(userId)
   );
 
-  console.log("Available Employees:");
+  console.log("Available Employees:", availableAgents.length);
   console.log(availableAgents);
 
-  const availableAgents = Array.from(users.entries()).filter(
-    ([userId, user]) =>
-      user.role === "employee" &&
-      !busyAgents.has(userId)
-  );
-
-  console.log(
-    "Available Employees:",
-    availableAgents.length
-  );
-
+  if (availableAgents.length === 0) {
+    socket.emit("all-agents-busy", {
+      message: "ሁሉም ሰራተኞች በስራ ላይ ናቸው።"
+    });
+    return;
+  }
   if (availableAgents.length === 0) {
     socket.emit("all-agents-busy", {
       message: "ሁሉም ሰራተኞች በስራ ላይ ናቸው።"
