@@ -21,10 +21,13 @@ const VideoCallAccess = () => {
   const [statusMessage, setStatusMessage] = useState("");
   const [myId, setMyId] = useState("");
   const [employeeId, setEmployeeId] = useState("");
-  const [tin, setTin] = useState("");
 
   useEffect(() => {
     initializeMedia();
+
+    socket.on("connect", () => {
+      console.log("Connected:", socket.id);
+    });
 
     socket.on("agent-accepted", handleEmployeeAccepted);
     socket.on("call-ended", handleCallEnded);
@@ -115,14 +118,9 @@ const VideoCallAccess = () => {
     alert("ጥሪዎ ውድቅ ተደርጓል");
   };
 
-  const startCall = (pensionerId) => {
+  const startCall = (userId) => {
     if (!stream) {
       alert("Camera not ready");
-      return;
-    }
-
-    if (!pensionerId) {
-      alert("User ID missing");
       return;
     }
 
@@ -140,10 +138,8 @@ const VideoCallAccess = () => {
     });
 
     peer.on("signal", (signalData) => {
-      console.log("Sending Call Request");
-
       socket.emit("request-agent-call", {
-        pensionerId,
+        pensionerId: userId,
         signalData,
       });
     });
@@ -161,43 +157,24 @@ const VideoCallAccess = () => {
     peerRef.current = peer;
   };
 
-  const checkTinAndCall = async () => {
-    if (!tin.trim()) {
-      alert("Please enter your TIN");
+  const startCallWithoutTin = () => {
+    if (!socket.id) {
+      alert("Server connection not ready");
       return;
     }
 
-    try {
-      const response = await fetch(
-        `${
-          process.env.REACT_APP_BACKEND_URL ||
-          "https://poessa-digital-services-1.onrender.com"
-        }/api/pensioners/tin/${tin}`
-      );
+    const userId = socket.id;
 
-      const data = await response.json();
+    setMyId(userId);
 
-      if (!response.ok || !data) {
-        alert("You are not registered. Please register first.");
-        return;
-      }
+    socket.emit("register-user", {
+      userId,
+      role: "pensioner",
+    });
 
-      const pensionerId = data._id;
+    console.log("User Registered:", userId);
 
-      setMyId(pensionerId);
-
-      socket.emit("register-user", {
-        userId: pensionerId,
-        role: "pensioner",
-      });
-
-      console.log("Pensioner Registered:", pensionerId);
-
-      startCall(pensionerId);
-    } catch (error) {
-      console.error(error);
-      alert("Server connection failed");
-    }
+    startCall(userId);
   };
 
   const endCall = () => {
@@ -224,16 +201,6 @@ const VideoCallAccess = () => {
     <div className="video-call-page">
       <div className="video-call-container">
         <h1 className="page-title">የቀጥታ ቪዲዮ ጥሪ</h1>
-
-        <div className="tin-input-container">
-          <input
-            type="text"
-            value={tin}
-            onChange={(e) => setTin(e.target.value)}
-            placeholder="Enter TIN Number"
-            className="tin-input"
-          />
-        </div>
 
         <div className="status-box">
           {statusMessage ||
@@ -270,13 +237,11 @@ const VideoCallAccess = () => {
         </div>
 
         <div className="button-group">
-          {callStatus === "idle" && (
-            <button className="call-btn" onClick={checkTinAndCall}>
+          {callStatus === "idle" ? (
+            <button className="call-btn" onClick={startCallWithoutTin}>
               📞 ደውል
             </button>
-          )}
-
-          {callStatus !== "idle" && (
+          ) : (
             <button className="end-btn" onClick={endCall}>
               ❌ ጥሪ ዝጋ
             </button>

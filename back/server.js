@@ -14,10 +14,7 @@ const allowedOrigins = [
   "https://poessa-digital-services.vercel.app",
   "http://localhost:3000"
 ];
- app.use(
-  "/api/pensioners",
-  require("./VideoCallBack")
-);
+
 app.use(
   cors({
     origin: function (origin, callback) {
