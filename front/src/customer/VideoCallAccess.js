@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Peer from "simple-peer";
 import io from "socket.io-client";
 import "./VideoCallAccess.css";
@@ -21,6 +22,7 @@ const VideoCallAccess = () => {
   const [statusMessage, setStatusMessage] = useState("");
   const [myId, setMyId] = useState("");
   const [employeeId, setEmployeeId] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     initializeMedia();
@@ -76,22 +78,29 @@ const VideoCallAccess = () => {
     }
   };
 
-  const handleCallEnded = () => {
-    console.log("Call Ended");
+const handleCallEnded = () => {
+  console.log("Call Ended");
 
-    if (peerRef.current) {
-      peerRef.current.destroy();
-      peerRef.current = null;
-    }
+  if (peerRef.current) {
+    peerRef.current.destroy();
+    peerRef.current = null;
+  }
 
-    if (remoteVideo.current) {
-      remoteVideo.current.srcObject = null;
-    }
+  if (remoteVideo.current) {
+    remoteVideo.current.srcObject = null;
+  }
 
-    setCallStatus("idle");
-    setEmployeeId("");
-    setStatusMessage("");
-  };
+  setCallStatus("idle");
+  setEmployeeId("");
+
+  setStatusMessage(
+    "ጥሪዉ ተቋርቷል። ከ10 ሰከንዶች በኋላ ወደ ዋና ማውጫ ይመለሳሉ..."
+  );
+
+  setTimeout(() => {
+    navigate("/");
+  }, 10000);
+};
 
   const handleBusyEmployees = (data) => {
     console.log("No Employees Available");
@@ -177,25 +186,32 @@ const VideoCallAccess = () => {
     startCall(userId);
   };
 
-  const endCall = () => {
-    if (peerRef.current) {
-      peerRef.current.destroy();
-      peerRef.current = null;
-    }
+const endCall = () => {
+  if (peerRef.current) {
+    peerRef.current.destroy();
+    peerRef.current = null;
+  }
 
-    socket.emit("end-call", {
-      pensionerId: myId,
-      agentId: employeeId,
-    });
+  socket.emit("end-call", {
+    pensionerId: myId,
+    agentId: employeeId,
+  });
 
-    if (remoteVideo.current) {
-      remoteVideo.current.srcObject = null;
-    }
+  if (remoteVideo.current) {
+    remoteVideo.current.srcObject = null;
+  }
 
-    setCallStatus("idle");
-    setEmployeeId("");
-    setStatusMessage("");
-  };
+  setCallStatus("idle");
+  setEmployeeId("");
+
+  setStatusMessage(
+    "ጥሪዉ ተቋርቷል። ከ10 ሰከንዶች በኋላ ወደ ዋና ማውጫ ይመለሳሉ..."
+  );
+
+  setTimeout(() => {
+    navigate("/");
+  }, 10000);
+};
 
   return (
     <div className="video-call-page">
