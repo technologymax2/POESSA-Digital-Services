@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {useEffect, useRef,useState,useCallback} from "react";
 import { useNavigate } from "react-router-dom";
 import Peer from "simple-peer";
 import io from "socket.io-client";
@@ -24,30 +24,7 @@ const VideoCallAccess = () => {
   const [employeeId, setEmployeeId] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    initializeMedia();
-
-    socket.on("connect", () => {
-      console.log("Connected:", socket.id);
-    });
-
-    socket.on("agent-accepted", handleEmployeeAccepted);
-    socket.on("call-ended", handleCallEnded);
-    socket.on("all-agents-busy", handleBusyEmployees);
-    socket.on("call-rejected", handleRejected);
-
-    return () => {
-      socket.off("agent-accepted");
-      socket.off("call-ended");
-      socket.off("all-agents-busy");
-      socket.off("call-rejected");
-
-      if (peerRef.current) {
-        peerRef.current.destroy();
-      }
-    };
-  }, []);
-
+  
   const initializeMedia = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -78,7 +55,7 @@ const VideoCallAccess = () => {
     }
   };
 
-const handleCallEnded = () => {
+const handleCallEnded = useCallback(() => {
   console.log("Call Ended");
 
   if (peerRef.current) {
@@ -94,13 +71,37 @@ const handleCallEnded = () => {
   setEmployeeId("");
 
   setStatusMessage(
-    "ጥሪዉ ተቋርቷል። ከ10 ሰከንዶች በኋላ ወደ ዋና ማውጫ ይመለሳሉ..."
+    "ጥሪዉ ተቋርቷል።"
   );
 
   setTimeout(() => {
     navigate("/");
   }, 10000);
-};
+}, [navigate]);
+useEffect(() => {
+  initializeMedia();
+
+  socket.on("connect", () => {
+    console.log("Connected:", socket.id);
+  });
+
+  socket.on("agent-accepted", handleEmployeeAccepted);
+  socket.on("call-ended", handleCallEnded);
+  socket.on("all-agents-busy", handleBusyEmployees);
+  socket.on("call-rejected", handleRejected);
+
+  return () => {
+    socket.off("agent-accepted");
+    socket.off("call-ended");
+    socket.off("all-agents-busy");
+    socket.off("call-rejected");
+
+    if (peerRef.current) {
+      peerRef.current.destroy();
+    }
+  };
+}, [handleCallEnded]);
+
 
   const handleBusyEmployees = (data) => {
     console.log("No Employees Available");
@@ -123,8 +124,8 @@ const handleCallEnded = () => {
     }
 
     setCallStatus("idle");
-
-    alert("ጥሪዎ ውድቅ ተደርጓል");
+ setStatusMessage("ጥሪዉ ተቋርጧል");
+   
   };
 
   const startCall = (userId) => {
@@ -205,7 +206,7 @@ const endCall = () => {
   setEmployeeId("");
 
   setStatusMessage(
-    "ጥሪዉ ተቋርቷል። ከ10 ሰከንዶች በኋላ ወደ ዋና ማውጫ ይመለሳሉ..."
+    "ጥሪዉ ተቋርቷል"
   );
 
   setTimeout(() => {
@@ -226,15 +227,17 @@ const endCall = () => {
               ? "ለሰራተኛ በመደወል ላይ..."
               : "ጥሪው ተገናኝቷል")}
         </div>
-        {callStatus === "idle" && statusMessage && (
-  <button
-    type="button"
-    onClick={() => navigate("/")}
-    className="back-to-dashboard-btn"
-  >
-    <strong>← ወደ ዋና ማውጫ</strong>
-  </button>
-)}
+    {
+  statusMessage.includes("ጥሪዉ ተቋርቷል") && (
+    <button
+      type="button"
+      onClick={() => navigate("/")}
+      className="back-to-dashboard-btn"
+    >
+      <strong>← ወደ ዋና ማውጫ</strong>
+    </button>
+  )
+}
 
         <div className="video-grid">
           <div className="video-card">
