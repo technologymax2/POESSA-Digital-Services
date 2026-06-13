@@ -31,7 +31,12 @@ const DashboardContent = () => {
           <div className="icon-box">👤</div>
           <h3>የህይወት ማረጋገጫ</h3>
           <p>Liveness Proof</p>
-          <button>Action now</button>
+          <button 
+  className="video-btn" 
+  onClick={() => navigate('/liveness')}
+>
+  Action now
+</button>
         </div>
         <div className="action-card">
           <div className="icon-box">📄</div>
