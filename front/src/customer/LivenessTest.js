@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as faceapi from '@vladmandic/face-api';
-import './LivenessTest.css'; // የሲኤስኤስ ፋይሉን እዚህ ጋር እናገናኘዋለን
+import './LivenessTest.css'; 
 
 function LivenessTest() {
   const videoRef = useRef(null);
@@ -9,20 +9,25 @@ function LivenessTest() {
   const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
-    // የሞዴል ፋይሎችን ከ Vercel ላይ መጫን
+    // Vercel ላይ ከ /front/public/models ማውጫ ውስጥ በቀጥታ እንዲያነብ ማድረግ
+    const modelPath = window.location.origin + '/models';
+
     Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-      faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-      faceapi.nets.faceExpressionNet.loadFromUri('/models')
+      faceapi.nets.tinyFaceDetector.loadFromUri(modelPath),
+      faceapi.nets.faceLandmark68Net.loadFromUri(modelPath),
+      faceapi.nets.faceExpressionNet.loadFromUri(modelPath)
     ]).then(() => {
       setStatus("ሞዴሎች ተጭነዋል፤ ካሜራ እየተከፈተ ነው...");
       startVideo();
-    }).catch(err => setStatus("የሞዴል ስህተት፡ " + err));
+    }).catch(err => {
+      console.error(err);
+      setStatus("የሞዴል ስህተት፡ እባክዎ ገጹን Refresh ያድርጉት");
+    });
   }, []);
 
   const startVideo = () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 300 } })
+      navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 300, facingMode: "user" } })
         .then(stream => { 
           if (videoRef.current) videoRef.current.srcObject = stream; 
         })
