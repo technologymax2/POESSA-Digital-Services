@@ -9,6 +9,8 @@ import AgentVideoPage from './employee/AgentVideoPage' ;
 import EmployeeDashboard from './employee/EmployeeDashboard';  
 import AdminDashboard from "./admin/AdminDashboard";
 import CustomerDashboard from "./customer/CustomerDashboard";
+import LivenessTest from './customer/LivenessTest';
+
 import './App.css';
 
 
@@ -25,6 +27,8 @@ function App() {
            <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
            <Route path="/admin-dashboard" element={<AdminDashboard />} />
            <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+           <Route path="/liveness" element={<LivenessTest />} />
+
         </Routes>
       </div>
     </Router>
