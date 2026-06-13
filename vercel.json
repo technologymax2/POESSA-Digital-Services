@@ -1,5 +1,12 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/front/index.html" }
+    {
+      "source": "/models/(.*)",
+      "destination": "/front/public/models/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/front/index.html"
+    }
   ]
 }
