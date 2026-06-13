@@ -1,14 +1,13 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as faceapi from 'face-api.js';
 
-export default function LivenessTest() {
+function LivenessTest() {
   const videoRef = useRef(null);
   const [challenge, setChallenge] = useState("እባክዎ ፈገግ ይበሉ (Smile Please)");
   const [status, setStatus] = useState("የፊት መለያ ሞዴሎች እየተጫኑ ነው...");
   const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
-    // በ public/models የተጫኑትን ፋይሎች ማንበብ
     Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
       faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
@@ -20,9 +19,13 @@ export default function LivenessTest() {
   }, []);
 
   const startVideo = () => {
-    navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 300 } })
-      .then(stream => { if (videoRef.current) videoRef.current.srcObject = stream; })
-      .catch(err => setStatus("እባክዎ የካሜራ ፈቃድ ይስጡ"));
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 300 } })
+        .then(stream => { if (videoRef.current) videoRef.current.srcObject = stream; })
+        .catch(err => setStatus("እባክዎ የካሜራ ፈቃድ ይስጡ"));
+    } else {
+      setStatus("ብሮውዘርዎ ካሜራ አይደግፍም");
+    }
   };
 
   const handleVideoPlay = () => {
@@ -32,23 +35,25 @@ export default function LivenessTest() {
         return;
       }
       
-      const detections = await faceapi.detectSingleFace(
-        videoRef.current, 
-        new faceapi.TinyFaceDetectorOptions()
-      ).withFaceLandmarks().withFaceExpressions();
+      try {
+        const detections = await faceapi.detectSingleFace(
+          videoRef.current, 
+          new faceapi.TinyFaceDetectorOptions()
+        ).withFaceLandmarks().withFaceExpressions();
 
-      if (detections) {
-        setStatus("ፊት ተገኝቷል፤ ትዕዛዙን ይፈጽሙ...");
-        
-        // Active Liveness - ፈገግታው ከ 80% በላይ መሆኑን መለየት
-        const smileValue = detections.expressions.happy;
-        if (smileValue > 0.80) { 
-          setIsVerified(true);
-          setStatus("በአሸናፊነት ተረጋግጧል! (Verified) 🎉");
-          clearInterval(interval);
+        if (detections) {
+          setStatus("ፊት ተገኝቷል፤ ትዕዛዙን ይፈጽሙ...");
+          const smileValue = detections.expressions.happy;
+          if (smileValue > 0.80) { 
+            setIsVerified(true);
+            setStatus("በአሸናፊነት ተረጋግጧል! (Verified) 🎉");
+            clearInterval(interval);
+          }
+        } else {
+          setStatus("እባክዎ ፊትዎን ወደ ካሜራው ያቅርቡ");
         }
-      } else {
-        setStatus("እባክዎ ፊትዎን ወደ ካሜራው ያቅርቡ");
+      } catch (e) {
+        // ማንኛውንም በሂደት ላይ የሚመጣ ስህተት በዝምታ ለማለፍ
       }
     }, 600);
   };
@@ -63,10 +68,10 @@ export default function LivenessTest() {
       </div>
       
       <div className="relative rounded-3xl overflow-hidden border-4 border-blue-600 w-full max-w-sm aspect-[4/3] shadow-2xl bg-black">
-        <video ref={videoRef} autoPlay muted onPlay={handleVideoPlay} className="w-full h-full object-cover" />
+        <video ref={videoRef} autoPlay muted onPlay={handleVideoPlay} className="w-full h-full object-cover" playsInline />
         {isVerified && (
           <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center backdrop-blur-sm">
-            <span className="bg-emerald-600 text-white font-bold px-6 py-3 rounded-full text-sm animate-bounce shadow-lg">✓ ተረጋግጧል</span>
+            <span className="bg-emerald-600 text-white font-bold px-6 py-3 rounded-full text-sm">✓ ተረጋግጧል</span>
           </div>
         )}
       </div>
@@ -77,3 +82,5 @@ export default function LivenessTest() {
     </div>
   );
 }
+
+export default LivenessTest;
