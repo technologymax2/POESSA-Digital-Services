@@ -1,0 +1,145 @@
+/* ከዚህ በላይ ያሉት ቅድም የጻፍናቸው የፎርም CSSዎች ናቸው... */
+
+/* 💳 መታወቂያ ካርድ ዲዛይን */
+.id-card-wrapper {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.id-card {
+  width: 480px;
+  height: 270px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+  border: 3px solid #f59e0b;
+  border-radius: 12px;
+  padding: 15px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+  position: relative;
+}
+
+.id-card-header {
+  border-bottom: 2px solid #f59e0b;
+  padding-bottom: 5px;
+  text-align: center;
+}
+
+.id-card-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #f59e0b;
+  letter-spacing: 1px;
+}
+
+.id-card-header p {
+  margin: 2px 0 0 0;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.id-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0;
+  gap: 12px;
+}
+
+.id-photo-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100px;
+}
+
+.id-pensioner-img {
+  width: 90px;
+  height: 100px;
+  object-fit: cover;
+  border: 2px solid white;
+  border-radius: 6px;
+}
+
+.id-num {
+  font-size: 11px;
+  font-weight: bold;
+  color: #f59e0b;
+  margin-top: 5px;
+}
+
+.id-details-zone {
+  flex: 1;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.id-details-zone p {
+  margin: 0;
+}
+
+.id-qr-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: white;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.qr-label {
+  font-size: 8px;
+  color: #000;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.id-card-footer {
+  border-top: 1px solid #374151;
+  padding-top: 4px;
+  text-align: center;
+  font-size: 9px;
+  color: #9ca3af;
+}
+
+.print-btn {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.print-btn:hover {
+  background-color: #059669;
+}
+
+/* 🖨️ ማተሚያ ሲስተም (ሲታተም ፎርሙን ደብቆ መታወቂያውን ብቻ ማውጫ) */
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .id-card {
+    border: 2px solid #000 !important;
+    box-shadow: none !important;
+    background: #1e3a8a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    margin: 0 auto;
+  }
+}
