@@ -8,14 +8,12 @@ function LivenessTest() {
   const [status, setStatus] = useState("የፊት መለያ ሞዴሎች እየተጫኑ ነው...");
   const [isVerified, setIsVerified] = useState(false);
 
-  useEffect(() => {
-    // Vercel ላይ ከ /front/public/models ማውጫ ውስጥ በቀጥታ እንዲያነብ ማድረግ
-    const modelPath = window.location.origin + '/models';
-
+    useEffect(() => {
+    // Vercel ላይ ፋይሎቹ በቀጥታ ከዋናው አድራሻ (Root) ስር ስለሚገኙ እንዲህ መጻፍ ይበቃል
     Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri(modelPath),
-      faceapi.nets.faceLandmark68Net.loadFromUri(modelPath),
-      faceapi.nets.faceExpressionNet.loadFromUri(modelPath)
+      faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+      faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+      faceapi.nets.faceExpressionNet.loadFromUri('/models')
     ]).then(() => {
       setStatus("ሞዴሎች ተጭነዋል፤ ካሜራ እየተከፈተ ነው...");
       startVideo();
@@ -24,6 +22,7 @@ function LivenessTest() {
       setStatus("የሞዴል ስህተት፡ እባክዎ ገጹን Refresh ያድርጉት");
     });
   }, []);
+
 
   const startVideo = () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
