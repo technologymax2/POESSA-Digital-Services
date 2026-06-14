@@ -10,7 +10,7 @@ const upload = multer({
   limits: { fileSize: 2 * 1024 * 1024 } 
 });
 
-// 1. 🔍 የጡረተኛ መረጃ መፈለጊያ መስመር (GET)
+// 1. 🔍 መረጃ መፈለጊያ (GET) -> /api/pensioners/search
 router.get("/search", async (req, res) => {
   try {
     const { query } = req.query;
@@ -19,7 +19,7 @@ router.get("/search", async (req, res) => {
     }
 
     const pensioner = await UserPensioner.findOne({
-      $or: [{ faydaNumber: query }, { phone: query }]
+      $or: [{ faydaNumber: query }, { phone: query }, { pensionerId: query }]
     });
 
     if (!pensioner) {
@@ -31,16 +31,15 @@ router.get("/search", async (req, res) => {
   }
 });
 
-// 2. 📝 የተሳሳተ መረጃ ማስተካከያ መስመር (PUT) - የባለሙያ ስም ይጨምራል 👤
+// 2. 📝 መረጃ ማስተካከያ (PUT) -> /api/pensioners/update/:id
 router.put("/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { employeeName, ...updateFields } = req.body; // ➕ የባለሙያውን ስም እንለያለን
+    const { employeeName, ...updateFields } = req.body;
 
-    if (updateFields.age) updateFields.age = Number(updateFields.age);
-    if (updateFields.pensionAmount) updateFields.pensionAmount = Number(updateFields.pensionAmount);
+    if (updateFields.age) updateFields.age = Number(updateFields.age) || 0;
+    if (updateFields.pensionAmount) updateFields.pensionAmount = Number(updateFields.pensionAmount) || 0;
 
-    // ➕ ያረመውን ባለሙያ ስም እና ሰዓት አብሮ መመዝገብ
     updateFields.updatedBy = employeeName || "ያልታወቀ ባለሙያ";
     updateFields.lastUpdatedAt = new Date();
 
@@ -60,11 +59,11 @@ router.put("/update/:id", async (req, res) => {
   }
 });
 
-// 3. 🗑️ መረጃ ማጥፊያ መስመር (DELETE) - ያጠፋውን ባለሙያ በኮንሶል/ሎግ ይይዛል 👤
+// 3. 🗑️ መረጃ ማጥፊያ (DELETE) -> /api/pensioners/delete/:id
 router.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { employeeName } = req.query; // ➕ ያጠፋው ባለሙያ ስም ከኩዌሪ ይመጣል
+    const { employeeName } = req.query;
 
     const deletedPensioner = await UserPensioner.findByIdAndDelete(id);
 
@@ -72,8 +71,7 @@ router.delete("/delete/:id", async (req, res) => {
       return res.status(404).json({ success: false, message: "ጡረተኛው አልተገኘም!" });
     }
 
-    // 🚨 ለደህንነት ሲባል ማን እንዳጠፋው በሰርቨሩ ሎግ ላይ በግልጽ ይመዘገባል
-    console.log(`⚠️ 🚨 ትኩረት፡ የጡረተኛው መረጃ [ስም፡ ${deletedPensioner.name}፣ ID: ${deletedPensioner.pensionerId}] በባለሙያ [${employeeName || "Unknown"}] ከዳታቤዝ ተሰርዟል! ቀን፡ ${new Date()}`);
+    console.log(`⚠️ የጡረተኛው መረጃ [ID: ${id}] በባለሙያ [${employeeName || "Unknown"}] ጠፍቷል።`);
 
     res.status(200).json({
       success: true,
@@ -84,13 +82,13 @@ router.delete("/delete/:id", async (req, res) => {
   }
 });
 
-// 4. 📥 የጡረተኛ መመዝገቢያ መስመር (POST) - የመዘገበውን ባለሙያ ስም ይይዛል 👤
+// 4. 📥 አዲስ መመዝገቢያ (POST) -> /api/pensioners/register
 router.post("/register", upload.single("photo"), async (req, res) => {
   try {
     const {
-      pensionId, name, tin, phone, age, gender,
+      pensionerId, name, tin, phone, age, gender,
       faydaNumber, poessaBranch, bankName, bankBranch, pensionAmount,
-      address, issueDate, expiryDate, employeeName // ➕ የባለሙያው ስም
+      address, issueDate, expiryDate, employeeName 
     } = req.body;
 
     if (!req.file) {
@@ -102,16 +100,19 @@ router.post("/register", upload.single("photo"), async (req, res) => {
       return res.status(400).json({ success: false, message: "⚠️ ይህ የፋይዳ ቁጥር ቀድሞ ተመዝግቧል!" });
     }
 
+    const existingId = await UserPensioner.findOne({ pensionerId });
+    if (existingId) {
+      return res.status(400).json({ success: false, message: "⚠️ ይህ የጡረታ መለያ ቁጥር ቀድሞ ተመዝግቧል!" });
+    }
+
     const base64Image = req.file.buffer.toString("base64");
     const photoUrl = `data:${req.file.mimetype};base64,${base64Image}`;
 
     const newPensioner = new UserPensioner({
-      pensionerId: pensionId,
-      name, tin, phone, age: Number(age), gender,
-      faydaNumber, poessaBranch, bankName, bankBranch, pensionAmount: Number(pensionAmount),
-      address, issueDate, expiryDate, photoUrl,
-      registeredBy: employeeName || "ያልታወቀ ባለሙያ", // ➕ የመዘገበው ባለሙያ ስም
-      registeredAt: new Date()
+      pensionerId, name, tin, phone, age: Number(age) || 0, gender,
+      faydaNumber, poessaBranch, bankName, bankBranch, pensionAmount: Number(pensionAmount) || 0,
+      address: address || "", issueDate: issueDate || "", expiryDate: expiryDate || "", photoUrl,
+      registeredBy: employeeName || "ያልታወቀ ባለሙያ"
     });
 
     await newPensioner.save();
@@ -122,7 +123,8 @@ router.post("/register", upload.single("photo"), async (req, res) => {
       data: newPensioner
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "በሰርቨር ላይ ስህተት አጋጥሟል!" });
+    console.error("🔥 Error Detail:", error);
+    res.status(500).json({ success: false, message: `በሰርቨር ላይ ስህተት አጋጥሟል! ዝርዝር፡ ${error.message}` });
   }
 });
 
