@@ -323,7 +323,7 @@ function PensionerRegistration() {
                 ) : (
                   <div className="upload-placeholder">
                     <span className="upload-icon">📷</span>
-                    <span>የጡረተኛውን ፎቶ እዚህ ይጫኑ</span>
+                    <span>የጡረተኛውን ፎቶ </span>
                   </div>
                 )}
               </div>
@@ -356,7 +356,7 @@ function PensionerRegistration() {
 
             {status && <p className="status-message">{status}</p>}
             <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? 'እባክዎ ይጠብቁ፣ እየተመዘገበ ነው...' : 'የጡረተኛውን መረጃ መዝግብ'}
+              {loading ? 'በመመዝገብ ላይ ...' : 'የጡረተኛውን መረጃ መዝግብ'}
             </button>
           </form>
         </div>
@@ -399,7 +399,6 @@ function PensionerRegistration() {
           <div className="id-card" id="pensioner-id-card">
             <div className="id-card-header">
               <h3>POESSA DIGITAL ID</h3>
-              <p>የጡረተኞች የህይወት ማረጋገጫ ሲስተም</p>
             </div>
             
             <div className="id-card-body">
@@ -431,7 +430,7 @@ function PensionerRegistration() {
             </div>
             
             <div className="id-card-footer">
-              <p>ይህ ካርድ በህይወት መኖርን በዲጂታል መንገድ ለማረጋገጫነት ያገለግላል።</p>
+              <p>የግል ድርጅት ሰራተኞች ማህበራዊ ዋስትና አስተዳደር</p>
             </div>
           </div>
           <button onClick={handlePrint} className="print-btn no-print">🖨️ መታወቂያውን አትም (Print ID)</button>
