@@ -10,6 +10,7 @@ import EmployeeDashboard from './employee/EmployeeDashboard';
 import AdminDashboard from "./admin/AdminDashboard";
 import CustomerDashboard from "./customer/CustomerDashboard";
 import LivenessTest from './customer/LivenessTest';
+import PensionerRegistration from './employee/PensionerRegistration';
 
 import './App.css';
 
@@ -28,6 +29,7 @@ function App() {
            <Route path="/admin-dashboard" element={<AdminDashboard />} />
            <Route path="/customer-dashboard" element={<CustomerDashboard />} />
            <Route path="/liveness" element={<LivenessTest />} />
+           <Route path="/pensioner-registration" element ={<PensionerRegistration />} />
 
         </Routes>
       </div>
