@@ -30,6 +30,7 @@ function PensionerRegistration() {
     }
   };
 
+  // 🔥 ሙሉ በሙሉ የተስተካከለውና መረጃን ወደ ዳታቤዝ የሚልከው ተግባር
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -42,28 +43,53 @@ function PensionerRegistration() {
       return;
     }
 
-    setStatus('የጡረተኛው መረጃ እየተመዘገበ ነው...');
+    setStatus('የጡረተኛው መረጃ እና ፎቶ ወደ Render ሰርቨር እና MongoDB እየተላከ ነው...');
+
+    // 📦 ፎቶ እና ጽሑፎችን በአንድ ላይ ለማስተላለፍ FormData ማዘጋጀት
+    const dataToSend = new FormData();
+    dataToSend.append('photo', image); // በባክኤንድ upload.single('photo') የሚለውን ስም ይይዛል
+    
+    // ሁሉንም የጽሑፍ መረጃዎች መጫን
+    Object.keys(formData).forEach(key => {
+      dataToSend.append(key, formData[key]);
+    });
 
     try {
-      // ለጊዜው ዳታው በተሳካ ሁኔታ ተመዘገበ ብለን ለመታወቂያው እናዘጋጀዋለን
-      // ወደፊት ከ Backend ሲመጣ እውነተኛ የጡረተኛ ID (የሰርቨር መታወቂያ ቁጥር) እዚህ ይተካል
-      setRegisteredData({
-        ...formData,
-        pensionerId: `PENS-${Math.floor(100000 + Math.random() * 900000)}`, // ጊዜያዊ ቁጥር
-        imageSrc: imagePreview
+      // 🌐 የሬንደር ሰርቨርህን አዲሱን የጡረተኞች መመዝገቢያ ኤፒአይ መጥራት
+      const response = await fetch('https://poessa-digital-services-1.onrender.com/api/pensioners/register', {
+        method: 'POST',
+        body: dataToSend, // Content-Type በራሱ በFormData ይተካላል
       });
 
-      setStatus('🎉 የጡረተኛው መረጃ በተሳካ ሁኔታ ተመዝግቧል! መታወቂያው ከታች ተፈጥሯል።');
-      
-      // ፎርሙን ባዶ ማድረግ
-      setFormData({
-        name: '', tin: '', phone: '', age: '', gender: '',
-        faydaNumber: '', poessaBranch: '', bankName: '', bankBranch: '', pensionAmount: ''
-      });
-      setImage(null);
-      setImagePreview(null);
+      const result = await response.json();
+
+      if (result.success) {
+        // ሰርቨሩ በዳታቤዝ መዝግቦ የመለሰልንን እውነተኛ መረጃ ለመታወቂያው መስጠት
+        setRegisteredData({
+          pensionerId: result.data.pensionerId,
+          name: result.data.name,
+          faydaNumber: result.data.faydaNumber,
+          poessaBranch: result.data.poessaBranch,
+          bankName: result.data.bankName,
+          pensionAmount: result.data.pensionAmount,
+          imageSrc: result.data.photoUrl // ከImgBB የተገኘው ቋሚ የፎቶ ሊንክ
+        });
+
+        setStatus(`🎉 ${result.message}`);
+        
+        // ፎርሙን ማጽዳት (ሰራተኛው ቀጣይ ሰው መመዝገብ እንዲችል)
+        setFormData({
+          name: '', tin: '', phone: '', age: '', gender: '',
+          faydaNumber: '', poessaBranch: '', bankName: '', bankBranch: '', pensionAmount: ''
+        });
+        setImage(null);
+        setImagePreview(null);
+      } else {
+        setStatus(`❌ ስህተት፡ ${result.message}`);
+      }
     } catch (err) {
-      setStatus('❌ ስህተት፡ መመዝገብ አልተቻለም።');
+      console.error("የግንኙነት ስህተት፡", err);
+      setStatus('❌ ስህተት፡ ከ Render ሰርቨር ጋር መገናኘት አልተቻለም። ሰርቨሩ መነሳቱን ያረጋግጡ።');
     }
   };
 
@@ -120,7 +146,7 @@ function PensionerRegistration() {
         </form>
       </div>
 
-      {/* 💳 የ QR ኮድ መታወቂያ ካርድ (የሚታየው ምዝገባ ሲጠናቀቅ ብቻ ነው) */}
+      {/* 💳 የ QR ኮድ መታወቂያ卡 (የሚታየው ምዝገባ ሲጠናቀቅ ብቻ ነው) */}
       {registeredData && (
         <div className="id-card-wrapper">
           <div className="id-card" id="pensioner-id-card">
@@ -144,7 +170,6 @@ function PensionerRegistration() {
               </div>
 
               <div className="id-qr-zone">
-                {/* QR ኮዱ በውስጡ የጡረተኛውን መለያ ቁጥር ይይዛል */}
                 <QRCodeSVG 
                   value={JSON.stringify({ id: registeredData.pensionerId, fayda: registeredData.faydaNumber, name: registeredData.name })} 
                   size={90}
