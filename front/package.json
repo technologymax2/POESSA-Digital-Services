@@ -22,15 +22,12 @@
     "web-vitals": "^2.1.4",
     "@vladmandic/face-api": "^1.7.12",
     "qrcode.react": "^3.1.0"
-
   },
-"scripts": {
-  "start": "react-scripts start",
-  "build": "npm install --legacy-peer-deps && react-scripts build",
-  "test": "react-scripts test",
-  "eject": "react-scripts eject"
-}
-
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "npm install --legacy-peer-deps && react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
