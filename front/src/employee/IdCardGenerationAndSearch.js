@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
+import './PensionerRegistration.css';
 
 function IdCardGenerationAndSearch() {
   const navigate = useNavigate();
