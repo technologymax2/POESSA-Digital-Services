@@ -135,4 +135,3 @@ function LivenessTest() {
 }
 
 export default LivenessTest;
-export default LivenessTest;
