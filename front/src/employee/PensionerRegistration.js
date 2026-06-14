@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import './PensionerRegistration.css'; // የጋራ CSS
 
 function PensionerRegistration() {
-  const navigate = useNavigate();
   const [currentEmployee, setCurrentEmployee] = useState('የፖኤሳ ሰራተኛ');
   
   const [formData, setFormData] = useState({
@@ -19,6 +17,7 @@ function PensionerRegistration() {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
+    // ሰራተኛው መግባቱን ማረጋገጫ
     const storedUser = localStorage.getItem('user') || localStorage.getItem('username') || 'የፖኤሳ ሰራተኛ';
     setCurrentEmployee(storedUser);
   }, []);
@@ -46,6 +45,10 @@ function PensionerRegistration() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // 🚨 ከስቴት መዘግየት ለማምለጥ በቀጥታ ከ localStorage መውሰድ ሰርቨር ስህተትን ይከላከላል
+    const activeEmployee = localStorage.getItem('user') || localStorage.getItem('username') || currentEmployee;
+
     if (formData.faydaNumber.length !== 16) {
       setStatus('⚠️ እባክዎ ትክክለኛ የፋይዳ ቁጥር (16 ዲጂት) ያስገቡ!');
       return;
@@ -55,20 +58,22 @@ function PensionerRegistration() {
       return;
     }
 
-    setStatus('የጡረተኛው መረጃ እየተላከ ነው...');
+    setStatus('⏳ የጡረተኛው መረጃ ወደ ሰርቨር እየተላከ ነው፣ እባክዎ ይጠብቁ...');
     setLoading(true);
 
     const dataToSend = new FormData();
     dataToSend.append('photo', image);
-    dataToSend.append('employeeName', currentEmployee);
+    dataToSend.append('employeeName', activeEmployee);
     Object.keys(formData).forEach(key => dataToSend.append(key, formData[key]));
 
     try {
       const response = await fetch('https://poessa-digital-services-1.onrender.com/api/pensioners/register', {
         method: 'POST',
-        body: dataToSend,
+        body: dataToSend, // 🚨 ማሳሰቢያ፡ FormData ሲላክ Headers (Content-Type) መጫን አያስፈልግም
       });
+      
       const result = await response.json();
+      
       if (result.success) {
         setStatus(`🎉 ${result.message}`);
         setFormData({
@@ -79,36 +84,30 @@ function PensionerRegistration() {
         setImage(null);
         setImagePreview(null);
       } else {
-        setStatus(`❌ ስህተት፡ ${result.message}`);
+        // 🚨 ሰርቨሩ ራሱ ውድቅ ካደረገው የሚመልሰውን ትክክለኛ ምክንያት እዚህ ያሳያል
+        setStatus(`❌ የሰርቨር እምቢታ፡ ${result.message || 'ያልታወቀ ስህተት'}`);
       }
     } catch (err) {
-      setStatus('❌ ከሰርቨር ጋር መገናኘት አልተቻለም።');
+      // 🚨 የኔትወርክ ወይም የሊንክ ስህተት ካለ እዚህ ይያዛል
+      setStatus(`❌ ከሰርቨር ጋር መገናኘት አልተቻለም። ዝርዝር፡ ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="registration-container no-print">
+    <div className="registration-container no-print" style={{ boxShadow: 'none', padding: '0' }}>
       
-      {/* 🔝 Heading Route Navigation */}
-      <div className="heading-route-tabs">
-        <button className="route-btn active" onClick={() => navigate('/pensioner-registration')}>
-          📝 አዲስ ጡረተኛ መመዝገቢያ ቅጽ
-        </button>
-        <button className="route-btn" onClick={() => navigate('/idcard-generation-search')}>
-          🔍 መረጃ መፈለጊያ እና መታወቂያ ማውጫ
-        </button>
-      </div>
+      {/* 💡 አሰልቺው የ Route አዝራሮች ከዚህ ተወግደዋል፤ ምክንያቱም ዳሽቦርዱ ራሱ በቁልፍ ስለሚቆጣጠረው ኮዱን ንጹህ ያደርገዋል */}
 
       <h2 className="form-title">POESSA የጡረተኞች ምዝገባ ቅጽ</h2>
-      <p className="form-subtitle">የሰራተኞች መመዝገቢያ ዴስክ</p>
+      <p className="form-subtitle">የሰራተኞች መመዝገቢያ ዴስክ | ፈጻሚ፡ <span style={{color: '#2b6cb0', fontWeight: 'bold'}}>{currentEmployee}</span></p>
 
       <form onSubmit={handleSubmit} className="pensioner-form">
         <div className="image-upload-section">
-          <div className="image-preview-box" onClick={() => fileInputRef.current.click()}>
+          <div className="image-preview-box" onClick={() => fileInputRef.current.click()} style={{ width: '130px', height: '150px' }}>
             {imagePreview ? <img src={imagePreview} alt="Preview" className="preview-img" /> : (
-              <div className="upload-placeholder"><span className="upload-icon">📷</span><span>የጡረተኛውን ፎቶ እዚህ ይጫኑ</span></div>
+              <div className="upload-placeholder"><span className="upload-icon">📷</span><span>የጡረተኛውን ፎቶ ይጫኑ</span></div>
             )}
           </div>
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} style={{ display: 'none' }} />
@@ -138,9 +137,21 @@ function PensionerRegistration() {
           <div className="input-group"><label>የጡረታ አበል መጠን</label><input type="number" name="pensionAmount" value={formData.pensionAmount} onChange={handleChange} required /></div>
         </div>
 
-        {status && <p className="status-message">{status}</p>}
-        <button type="submit" className="submit-btn" disabled={loading}>
-          {loading ? 'እባክዎ ይጠብቁ...' : 'የጡረተኛውን መረጃ መዝግብ'}
+        {status && (
+          <p className="status-message" style={{ 
+            padding: '10px', 
+            borderRadius: '4px', 
+            backgroundColor: status.includes('❌') ? '#fff5f5' : '#f0fff4',
+            color: status.includes('❌') ? '#e53e3e' : '#38a169',
+            fontWeight: 'bold',
+            border: status.includes('❌') ? '1px solid #fed7d7' : '1px solid #c6f6d5'
+          }}>
+            {status}
+          </p>
+        )}
+        
+        <button type="submit" className="submit-btn" disabled={loading} style={{ marginTop: '10px' }}>
+          {loading ? '⏳ መረጃው እየተላከ ነው...' : '💾 የጡረተኛውን መረጃ መዝግብ'}
         </button>
       </form>
     </div>
