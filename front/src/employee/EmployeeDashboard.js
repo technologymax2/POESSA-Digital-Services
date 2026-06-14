@@ -1,33 +1,134 @@
-import React, { useState } from 'react';
-import Sidebar from '../components/Sidebar';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import PensionerRegistration from './PensionerRegistration'; // አዲሱን ቅጽ እዚህ ጋ አስገባነው
+import PensionerRegistration from './PensionerRegistration'; 
 import './EmployeeDashboard.css';
 
 const EmployeeDashboard = () => {
-  // የቋንቋ ስቴት
+  const navigate = useNavigate();
+  
+  // 👥 የሰራተኛ መረጃ ስቴት
+  const [currentEmployee, setCurrentEmployee] = useState({
+    username: 'የፖኤሳ ሰራተኛ',
+    role: 'ባለሙያ',
+    profilePic: null // እውነተኛ ፎቶ ከሌለ የመጀመሪያ ፊደሉን በክብ ቅርጽ እናሳያለን
+  });
+
+  // 🌍 የቋንቋ እና የሳይድባር ስቴቶች (በኮድህ ላይ የነበሩት)
   const [lang, setLang] = useState('am');
   const [collapsed, setCollapsed] = useState(false);
 
-  const toggleLanguage = () => {
-    setLang(prev => (prev === 'am' ? 'en' : 'am'));
+  // 📥 ሲስተሙ ሲከፈት የገባውን ሰራተኛ መረጃ ከ localStorage መውሰድ
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user') || localStorage.getItem('username') || 'የፖኤሳ ሰራተኛ';
+    const storedRole = localStorage.getItem('role') || 'ባለሙያ';
+    
+    setCurrentEmployee({
+      username: storedUser,
+      role: storedRole,
+      profilePic: localStorage.getItem('profilePic') || null
+    });
+  }, []);
+
+  // 🚪 ከሲስተም መውጫ (Logout) ተግባር
+  const handleLogout = () => {
+    if (window.confirm(lang === 'am' ? "እርግጠኛ ነዎት ከሲስተሙ መውጣት ይፈልጋሉ?" : "Are you sure you want to logout?")) {
+      localStorage.clear(); // ሁሉንም የተቀመጡ ዳታዎች ማጽዳት
+      navigate('/login');   // ወደ ሎጊን ገጽ መመለስ
+    }
   };
 
   return (
     <div className="dashboard-page">
       
-      <Sidebar 
-        currentLang={lang} 
-        toggleLanguage={toggleLanguage}
-        collapsed={collapsed}
-        setCollapsed={setCollapsed}
-      />
+      {/* 🔝 👑 አዲስ፡ የላይኛው የቀኝ ራስጌ የሰራተኛ መቆጣጠሪያ ባር (Top Header Bar) */}
+      <div className="dashboard-top-nav no-print" style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#1a202c',
+        color: 'white',
+        padding: '10px 25px',
+        borderBottom: '3px solid #3182ce'
+      }}>
+        {/* የግራ ክፍል፡ የሲስተም አርማ/ስም */}
+        <div className="nav-left">
+          <h3 style={{ margin: 0, color: '#63b3ed', letterSpacing: '1px' }}>POESSA INTERNAL PORTAL</h3>
+        </div>
 
+        {/* የቀኝ ክፍል፡ የሰራተኛው ፕሮፋይል እና የLogout አዝራር */}
+        <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          
+          {/* የቋንቋ መቀያየሪያ (አማርኛ/English) */}
+          <button 
+            onClick={() => setLang(lang === 'am' ? 'en' : 'am')}
+            style={{ backgroundColor: '#4a5568', color: 'white', border: 'none', padding: '5px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+          >
+            {lang === 'am' ? 'English 🌐' : 'አማርኛ 🌐'}
+          </button>
+
+          {/* 👤 የሰራተኛው መረጃ ዝርዝር */}
+          <div className="employee-profile-box" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* የፕሮፋይል ፎቶ ወይንም የመጀመሪያ ፊደል ክብ ምልክት */}
+            {currentEmployee.profilePic ? (
+              <img 
+                src={currentEmployee.profilePic} 
+                alt="Profile" 
+                style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #63b3ed' }} 
+              />
+            ) : (
+              <div style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '50%',
+                backgroundColor: '#3182ce',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                border: '2px solid #fff'
+              }}>
+                {currentEmployee.username.charAt(0).toUpperCase()}
+              </div>
+            )}
+            
+            {/* የሰራተኛው ስምና ማዕረግ */}
+            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>{currentEmployee.username}</span>
+              <span style={{ fontSize: '11px', color: '#a0aec0' }}>{currentEmployee.role}</span>
+            </div>
+          </div>
+
+          {/* 🚪 የLogout አዝራር */}
+          <button 
+            onClick={handleLogout} 
+            className="logout-button"
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#e53e3e',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 'bold',
+              transition: '0.2s'
+            }}
+          >
+            {lang === 'am' ? '🚪 ውጣ (Logout)' : '🚪 Logout'}
+          </button>
+        </div>
+      </div>
+
+      {/* 📂 ዋናው የዳሽቦርድ አካል */}
       <div className={`main-content ${collapsed ? 'collapsed' : ''}`}>
         <Header title={lang === 'am' ? "POESSA | ዲጂታል አገልግሎቶች" : "POESSA | Digital Services"} />
 
         <main className="dashboard-body">
-          {/* የስታቲስቲክስ ካርዶች */}
+          
+          {/* የስታቲስቲክስ ካርዶች ሰሌዳ */}
           <div className="stats-grid">
             <div className="stat-card">
               <h3>{lang === 'am' ? 'ያለፉ የህይወት ማረጋገጫ' : 'Expired Life Verifications'}</h3>
@@ -43,13 +144,13 @@ const EmployeeDashboard = () => {
             </div>
           </div>
 
-          {/* 📝 አዲሱ የጡረተኞች መመዝገቢያ ቅጽ ከነ QR ኮዱ እዚህ ጋ ይቀመጣል */}
-          <div className="registration-section-wrapper">
+          {/* 📝 የጡረተኞች መመዝገቢያ እና መፈለጊያ ታብ ገጽ እዚህ ይገለጣል */}
+          <div className="registration-section-wrapper" style={{ marginTop: '30px' }}>
             <PensionerRegistration />
           </div>
 
           {/* በቅርብ ጊዜ የተረጋገጡ ጡረተኞች ዝርዝር ክፍል */}
-          <div className="section-header">
+          <div className="section-header" style={{ marginTop: '40px' }}>
             <h2>{lang === 'am' ? 'በቅርብ ጊዜ የተረጋገጡ ጡረተኞች' : 'Recently Verified Pensioners'}</h2>
           </div>
 
