@@ -1,75 +1,91 @@
-/* 📝 የመመዝገቢያ ፎርም ዋና ሳጥን */
-.registration-container {
-  max-width: 100%;
-  margin: 10px auto;
-  padding: 30px;
-  background-color: #111827;
-  color: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+/* ==========================================================================
+   🏠 1. የጋራ አቀማመጥ እና የHeading Route ናቪጌሽን ስታይል
+   ========================================================================== */
+.registration-container, .id-generation-page-container {
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  box-sizing: border-box;
 }
 
+/* 🔝 Heading Route Navigation Tabs */
+.heading-route-tabs {
+  display: flex;
+  gap: 12px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 12px;
+  margin-bottom: 30px;
+}
+
+.route-btn {
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #edf2f7;
+  color: #2d3748;
+  transition: all 0.2s ease;
+}
+
+.route-btn:hover {
+  background-color: #cbd5e0;
+}
+
+.route-btn.active {
+  background-color: #2b6cb0;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(43, 108, 176, 0.3);
+}
+
+/* ==========================================================================
+   📝 2. የምዝገባ እና የማስተካከያ ፎርም ስታይሎች (Form Styling)
+   ========================================================================== */
 .form-title {
-  text-align: center;
-  color: #f3f4f6;
-  font-size: 24px;
+  color: #1a365d;
   margin-bottom: 5px;
+  font-size: 24px;
+  text-align: left;
 }
 
 .form-subtitle {
-  text-align: center;
-  color: #9ca3af;
-  font-size: 13px;
+  color: #718096;
   margin-bottom: 25px;
+  font-size: 14px;
+  text-align: left;
 }
 
 .pensioner-form {
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: 20px;
 }
 
-/* 📷 የፎቶ መጫኛ ክፍል */
+/* 📷 ፎቶ መስቀያ ክፍል */
 .image-upload-section {
   display: flex;
   justify-content: center;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 .image-preview-box {
   width: 140px;
-  height: 140px;
-  border: 2px dashed #3b82f6;
-  border-radius: 50%;
+  height: 160px;
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   cursor: pointer;
+  background-color: #f7fafc;
   overflow: hidden;
-  background-color: #1f2937;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s;
 }
 
 .image-preview-box:hover {
-  border-color: #60a5fa;
-  background-color: #374151;
-}
-
-.upload-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: 11px;
-  color: #9ca3af;
-  text-align: center;
-  padding: 10px;
-}
-
-.upload-icon {
-  font-size: 28px;
-  margin-bottom: 6px;
+  border-color: #2b6cb0;
 }
 
 .preview-img {
@@ -78,242 +94,280 @@
   object-fit: cover;
 }
 
-/* 🗂️ የፎርም ግሪድ (በኮምፒውተር ላይ 2 ኮለምን ያደርገዋል) */
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #718096;
+  font-size: 12px;
+  padding: 10px;
+  text-align: center;
+}
+
+.upload-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+/* 🎛️ የፎርም ግሪድ አቀማመጥ */
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
+  text-align: left;
 }
 
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .input-group label {
   font-size: 13px;
-  color: #d1d5db;
-  font-weight: 500;
+  font-weight: 600;
+  color: #4a5568;
 }
 
 .input-group input, .input-group select {
-  padding: 12px;
-  background-color: #1f2937;
-  border: 1px solid #4b5563;
-  border-radius: 8px;
-  color: #ffffff;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
   font-size: 14px;
-  outline: none;
-  transition: border 0.3s;
-  width: 100%;
-  box-sizing: border-box;
+  transition: all 0.2s;
 }
 
 .input-group input:focus, .input-group select:focus {
-  border-color: #3b82f6;
+  outline: none;
+  border-color: #2b6cb0;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
 }
 
-.status-message {
-  text-align: center;
-  font-size: 14px;
-  font-weight: bold;
-  color: #fbbf24;
-  margin: 10px 0;
-}
-
+/* አዝራሮች (Buttons) */
 .submit-btn {
-  background-color: #f59e0b;
-  color: #000000;
+  padding: 12px;
+  background-color: #2b6cb0;
+  color: white;
   border: none;
-  padding: 14px;
+  border-radius: 4px;
   font-size: 16px;
   font-weight: bold;
-  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.3s;
-  margin-top: 10px;
-  width: 100%;
+  transition: background 0.2s;
 }
 
-.submit-btn:hover {
-  background-color: #d97706;
+.submit-btn:hover { background-color: #2c5282; }
+.submit-btn:disabled { background-color: #a0aec0; cursor: not-allowed; }
+
+.status-message, .status-indicator {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2b6cb0;
+  margin: 10px 0;
+  text-align: left;
 }
 
-/* 💳 የ QR ኮድ መታወቂያ ካርድ መያዣ */
-.id-card-wrapper {
-  margin-top: 40px;
+/* ==========================================================================
+   🔍 3. የፍለጋ እና የማስተካከያ ፓነል ስታይሎች (Search Section)
+   ========================================================================== */
+.search-section {
+  background-color: #f0f4f8;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #d1d9e6;
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.search-section h3 {
+  margin: 0;
+  color: #1a365d;
+}
+
+.search-submit-btn {
+  padding: 10px 25px;
+  background-color: #2b6cb0;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.search-submit-btn:hover { background-color: #2c5282; }
+
+.edit-form-section {
+  padding: 20px;
+  background-color: #fffaf0;
+  border-radius: 8px;
+  border: 1px solid #feebc8;
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.save-btn { padding: 10px 20px; background-color: #38a169; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.cancel-btn { padding: 10px 20px; background-color: #e5e7eb; color: black; border: none; border-radius: 4px; cursor: pointer; }
+
+/* ==========================================================================
+   🪪 4. የዲጂታል መታወቂያ ካርድ ስታይል (POESSA Digital ID Card)
+   ========================================================================== */
+.id-card-wrapper-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px;
-  width: 100%;
+  margin-top: 25px;
 }
 
+.admin-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 25px;
+}
+
+.edit-action-btn { padding: 10px 20px; background-color: #dd6b20; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.delete-action-btn { padding: 10px 20px; background-color: #e53e3e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+/* 💳 እውነተኛው የመታወቂያ ሳጥን (ID Card) */
 .id-card {
-  width: 450px;
-  height: 260px;
-  background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
-  border: 3px solid #f59e0b;
+  width: 460px;
+  height: 280px;
+  background: #ffffff;
+  border: 3px solid #1a365d;
   border-radius: 12px;
-  padding: 15px;
-  color: white;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-  box-sizing: border-box;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
 }
 
 .id-card-header {
-  border-bottom: 2px solid #f59e0b;
-  padding-bottom: 5px;
+  background-color: #1a365d;
+  color: white;
+  padding: 10px;
   text-align: center;
 }
 
-.id-card-header h3 {
-  margin: 0;
-  font-size: 16px;
-  color: #f59e0b;
-  letter-spacing: 1px;
-}
-
-.id-card-header p {
-  margin: 2px 0 0 0;
-  font-size: 10px;
-  color: #9ca3af;
-}
+.id-card-header h3 { margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 1px; }
+.id-card-header p { margin: 2px 0 0 0; font-size: 10px; color: #90cdf4; }
 
 .id-card-body {
   display: flex;
+  padding: 15px;
+  flex: 1;
+  gap: 15px;
   align-items: center;
-  justify-content: space-between;
-  margin: 10px 0;
-  gap: 12px;
+  background-color: #f7fafc;
 }
 
+/* 🖼️ የመታወቂያ ፎርም ፎቶ ዞን */
 .id-photo-zone {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 90px;
+  gap: 6px;
 }
 
 .id-pensioner-img {
-  width: 80px;
-  height: 90px;
+  width: 100px;
+  height: 120px;
   object-fit: cover;
-  border: 2px solid white;
-  border-radius: 6px;
+  border: 2px solid #cbd5e0;
+  border-radius: 4px;
+  background-color: #edf2f7;
 }
 
 .id-num {
-  font-size: 10px;
+  font-family: monospace;
+  font-size: 12px;
   font-weight: bold;
-  color: #f59e0b;
-  margin-top: 5px;
+  color: #e53e3e;
+  margin: 0;
 }
 
+/* 📝 ዝርዝር መረጃ ማሳያ ዞን */
 .id-details-zone {
   flex: 1;
-  font-size: 12px;
+  text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
 .id-details-zone p {
   margin: 0;
+  font-size: 13px;
+  color: #2d3748;
+  line-height: 1.4;
 }
 
+.id-details-zone strong {
+  color: #4a5568;
+  display: inline-block;
+  width: 85px;
+}
+
+/* 📱 የ QR ኮድ ዞን */
 .id-qr-zone {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: white;
-  padding: 6px;
-  border-radius: 6px;
+  gap: 5px;
 }
 
 .qr-label {
-  font-size: 7px;
-  color: #000;
+  font-size: 8px;
   font-weight: bold;
-  margin-top: 4px;
+  color: #718096;
 }
 
 .id-card-footer {
-  border-top: 1px solid #374151;
-  padding-top: 4px;
+  background-color: #edf2f7;
+  padding: 6px;
   text-align: center;
-  font-size: 9px;
-  color: #9ca3af;
+  border-top: 1px solid #e2e8f0;
 }
+
+.id-card-footer p { margin: 0; font-size: 9px; color: #718096; font-weight: 500; }
 
 .print-btn {
-  background-color: #10b981;
+  margin-top: 20px;
+  padding: 12px 30px;
+  background-color: #1a365d;
   color: white;
   border: none;
-  padding: 10px 20px;
-  font-size: 15px;
+  border-radius: 5px;
   font-weight: bold;
-  border-radius: 6px;
+  font-size: 15px;
   cursor: pointer;
-  transition: 0.3s;
+  transition: 0.2s;
 }
 
-/* ==========================================================================
-   📱 ለስልክ ስክሪን ማስተካከያ (Responsive Media Queries)
-   ========================================================================== */
-
-@media (max-width: 600px) {
-  .registration-container {
-    padding: 15px;
-  }
-
-  /* ፎርሙ በስልክ ላይ 1 ኮለምን ብቻ ይሆናል */
-  .form-grid {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-
-  .form-title {
-    font-size: 20px;
-  }
-
-  /* 💳 በስልክ ላይ መታወቂያ ካርዱ ስክሪኑን እንዳይቀድ በ scale ትንሽ እናሳንሰዋለን */
-  .id-card {
-    width: 100%;
-    max-width: 340px;
-    height: auto;
-    min-height: 240px;
-  }
-  
-  .id-card-body {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-  }
-
-  .id-details-zone {
-    min-width: 140px;
-  }
-}
+.print-btn:hover { background-color: #2a4365; }
 
 /* ==========================================================================
-   🖨️ ለማተሚያ (Print) የተለየ ህግ
+   🖨️ 5. የህትመት ማስተካከያ (Print Optimization)
    ========================================================================== */
 @media print {
-  .no-print {
+  /* መታወቂያው ሲታተም ከእሱ ውጭ ያሉትን ነገሮች በሙሉ ደብቅ */
+  .no-print, .heading-route-tabs, .search-section, .admin-actions, .edit-form-section {
     display: none !important;
   }
-  .id-card {
-    border: 2px solid #000 !important;
+  
+  body, .id-generation-page-container, .id-card-wrapper-section {
+    background: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
     box-shadow: none !important;
-    background: #1e3a8a !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-    margin: 0 auto;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    height: 100vh;
+  }
+
+  .id-card {
+    box-shadow: none !important;
+    border: 2px solid #000000 !important;
   }
 }
