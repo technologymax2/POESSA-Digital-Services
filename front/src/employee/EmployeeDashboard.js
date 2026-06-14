@@ -11,10 +11,10 @@ const EmployeeDashboard = () => {
   const [currentEmployee, setCurrentEmployee] = useState({
     username: 'የፖኤሳ ሰራተኛ',
     role: 'ባለሙያ',
-    profilePic: null // እውነተኛ ፎቶ ከሌለ የመጀመሪያ ፊደሉን በክብ ቅርጽ እናሳያለን
+    profilePic: null
   });
 
-  // 🌍 የቋንቋ እና የሳይድባር ስቴቶች (በኮድህ ላይ የነበሩት)
+  // 🌍 የቋንቋ እና የሳይድባር ስቴቶች
   const [lang, setLang] = useState('am');
   const [collapsed, setCollapsed] = useState(false);
 
@@ -41,7 +41,7 @@ const EmployeeDashboard = () => {
   return (
     <div className="dashboard-page">
       
-      {/* 🔝 👑 አዲስ፡ የላይኛው የቀኝ ራስጌ የሰራተኛ መቆጣጠሪያ ባር (Top Header Bar) */}
+      {/* 🔝 የላይኛው የቀኝ ራስጌ የሰራተኛ መቆጣጠሪያ ባር (Top Navbar) */}
       <div className="dashboard-top-nav no-print" style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -51,35 +51,36 @@ const EmployeeDashboard = () => {
         padding: '10px 25px',
         borderBottom: '3px solid #3182ce'
       }}>
-        {/* የግራ ክፍል፡ የሲስተም አርማ/ስም */}
+        {/* የግራ ክፍል፡ የሲስተም ስም */}
         <div className="nav-left">
-          <h3 style={{ margin: 0, color: '#63b3ed', letterSpacing: '1px' }}>POESSA INTERNAL PORTAL</h3>
+          <h3 style={{ margin: 0, color: '#63b3ed', letterSpacing: '1px', fontSize: '18px' }}>
+            POESSA INTERNAL PORTAL
+          </h3>
         </div>
 
-        {/* የቀኝ ክፍል፡ የሰራተኛው ፕሮፋይል እና የLogout አዝራር */}
+        {/* የቀኝ ክፍል፡ የቋንቋ መቀያየሪያ፣ የሰራተኛው ፕሮፋይል እና የLogout አዝራር */}
         <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           
-          {/* የቋንቋ መቀያየሪያ (አማርኛ/English) */}
+          {/* 🌐 የቋንቋ መቀያየሪያ */}
           <button 
             onClick={() => setLang(lang === 'am' ? 'en' : 'am')}
-            style={{ backgroundColor: '#4a5568', color: 'white', border: 'none', padding: '5px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+            style={{ backgroundColor: '#4a5568', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
           >
             {lang === 'am' ? 'English 🌐' : 'አማርኛ 🌐'}
           </button>
 
-          {/* 👤 የሰራተኛው መረጃ ዝርዝር */}
-          <div className="employee-profile-box" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* የፕሮፋይል ፎቶ ወይንም የመጀመሪያ ፊደል ክብ ምልክት */}
+          {/* 👤 የሰራተኛው መረጃ ሳጥን (በ CSS ውስጥ .employee-profile-box ተብሎ የተሰራው) */}
+          <div className="employee-profile-box" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {currentEmployee.profilePic ? (
               <img 
                 src={currentEmployee.profilePic} 
                 alt="Profile" 
-                style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #63b3ed' }} 
+                style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #63b3ed' }} 
               />
             ) : (
               <div style={{
-                width: '38px',
-                height: '38px',
+                width: '36px',
+                height: '36px',
                 borderRadius: '50%',
                 backgroundColor: '#3182ce',
                 color: 'white',
@@ -87,21 +88,20 @@ const EmployeeDashboard = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 'bold',
-                fontSize: '16px',
+                fontSize: '15px',
                 border: '2px solid #fff'
               }}>
                 {currentEmployee.username.charAt(0).toUpperCase()}
               </div>
             )}
             
-            {/* የሰራተኛው ስምና ማዕረግ */}
             <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff' }}>{currentEmployee.username}</span>
-              <span style={{ fontSize: '11px', color: '#a0aec0' }}>{currentEmployee.role}</span>
+              <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', lineHeight: '1.2' }}>{currentEmployee.username}</span>
+              <span style={{ fontSize: '11px', color: '#a0aec0', marginTop: '2px' }}>{currentEmployee.role}</span>
             </div>
           </div>
 
-          {/* 🚪 የLogout አዝራር */}
+          {/* 🚪 የLogout አዝራር (በ CSS ውስጥ .logout-button ተብሎ የተሰራው) */}
           <button 
             onClick={handleLogout} 
             className="logout-button"
@@ -113,22 +113,21 @@ const EmployeeDashboard = () => {
               borderRadius: '4px',
               cursor: 'pointer',
               fontSize: '13px',
-              fontWeight: 'bold',
-              transition: '0.2s'
+              fontWeight: 'bold'
             }}
           >
-            {lang === 'am' ? '🚪 ውጣ (Logout)' : '🚪 Logout'}
+            {lang === 'am' ? '🚪 ውጣ' : '🚪 Logout'}
           </button>
         </div>
       </div>
 
-      {/* 📂 ዋናው የዳሽቦርድ አካል */}
+      {/* 📂 ዋናው የይዘት አካል */}
       <div className={`main-content ${collapsed ? 'collapsed' : ''}`}>
         <Header title={lang === 'am' ? "POESSA | ዲጂታል አገልግሎቶች" : "POESSA | Digital Services"} />
 
         <main className="dashboard-body">
           
-          {/* የስታቲስቲክስ ካርዶች ሰሌዳ */}
+          {/* 📊 የስታቲስቲክስ ካርዶች ሰሌዳ */}
           <div className="stats-grid">
             <div className="stat-card">
               <h3>{lang === 'am' ? 'ያለፉ የህይወት ማረጋገጫ' : 'Expired Life Verifications'}</h3>
@@ -144,12 +143,12 @@ const EmployeeDashboard = () => {
             </div>
           </div>
 
-          {/* 📝 የጡረተኞች መመዝገቢያ እና መፈለጊያ ታብ ገጽ እዚህ ይገለጣል */}
-          <div className="registration-section-wrapper" style={{ marginTop: '30px' }}>
+          {/* 📝 የጡረተኞች ማኔጅመንት (የተከፋፈለው ታብ ገጽ እዚህ ይገለጣል) */}
+          <div className="registration-section-wrapper">
             <PensionerRegistration />
           </div>
 
-          {/* በቅርብ ጊዜ የተረጋገጡ ጡረተኞች ዝርዝር ክፍል */}
+          {/* 🕒 በቅርብ ጊዜ የተረጋገጡ ጡረተኞች ዝርዝር ክፍል */}
           <div className="section-header" style={{ marginTop: '40px' }}>
             <h2>{lang === 'am' ? 'በቅርብ ጊዜ የተረጋገጡ ጡረተኞች' : 'Recently Verified Pensioners'}</h2>
           </div>
