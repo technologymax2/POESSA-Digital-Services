@@ -15,17 +15,18 @@ const UserPensionerSchema = new mongoose.Schema(
     pensionAmount: { type: Number, required: true },
     photoUrl: { type: String, required: true },
 
-    // ➕ በምስሉ ላይ የጎደሉ እና ወደ ዳታቤዝ እንዲገቡ የተጨመሩ (አዲስ)
-    address: { type: String, default: "" },       // አድራሻ ባዶ ሆኖ ቢመጣ እንዳይዘጋው default ተደርጓል
-    issueDate: { type: String, default: "" },     // የተሰጠበት ቀን
-    expiryDate: { type: String, default: "" },    // የማብቂያ ጊዜ
+    // ➕ አድራሻ እና ቀናት (ባዶ እንዳይሆኑ ጥበቃ ተደርጓል)
+    address: { type: String, default: "" },       
+    issueDate: { type: String, default: "" },     
+    expiryDate: { type: String, default: "" },    
 
     // 👤 የደህንነትና የተጠያቂነት መስኮች (Audit Logs)
     registeredBy: { type: String, default: "ያልታወቀ ባለሙያ" }, 
     updatedBy: { type: String },                            
     lastUpdatedAt: { type: Date }                            
   },
-  { timestamps: true } 
+  { timestamps: true } // ይህ በራሱ createdAt እና updatedAt ቀናትን ይይዛል
 );
 
-module.exports = mongoose.models.UserPensioner || mongoose.model("UserPensioner", UserPensionerSchema);
+// 🚨 ማስተካከያ፡ ለ Express.js ትክክለኛው እና ቀጥተኛው ኤክስፖርት ማድረጊያ መንገድ ይህ ነው፦
+module.exports = mongoose.model("UserPensioner", UserPensionerSchema);
