@@ -2,35 +2,70 @@ import React, { useRef, useEffect, useState } from 'react';
 import * as faceapi from '@vladmandic/face-api';
 import './LivenessTest.css'; 
 
+// React 19 ደጋግሞ ሲያነሳው ሞዴሎቹ ተጋጭተው እንዳይቆሙ መቆለፊያ
+let isModelsLoading = false;
+let isModelsLoaded = false;
+
 function LivenessTest() {
   const videoRef = useRef(null);
   const [challenge, setChallenge] = useState("እባክዎ ፈገግ ይበሉ (Smile Please)");
   const [status, setStatus] = useState("የፊት መለያ ሞዴሎች እየተጫኑ ነው...");
   const [isVerified, setIsVerified] = useState(false);
 
-    useEffect(() => {
-    // Vercel ላይ ፋይሎቹ በቀጥታ ከዋናው አድራሻ (Root) ስር ስለሚገኙ እንዲህ መጻፍ ይበቃል
+  useEffect(() => {
+    // ሞዴሎቹ አስቀድመው ከተጫኑ በቀጥታ ካሜራውን ክፈት
+    if (isModelsLoaded) {
+      setStatus("ሞዴሎች ዝግጁ ናቸው፤ ካሜራ እየተከፈተ ነው...");
+      startVideo();
+      return;
+    }
+
+    if (isModelsLoading) return;
+    isModelsLoading = true;
+
+    setStatus("ሞዴሎች ከ Vercel ላይ እየተጫኑ ነው...");
+
+    // በ Vercel ላይ ካለው የ public/models ፎልደር ጋር ፍጹም ማገናኛ
+    const modelPath = window.location.origin + '/models';
+
     Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-      faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-      faceapi.nets.faceExpressionNet.loadFromUri('/models')
+      faceapi.nets.tinyFaceDetector.loadFromUri(modelPath),
+      faceapi.nets.faceLandmark68Net.loadFromUri(modelPath),
+      faceapi.nets.faceExpressionNet.loadFromUri(modelPath)
     ]).then(() => {
-      setStatus("ሞዴሎች ተጭነዋል፤ ካሜራ እየተከፈተ ነው...");
+      isModelsLoaded = true;
+      isModelsLoading = false;
+      setStatus("ሞዴሎች በተሳካ ሁኔታ ተጭነዋል! ካሜራ እየተከፈተ ነው...");
       startVideo();
     }).catch(err => {
-      console.error(err);
-      setStatus("የሞዴል ስህተት፡ እባክዎ ገጹን Refresh ያድርጉት");
+      console.error("የመጫን ስህተት:", err);
+      isModelsLoading = false;
+      setStatus("የሞዴል ፋይሎችን ማንበብ አልተቻለም። እባክዎ ገጹን Refresh ያድርጉ።");
     });
-  }, []);
 
+    // ገጹ ሲዘጋ ቪዲዮውን ለማቆም
+    return () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject;
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   const startVideo = () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 300, facingMode: "user" } })
         .then(stream => { 
-          if (videoRef.current) videoRef.current.srcObject = stream; 
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+          setStatus("ካሜራ ተከፍቷል፤ እባክዎ ፈገግ ይበሉ...");
         })
-        .catch(err => setStatus("እባክዎ የካሜራ ፈቃድ ይስጡ"));
+        .catch(err => {
+          console.error(err);
+          setStatus("እባክዎ ለብሮውዘርዎ የካሜራ ፈቃድ (Allow) ይስጡ");
+        });
     } else {
       setStatus("ብሮውዘርዎ ካሜራ አይደግፍም");
     }
@@ -53,25 +88,24 @@ function LivenessTest() {
           setStatus("ፊት ተገኝቷል፤ ትዕዛዙን ይፈጽሙ...");
           const smileValue = detections.expressions.happy;
           
-          // ፈገግታው ከ 80% በላይ መሆኑን ማረጋገጫ
-          if (smileValue > 0.80) { 
+          if (smileValue > 0.75) { 
             setIsVerified(true);
             setStatus("በአሸናፊነት ተረጋግጧል! (Verified) 🎉");
             clearInterval(interval);
           }
         } else {
-          setStatus("እባክዎ ፊትዎን ወደ ካሜራው ያቅርቡ");
+          setStatus("እባክዎ ፊትዎን ወደ ካሜራው ያቅናው...");
         }
       } catch (e) {
-        // የቪዲዮ ፍሬም መቋረጥ ስህተቶችን በዝምታ ለማለፍ
+        // ፍሬሞች በሚቋረጡበት ጊዜ የሚመጡ ጥቃቅን ስህተቶችን በዝምታ ለማለፍ
       }
-    }, 600);
+    }, 500);
   };
 
   return (
     <div className="liveness-container">
       <h2 className="liveness-title">POESSA ዲጂታል አገልግሎት</h2>
-      <p className="liveness-subtitle">የጡረተኞች የህይወት ማረጋገጫ ሲስተም</p>
+      <p className="liveness-subtitle">የጡረተኞች የህይវត្ត ማረጋገጫ ሲስተም</p>
       
       <div className="challenge-box">
         {challenge}
@@ -100,4 +134,5 @@ function LivenessTest() {
   );
 }
 
+export default LivenessTest;
 export default LivenessTest;
