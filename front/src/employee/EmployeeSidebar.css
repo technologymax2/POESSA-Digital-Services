@@ -1,0 +1,101 @@
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f7fafc;
+}
+
+.employee-sidebar {
+  width: 260px;
+  background-color: #1a202c;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.sidebar-profile {
+  text-align: center;
+  padding: 15px 0;
+}
+
+.profile-icon {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.employee-title {
+  margin: 5px 0;
+  font-size: 16px;
+  color: #e2e8f0;
+}
+
+.role-badge {
+  font-size: 11px;
+  background-color: #2b6cb0;
+  padding: 2px 8px;
+  border-radius: 12px;
+  color: #fff;
+}
+
+.sidebar-divider {
+  border: 0;
+  border-top: 1px solid #2d3748;
+  margin: 15px 0;
+}
+
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.menu-item {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  text-align: left;
+  padding: 12px 15px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+  background-color: #2d3748;
+  color: #fff;
+}
+
+.menu-item.active {
+  background-color: #2b6cb0;
+  color: #fff;
+  font-weight: bold;
+}
+
+.menu-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sidebar-logout-btn {
+  background-color: #e53e3e;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: auto;
+}
+
+.sidebar-logout-btn:hover {
+  background-color: #c53030;
+}
+
+.dashboard-main-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
