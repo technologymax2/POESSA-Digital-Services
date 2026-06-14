@@ -50,7 +50,7 @@ function IdCardGenerationAndSearch() {
         setSearchStatus(`❌ ${result.message}`);
       }
     } catch (err) {
-      setSearchStatus('❌ የፍለጋ ስህተት አጋጥሟል።');
+      setSearchStatus(`❌ የፍለጋ ስህተት፡ ${err.message}`);
     }
   };
 
@@ -61,7 +61,12 @@ function IdCardGenerationAndSearch() {
       const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/update/${registeredData._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...editData, employeeName: currentEmployee }),
+        body: JSON.stringify({ 
+          ...editData, 
+          age: editData.age ? Number(editData.age) : 0,
+          pensionAmount: editData.pensionAmount ? Number(editData.pensionAmount) : 0,
+          employeeName: currentEmployee 
+        }),
       });
       const result = await response.json();
       if (result.success) {
@@ -72,7 +77,7 @@ function IdCardGenerationAndSearch() {
         setSearchStatus(`❌ ስህተት፡ ${result.message}`);
       }
     } catch (err) {
-      setSearchStatus('❌ ማስተካከል አልተቻለም።');
+      setSearchStatus(`❌ ማስተካከል አልተቻለም፡ ${err.message}`);
     }
   };
 
@@ -85,16 +90,17 @@ function IdCardGenerationAndSearch() {
         setRegisteredData(null);
         setSearchQuery('');
         setSearchStatus(`🗑️ ${result.message}`);
+      } else {
+        setSearchStatus(`❌ ስህተት፡ ${result.message}`);
       }
     } catch (err) {
-      setSearchStatus('❌ ማጥፋት አልተቻለም።');
+      setSearchStatus(`❌ ማጥፋት አልተቻለም፡ ${err.message}`);
     }
   };
 
   return (
     <div className="id-generation-page-container">
       
-      {/* 🔝 Heading Route Navigation */}
       <div className="heading-route-tabs no-print">
         <button className="route-btn" onClick={() => navigate('/pensioner-registration')}>
           📝 አዲስ ጡረተኛ መመዝገቢያ ቅጽ
@@ -104,7 +110,6 @@ function IdCardGenerationAndSearch() {
         </button>
       </div>
 
-      {/* 🔍 መፈለጊያ ሳጥን */}
       <div className="search-section no-print">
         <h3>🔍 የጡረተኛ መረጃ ማኔጅመንት እና መታወቂያ ማውጫ</h3>
         <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
@@ -114,7 +119,6 @@ function IdCardGenerationAndSearch() {
         {searchStatus && <p className="status-indicator">{searchStatus}</p>}
       </div>
 
-      {/* 📝 ማስተካከያ ፎርም */}
       {isEditing && (
         <div className="edit-form-section no-print">
           <h3>📝 የተሳሳተ መረጃ ማስተካከያ ፎርም</h3>
@@ -135,7 +139,6 @@ function IdCardGenerationAndSearch() {
         </div>
       )}
 
-      {/* 📋 💳 መታወቂያ ካርድ ማሳያ */}
       {registeredData && !isEditing && (
         <div className="id-card-wrapper-section">
           <div className="admin-actions no-print">
@@ -143,7 +146,6 @@ function IdCardGenerationAndSearch() {
             <button onClick={handleDelete} className="delete-action-btn">🗑️ ሙሉ በሙሉ አጥፋ</button>
           </div>
 
-          {/* መታወቂያ ካርድ */}
           <div className="id-card" id="pensioner-id-card">
             <div className="id-card-header"><h3>POESSA DIGITAL ID</h3><p>የጡረተኞች የህይወት ማረጋገጫ ሲስተም</p></div>
             <div className="id-card-body">
