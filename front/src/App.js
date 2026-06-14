@@ -11,7 +11,7 @@ import AdminDashboard from "./admin/AdminDashboard";
 import CustomerDashboard from "./customer/CustomerDashboard";
 import LivenessTest from './customer/LivenessTest';
 import PensionerRegistration from './employee/PensionerRegistration';
-
+import IdCardGenerationAndSearch from './employee/IdCardGenerationAndSearch';
 import './App.css';
 
 
@@ -30,6 +30,7 @@ function App() {
            <Route path="/customer-dashboard" element={<CustomerDashboard />} />
            <Route path="/liveness" element={<LivenessTest />} />
            <Route path="/pensioner-registration" element ={<PensionerRegistration />} />
+    <Route path="/idcard-generation-search" element={<IdCardGenerationAndSearch />} />
 
         </Routes>
       </div>
