@@ -1,0 +1,175 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
+
+function IdCardGenerationAndSearch() {
+  const navigate = useNavigate();
+  const [currentEmployee, setCurrentEmployee] = useState('የፖኤሳ ሰራተኛ');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchStatus, setSearchStatus] = useState('');
+  const [registeredData, setRegisteredData] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({});
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user') || localStorage.getItem('username') || 'የፖኤሳ ሰራተኛ';
+    setCurrentEmployee(storedUser);
+  }, []);
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditData({ ...editData, [name]: value });
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery) {
+      setSearchStatus('⚠️ እባክዎ መፈለጊያ ቁጥር ያስገቡ!');
+      return;
+    }
+    setSearchStatus('በመፈለግ ላይ...');
+    setRegisteredData(null);
+    setIsEditing(false);
+
+    try {
+      const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${searchQuery}`);
+      const result = await response.json();
+
+      if (result.success) {
+        setRegisteredData({
+          _id: result.data._id, pensionerId: result.data.pensionerId, name: result.data.name,
+          faydaNumber: result.data.faydaNumber, poessaBranch: result.data.poessaBranch, bankName: result.data.bankName,
+          bankBranch: result.data.bankBranch, tin: result.data.tin, age: result.data.age, gender: result.data.gender,
+          pensionAmount: result.data.pensionAmount, phone: result.data.phone, address: result.data.address,
+          issueDate: result.data.issueDate, expiryDate: result.data.expiryDate, imageSrc: result.data.photoUrl
+        });
+        setEditData(result.data);
+        setSearchStatus('🎉 የጡረተኛው ሙሉ መረጃ ተገኝቷል!');
+      } else {
+        setSearchStatus(`❌ ${result.message}`);
+      }
+    } catch (err) {
+      setSearchStatus('❌ የፍለጋ ስህተት አጋጥሟል።');
+    }
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setSearchStatus('መረጃው እየታረመ ነው...');
+    try {
+      const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/update/${registeredData._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...editData, employeeName: currentEmployee }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setRegisteredData({ ...registeredData, ...result.data, imageSrc: result.data.photoUrl });
+        setIsEditing(false);
+        setSearchStatus(`🎉 ${result.message}`);
+      } else {
+        setSearchStatus(`❌ ስህተት፡ ${result.message}`);
+      }
+    } catch (err) {
+      setSearchStatus('❌ ማስተካከል አልተቻለም።');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("🚨 ይህንን መረጃ ከሲስተም ማጥፋት ይፈልጋሉ?")) return;
+    try {
+      const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/delete/${registeredData._id}?employeeName=${currentEmployee}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (result.success) {
+        setRegisteredData(null);
+        setSearchQuery('');
+        setSearchStatus(`🗑️ ${result.message}`);
+      }
+    } catch (err) {
+      setSearchStatus('❌ ማጥፋት አልተቻለም።');
+    }
+  };
+
+  return (
+    <div className="id-generation-page-container">
+      
+      {/* 🔝 Heading Route Navigation */}
+      <div className="heading-route-tabs no-print">
+        <button className="route-btn" onClick={() => navigate('/pensioner-registration')}>
+          📝 አዲስ ጡረተኛ መመዝገቢያ ቅጽ
+        </button>
+        <button className="route-btn active" onClick={() => navigate('/idcard-generation-search')}>
+          🔍 መረጃ መፈለጊያ እና መታወቂያ ማውጫ
+        </button>
+      </div>
+
+      {/* 🔍 መፈለጊያ ሳጥን */}
+      <div className="search-section no-print">
+        <h3>🔍 የጡረተኛ መረጃ ማኔጅመንት እና መታወቂያ ማውጫ</h3>
+        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+          <input type="text" placeholder="የፋይዳ ቁጥር ወይም ስልክ ያስገቡ..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e0' }} />
+          <button type="submit" className="search-submit-btn">ፈልግ</button>
+        </form>
+        {searchStatus && <p className="status-indicator">{searchStatus}</p>}
+      </div>
+
+      {/* 📝 ማስተካከያ ፎርም */}
+      {isEditing && (
+        <div className="edit-form-section no-print">
+          <h3>📝 የተሳሳተ መረጃ ማስተካከያ ፎርም</h3>
+          <form onSubmit={handleUpdate} className="pensioner-form">
+            <div className="form-grid">
+              <div className="input-group"><label>ሙሉ ስም</label><input type="text" name="name" value={editData.name || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>ስልክ ቁጥር</label><input type="tel" name="phone" value={editData.phone || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>አድራሻ</label><input type="text" name="address" value={editData.address || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>የባንክ ስም</label><input type="text" name="bankName" value={editData.bankName || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>የጡረታ አበል</label><input type="number" name="pensionAmount" value={editData.pensionAmount || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>የማብቂያ ጊዜ</label><input type="date" name="expiryDate" value={editData.expiryDate || ''} onChange={handleEditChange} required /></div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+              <button type="submit" className="save-btn">ለውጦችን አስቀምጥ</button>
+              <button type="button" onClick={() => setIsEditing(false)} className="cancel-btn">አንሳ</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* 📋 💳 መታወቂያ ካርድ ማሳያ */}
+      {registeredData && !isEditing && (
+        <div className="id-card-wrapper-section">
+          <div className="admin-actions no-print">
+            <button onClick={() => setIsEditing(true)} className="edit-action-btn">📝 መረጃውን አርም</button>
+            <button onClick={handleDelete} className="delete-action-btn">🗑️ ሙሉ በሙሉ አጥፋ</button>
+          </div>
+
+          {/* መታወቂያ ካርድ */}
+          <div className="id-card" id="pensioner-id-card">
+            <div className="id-card-header"><h3>POESSA DIGITAL ID</h3><p>የጡረተኞች የህይወት ማረጋገጫ ሲስተም</p></div>
+            <div className="id-card-body">
+              <div className="id-photo-zone">
+                <img src={registeredData.imageSrc} alt="Pensioner" className="id-pensioner-img" />
+                <p className="id-num">{registeredData.pensionerId}</p>
+              </div>
+              <div className="id-details-zone">
+                <p><strong>ስም:</strong> {registeredData.name}</p>
+                <p><strong>FAYDA No:</strong> {registeredData.faydaNumber}</p>
+                <p><strong>ስልክ ቁጥር:</strong> {registeredData.phone}</p>
+                <p><strong>ቅርንጫፍ:</strong> {registeredData.poessaBranch}</p>
+                <p style={{fontSize: '11px', marginTop: '5px'}}><strong>የተሰጠበት ቀን:</strong> {registeredData.issueDate}</p>
+                <p style={{fontSize: '11px', color: 'red'}}><strong>የማብቂያ ጊዜ:</strong> {registeredData.expiryDate}</p>
+              </div>
+              <div className="id-qr-zone">
+                <QRCodeSVG value={JSON.stringify({ id: registeredData.pensionerId, fayda: registeredData.faydaNumber, name: registeredData.name })} size={90} level={"M"} />
+                <span className="qr-label">SCAN TO VERIFY</span>
+              </div>
+            </div>
+            <div className="id-card-footer"><p>ይህ ካርድ በህይወት መኖርን በዲጂታል መንገድ ለማረጋገጫነት ያገለግላል።</p></div>
+          </div>
+          <button onClick={() => window.print()} className="print-btn no-print">🖨️ መታወቂያውን አትም (Print ID)</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default IdCardGenerationAndSearch;
