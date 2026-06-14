@@ -4,9 +4,8 @@ import './PensionerRegistration.css';
 function PensionerRegistration() {
   const [currentEmployee, setCurrentEmployee] = useState('የፖኤሳ ሰራተኛ');
   
-  // 🚨 ከባክኤንድ ሞዴል (Schema) ጋር አንድ ለአንድ የተጣጣሙ የቁልፍ ስሞች (Keys)
   const [formData, setFormData] = useState({
-    pensionerId: '',    // 👈 ከባክኤንድ 'pensionerId' ጋር እንዲገጥም ተስተካክሏል (የድሮው pensionId ተቀይሯል)
+    pensionerId: '',    
     name: '', 
     tin: '', 
     phone: '', 
@@ -35,7 +34,6 @@ function PensionerRegistration() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // የፋይዳ ቁጥር 16 ዲጂት ብቻ መሆኑን መቆጣጠሪያ
     if (name === 'faydaNumber') {
       if (value.length > 16 || (value && !/^\d+$/.test(value))) return;
     }
@@ -45,7 +43,7 @@ function PensionerRegistration() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 🚨 ከባክኤንዱ '2MB' ሊሚት ጋር የተጣጣመ
+      if (file.size > 2 * 1024 * 1024) { 
         setStatus('⚠️ የፎቶው መጠን ከ 2MB መብለጥ የለበትም!');
         return;
       }
@@ -58,7 +56,6 @@ function PensionerRegistration() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // የባለሙያውን ስም በቀጥታ ማረጋገጫ
     const activeEmployee = localStorage.getItem('user') || localStorage.getItem('username') || currentEmployee;
 
     if (formData.faydaNumber.length !== 16) {
@@ -73,25 +70,29 @@ function PensionerRegistration() {
     setStatus('⏳ መረጃው ወደ ሰርቨር እየተላከ ነው...');
     setLoading(true);
 
-    // 📥 በባክኤንዱ 'upload.single("photo")' እና 'req.body' መሰረት FormData ማዘጋጀት
     const dataToSend = new FormData();
-    dataToSend.append('photo', image); // 👈 ባክኤንድ ላይ 'photo' ተብሎ ስለተጠበቀ ስሙ ተስተካክሏል
-    dataToSend.append('employeeName', activeEmployee); // 👈 ባክኤንድ 'employeeName' ብሎ ይቀበለዋል
+    dataToSend.append('photo', image); 
+    dataToSend.append('employeeName', activeEmployee); 
     
-    // የቀሩትን የፎርም መረጃዎች በሙሉ ወደ FormData መጫን
-    Object.keys(formData).forEach(key => dataToSend.append(key, formData[key]));
+    // 🚨 የቁጥር መረጃዎችን NaN እንዳይሆኑ ጥበቃ በማድረግ መጫን
+    Object.keys(formData).forEach(key => {
+      if (key === 'age' || key === 'pensionAmount') {
+        dataToSend.append(key, formData[key] ? Number(formData[key]) : 0);
+      } else {
+        dataToSend.append(key, formData[key] || "");
+      }
+    });
 
     try {
       const response = await fetch('https://poessa-digital-services-1.onrender.com/api/pensioners/register', {
         method: 'POST',
-        body: dataToSend, // 🚨 ማሳሰቢያ፡ ሙልተር (Multer) እንዲያነበው Headers መጫን የለብንም!
+        body: dataToSend, 
       });
       
       const result = await response.json();
       
       if (result.success) {
         setStatus(`🎉 ${result.message}`);
-        // ፎርሙን በባዶ ማጽዳት
         setFormData({
           pensionerId: '', name: '', tin: '', phone: '', age: '', gender: '',
           faydaNumber: '', poessaBranch: '', bankName: '', bankBranch: '', pensionAmount: '',
@@ -111,15 +112,12 @@ function PensionerRegistration() {
 
   return (
     <div className="registration-container no-print" style={{ boxShadow: 'none', padding: '0' }}>
-      
       <h2 className="form-title">POESSA የጡረተኞች ምዝገባ ቅጽ</h2>
       <p className="form-subtitle">የሰራተኞች መመዝገቢያ ዴስክ | ፈጻሚ፡ <span style={{color: '#2b6cb0', fontWeight: 'bold'}}>{currentEmployee}</span></p>
 
       <form onSubmit={handleSubmit} className="pensioner-form">
-        
-        {/* 📷 ፎቶ መጫኛ ክፍል */}
         <div className="image-upload-section">
-          <div className="image-preview-box" onClick={() => fileInputRef.current.click()} style={{ width: '130px', height: '150px' }}>
+          <div className="image-preview-box" onClick={() => fileInputRef.current && fileInputRef.current.click()} style={{ width: '130px', height: '150px' }}>
             {imagePreview ? <img src={imagePreview} alt="Preview" className="preview-img" /> : (
               <div className="upload-placeholder"><span className="upload-icon">📷</span><span>የጡረተኛውን ፎቶ ይጫኑ</span></div>
             )}
@@ -127,7 +125,6 @@ function PensionerRegistration() {
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} style={{ display: 'none' }} />
         </div>
 
-        {/* 🎛️ የፎርም ግሪድ - ከባክኤንድ ቁልፎች (input names) ጋር አንድ ለአንድ የተገጣጠመ */}
         <div className="form-grid">
           <div className="input-group">
             <label>የጡረታ መለያ ቁጥር (Pension ID)</label>
@@ -191,15 +188,12 @@ function PensionerRegistration() {
           </div>
         </div>
 
-        {/* 📊 የስራ ሁኔታ ማሳያ መልዕክት */}
         {status && (
           <p className="status-message" style={{ 
-            padding: '10px', 
-            borderRadius: '4px', 
+            padding: '10px', borderRadius: '4px', 
             backgroundColor: status.includes('❌') || status.includes('⚠️') ? '#fff5f5' : '#f0fff4',
             color: status.includes('❌') || status.includes('⚠️') ? '#e53e3e' : '#38a169',
-            fontWeight: 'bold',
-            border: status.includes('❌') || status.includes('⚠️') ? '1px solid #fed7d7' : '1px solid #c6f6d5',
+            fontWeight: 'bold', border: status.includes('❌') || status.includes('⚠️') ? '1px solid #fed7d7' : '1px solid #c6f6d5',
             textAlign: 'left'
           }}>
             {status}
