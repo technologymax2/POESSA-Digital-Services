@@ -13,9 +13,14 @@ const UserPensionerSchema = new mongoose.Schema(
     bankName: { type: String, required: true },
     bankBranch: { type: String, required: true },
     pensionAmount: { type: Number, required: true },
-    photoUrl: { type: String, required: true }
+    photoUrl: { type: String, required: true },
+
+    // 👤 አዲስ የተጨመሩ የደህንነትና የተጠያቂነት መስኮች (Audit Logs)
+    registeredBy: { type: String, default: "ያልታወቀ ባለሙያ" }, // መረጃውን የመዘገበው ባለሙያ ስም
+    updatedBy: { type: String },                            // መረጃውን ለመጨረሻ ጊዜ ያረመው ባለሙያ ስም
+    lastUpdatedAt: { type: Date }                            // መረጃው የመጨረሻው ማሻሻያ የተደረገበት ሰዓት
   },
-  { timestamps: true }
+  { timestamps: true } // ይህ በራሱ createdAt እና updatedAt ሰዓቶችን ይመዘግባል
 );
 
 // ለይቶ ለማወቅ በዳታቤዙ ላይ "UserPensioner" በሚል ስም እንዲቀመጥ አደረግነው
