@@ -15,13 +15,17 @@ const UserPensionerSchema = new mongoose.Schema(
     pensionAmount: { type: Number, required: true },
     photoUrl: { type: String, required: true },
 
-    // 👤 አዲስ የተጨመሩ የደህንነትና የተጠያቂነት መስኮች (Audit Logs)
-    registeredBy: { type: String, default: "ያልታወቀ ባለሙያ" }, // መረጃውን የመዘገበው ባለሙያ ስም
-    updatedBy: { type: String },                            // መረጃውን ለመጨረሻ ጊዜ ያረመው ባለሙያ ስም
-    lastUpdatedAt: { type: Date }                            // መረጃው የመጨረሻው ማሻሻያ የተደረገበት ሰዓት
+    // ➕ በምስሉ ላይ የጎደሉ እና ወደ ዳታቤዝ እንዲገቡ የተጨመሩ (አዲስ)
+    address: { type: String, default: "" },       // አድራሻ ባዶ ሆኖ ቢመጣ እንዳይዘጋው default ተደርጓል
+    issueDate: { type: String, default: "" },     // የተሰጠበት ቀን
+    expiryDate: { type: String, default: "" },    // የማብቂያ ጊዜ
+
+    // 👤 የደህንነትና የተጠያቂነት መስኮች (Audit Logs)
+    registeredBy: { type: String, default: "ያልታወቀ ባለሙያ" }, 
+    updatedBy: { type: String },                            
+    lastUpdatedAt: { type: Date }                            
   },
-  { timestamps: true } // ይህ በራሱ createdAt እና updatedAt ሰዓቶችን ይመዘግባል
+  { timestamps: true } 
 );
 
-// ለይቶ ለማወቅ በዳታቤዙ ላይ "UserPensioner" በሚል ስም እንዲቀመጥ አደረግነው
 module.exports = mongoose.models.UserPensioner || mongoose.model("UserPensioner", UserPensionerSchema);
