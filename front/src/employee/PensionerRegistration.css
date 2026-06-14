@@ -1,17 +1,158 @@
-/* ከዚህ በላይ ያሉት ቅድም የጻፍናቸው የፎርም CSSዎች ናቸው... */
+/* 📝 የመመዝገቢያ ፎርም ዋና ሳጥን */
+.registration-container {
+  max-width: 100%;
+  margin: 10px auto;
+  padding: 30px;
+  background-color: #111827;
+  color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-sizing: border-box;
+}
 
-/* 💳 መታወቂያ ካርድ ዲዛይን */
+.form-title {
+  text-align: center;
+  color: #f3f4f6;
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+.form-subtitle {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  margin-bottom: 25px;
+}
+
+.pensioner-form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* 📷 የፎቶ መጫኛ ክፍል */
+.image-upload-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.image-preview-box {
+  width: 140px;
+  height: 140px;
+  border: 2px dashed #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  overflow: hidden;
+  background-color: #1f2937;
+  transition: all 0.3s ease;
+}
+
+.image-preview-box:hover {
+  border-color: #60a5fa;
+  background-color: #374151;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 11px;
+  color: #9ca3af;
+  text-align: center;
+  padding: 10px;
+}
+
+.upload-icon {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 🗂️ የፎርም ግሪድ (በኮምፒውተር ላይ 2 ኮለምን ያደርገዋል) */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  font-size: 13px;
+  color: #d1d5db;
+  font-weight: 500;
+}
+
+.input-group input, .input-group select {
+  padding: 12px;
+  background-color: #1f2937;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.3s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input-group input:focus, .input-group select:focus {
+  border-color: #3b82f6;
+}
+
+.status-message {
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fbbf24;
+  margin: 10px 0;
+}
+
+.submit-btn {
+  background-color: #f59e0b;
+  color: #000000;
+  border: none;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.submit-btn:hover {
+  background-color: #d97706;
+}
+
+/* 💳 የ QR ኮድ መታወቂያ ካርድ መያዣ */
 .id-card-wrapper {
   margin-top: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 15px;
+  width: 100%;
 }
 
 .id-card {
-  width: 480px;
-  height: 270px;
+  width: 450px;
+  height: 260px;
   background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
   border: 3px solid #f59e0b;
   border-radius: 12px;
@@ -21,7 +162,7 @@
   flex-direction: column;
   justify-content: space-between;
   box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-  position: relative;
+  box-sizing: border-box;
 }
 
 .id-card-header {
@@ -32,14 +173,14 @@
 
 .id-card-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   color: #f59e0b;
   letter-spacing: 1px;
 }
 
 .id-card-header p {
   margin: 2px 0 0 0;
-  font-size: 11px;
+  font-size: 10px;
   color: #9ca3af;
 }
 
@@ -55,19 +196,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100px;
+  width: 90px;
 }
 
 .id-pensioner-img {
-  width: 90px;
-  height: 100px;
+  width: 80px;
+  height: 90px;
   object-fit: cover;
   border: 2px solid white;
   border-radius: 6px;
 }
 
 .id-num {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: bold;
   color: #f59e0b;
   margin-top: 5px;
@@ -78,7 +219,7 @@
   font-size: 12px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
 .id-details-zone p {
@@ -95,7 +236,7 @@
 }
 
 .qr-label {
-  font-size: 8px;
+  font-size: 7px;
   color: #000;
   font-weight: bold;
   margin-top: 4px;
@@ -121,16 +262,49 @@
   transition: 0.3s;
 }
 
-.print-btn:hover {
-  background-color: #059669;
+/* ==========================================================================
+   📱 ለስልክ ስክሪን ማስተካከያ (Responsive Media Queries)
+   ========================================================================== */
+
+@media (max-width: 600px) {
+  .registration-container {
+    padding: 15px;
+  }
+
+  /* ፎርሙ በስልክ ላይ 1 ኮለምን ብቻ ይሆናል */
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .form-title {
+    font-size: 20px;
+  }
+
+  /* 💳 በስልክ ላይ መታወቂያ ካርዱ ስክሪኑን እንዳይቀድ በ scale ትንሽ እናሳንሰዋለን */
+  .id-card {
+    width: 100%;
+    max-width: 340px;
+    height: auto;
+    min-height: 240px;
+  }
+  
+  .id-card-body {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .id-details-zone {
+    min-width: 140px;
+  }
 }
 
-/* 🖨️ ማተሚያ ሲስተም (ሲታተም ፎርሙን ደብቆ መታወቂያውን ብቻ ማውጫ) */
+/* ==========================================================================
+   🖨️ ለማተሚያ (Print) የተለየ ህግ
+   ========================================================================== */
 @media print {
-  body {
-    background-color: white !important;
-    color: black !important;
-  }
   .no-print {
     display: none !important;
   }
