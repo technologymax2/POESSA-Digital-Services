@@ -2,54 +2,111 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 
-// ✅ የሞዴል መገኛ አድራሻ
 const UserPensioner = require("./models/UserPensioner"); 
 
 const storage = multer.memoryStorage();
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 2 * 1024 * 1024 } // የፎቶ መጠን ከ 2MB እንዳይበልጥ ያደርጋል
+  limits: { fileSize: 2 * 1024 * 1024 } 
 });
 
+// 1. 🔍 የጡረተኛ መረጃ መፈለጊያ መስመር (GET)
+router.get("/search", async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ success: false, message: "እባክዎ መፈለጊያ ቁጥር ያስገቡ!" });
+    }
+
+    const pensioner = await UserPensioner.findOne({
+      $or: [{ faydaNumber: query }, { phone: query }]
+    });
+
+    if (!pensioner) {
+      return res.status(404).json({ success: false, message: "⚠️ በዚህ ቁጥር የተመዘገበ ጡረተኛ አልተገኘም!" });
+    }
+    res.status(200).json({ success: true, data: pensioner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "በሰርቨር ላይ የፍለጋ ስህተት አጋጥሟል!" });
+  }
+});
+
+// 2. 📝 ➕ አዲስ፡ የተሳሳተ መረጃ ማስተካከያ መስመር (PUT)
+router.put("/update/:id", async (req, res) => {
+  try {
+    const { id } = req.params; // የጡረተኛው መለያ (MongoDB _id)
+    const updateData = req.body;
+
+    // በቁጥር መሆን ያለባቸውን መረጃዎች መለወጥ
+    if (updateData.age) updateData.age = Number(updateData.age);
+    if (updateData.pensionAmount) updateData.pensionAmount = Number(updateData.pensionAmount);
+
+    const updatedPensioner = await UserPensioner.findByIdAndUpdate(id, updateData, { new: true });
+
+    if (!updatedPensioner) {
+      return res.status(404).json({ success: false, message: "ጡረተኛው አልተገኘም!" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "🎉 የጡረተኛው መረጃ በተሳካ ሁኔታ ተስተካክሏል!",
+      data: updatedPensioner
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "መረጃውን ማስተካከል አልተቻለም። ሰርቨር ስህተት!" });
+  }
+});
+
+// 3. 🗑️ ➕ አዲስ፡ መረጃ ማጥፊያ መስመር (DELETE)
+router.delete("/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedPensioner = await UserPensioner.findByIdAndDelete(id);
+
+    if (!deletedPensioner) {
+      return res.status(404).json({ success: false, message: "ጡረተኛው አልተገኘም!" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "🗑️ የጡረተኛው መረጃ ከዳታቤዝ ውስጥ ሙሉ በሙሉ ጠፍቷል!"
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "መረጃውን ማጥፋት አልተቻለም። ሰርቨር ስህተት!" });
+  }
+});
+
+// 4. 📥 የጡረተኛ መመዝገቢያ መስመር (POST)
 router.post("/register", upload.single("photo"), async (req, res) => {
   try {
     const {
-      name, tin, phone, age, gender,
-      faydaNumber, poessaBranch, bankName, bankBranch, pensionAmount
+      pensionId, name, tin, phone, age, gender,
+      faydaNumber, poessaBranch, bankName, bankBranch, pensionAmount,
+      address, issueDate, expiryDate 
     } = req.body;
 
-    // 1. ፎቶው መኖሩን ማረጋገጥ
     if (!req.file) {
       return res.status(400).json({ success: false, message: "እባክዎ የጡረተኛውን ፎቶ ይጫኑ!" });
     }
 
-    // 2. ቀድሞ መመዝገቡን ማረጋገጥ
-    const existingPensioner = await UserPensioner.findOne({ faydaNumber });
-    if (existingPensioner) {
+    const existingFayda = await UserPensioner.findOne({ faydaNumber });
+    if (existingFayda) {
       return res.status(400).json({ success: false, message: "⚠️ ይህ የፋይዳ ቁጥር ቀድሞ ተመዝግቧል!" });
     }
 
-    // 3. ፎቶውን ወደ Base64 በመቀየር በቀጥታ በሊንክ መልክ ማዘጋጀት (ImgBB አያስፈልገውም 🚀)
+    const existingId = await UserPensioner.findOne({ pensionerId: pensionId });
+    if (existingId) {
+      return res.status(400).json({ success: false, message: "⚠️ ይህ የጡረታ መለያ ቁጥር ቀድሞ ተመዝግቧል!" });
+    }
+
     const base64Image = req.file.buffer.toString("base64");
     const photoUrl = `data:${req.file.mimetype};base64,${base64Image}`;
 
-    // 4. ልዩ መለያ ቁጥር ማመንጨት
-    const pensionerId = `PENS-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    // 5. ዳታቤዝ ላይ መመዝገብ
     const newPensioner = new UserPensioner({
-      pensionerId,
-      name,
-      tin,
-      phone,
-      age: Number(age),
-      gender,
-      faydaNumber,
-      poessaBranch,
-      bankName,
-      bankBranch,
-      pensionAmount: Number(pensionAmount),
-      photoUrl // ፎቶው ራሱ ዳታቤዝ ውስጥ ይቀመጣል
+      pensionerId: pensionId,
+      name, tin, phone, age: Number(age), gender,
+      faydaNumber, poessaBranch, bankName, bankBranch, pensionAmount: Number(pensionAmount),
+      address, issueDate, expiryDate, photoUrl
     });
 
     await newPensioner.save();
@@ -59,9 +116,7 @@ router.post("/register", upload.single("photo"), async (req, res) => {
       message: "የጡረተኛው መረጃ በዳታቤዝ ውስጥ በቋሚነት ተቀምጧል!",
       data: newPensioner
     });
-
   } catch (error) {
-    console.error("የምዝገባ ሰርቨር ስህተት:", error.message);
     res.status(500).json({ success: false, message: "በሰርቨር ላይ ስህተት አጋጥሟል!" });
   }
 });
