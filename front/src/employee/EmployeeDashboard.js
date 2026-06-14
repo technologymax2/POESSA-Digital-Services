@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import PensionerRegistration from './PensionerRegistration'; // አዲሱን ቅጽ እዚህ ጋ አስገባነው
 import './EmployeeDashboard.css';
 
 const EmployeeDashboard = () => {
@@ -12,28 +13,26 @@ const EmployeeDashboard = () => {
     setLang(prev => (prev === 'am' ? 'en' : 'am'));
   };
 
- 
-
   return (
     <div className="dashboard-page">
       
       <Sidebar 
-  currentLang={lang} 
-  toggleLanguage={toggleLanguage}
-  collapsed={collapsed}
-  setCollapsed={setCollapsed}
-/>
+        currentLang={lang} 
+        toggleLanguage={toggleLanguage}
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+      />
 
       <div className={`main-content ${collapsed ? 'collapsed' : ''}`}>
-        <Header title={lang === 'am' ? "POESSA | ዲጂታል  አገልግሎቶች" : "POESSA | Digital Services"} />
+        <Header title={lang === 'am' ? "POESSA | ዲጂታል አገልግሎቶች" : "POESSA | Digital Services"} />
 
         <main className="dashboard-body">
+          {/* የስታቲስቲክስ ካርዶች */}
           <div className="stats-grid">
             <div className="stat-card">
               <h3>{lang === 'am' ? 'ያለፉ የህይወት ማረጋገጫ' : 'Expired Life Verifications'}</h3>
               <p className="stat-number">23</p>
             </div>
-            {/* የተቀሩት ስታቲስቲክስ በዚሁ መሰረት ይቀያየራሉ */}
             <div className="stat-card">
               <h3>{lang === 'am' ? 'አዲስ የውክልና ጥያቄ' : 'New Delegation Requests'}</h3>
               <p className="stat-number">20</p>
@@ -44,11 +43,16 @@ const EmployeeDashboard = () => {
             </div>
           </div>
 
+          {/* 📝 አዲሱ የጡረተኞች መመዝገቢያ ቅጽ ከነ QR ኮዱ እዚህ ጋ ይቀመጣል */}
+          <div className="registration-section-wrapper">
+            <PensionerRegistration />
+          </div>
+
+          {/* በቅርብ ጊዜ የተረጋገጡ ጡረተኞች ዝርዝር ክፍል */}
           <div className="section-header">
             <h2>{lang === 'am' ? 'በቅርብ ጊዜ የተረጋገጡ ጡረተኞች' : 'Recently Verified Pensioners'}</h2>
           </div>
 
-          
         </main>
       </div>
     </div>
