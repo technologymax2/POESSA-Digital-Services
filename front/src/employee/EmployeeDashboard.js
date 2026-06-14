@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import PensionerRegistration from './PensionerRegistration'; 
+import PensionerRegistration from './PensionerRegistration'; // 📝 መመዝገቢያ ገጽ
+import IdCardGenerationAndSearch from './IdCardGenerationAndSearch'; // 🔍 መታወቂያ እና ፍለጋ ገጽ
 import './EmployeeDashboard.css';
 
 const EmployeeDashboard = () => {
@@ -18,6 +19,10 @@ const EmployeeDashboard = () => {
   const [lang, setLang] = useState('am');
   const [collapsed, setCollapsed] = useState(false);
 
+  // 🔄 የትኛው ገጽ በዳሽቦርዱ መሃል ላይ መታየት እንዳለበት የሚቆጣጠር ስቴት
+  // (ማሳሰቢያ፡ React Router በመጠቀም App.js ላይ <Outlet /> ካደረግከው ይህ ስቴት አያስፈልግም፣ ነገር ግን እዚህ ዳሽቦርድ ላይ ቀጥታ ለመቀየር ይህ በጣም ቀላሉ መንገድ ነው)
+  const [activeSubPage, setActiveSubPage] = useState('registration'); // 'registration' ወይም 'search'
+
   // 📥 ሲስተሙ ሲከፈት የገባውን ሰራተኛ መረጃ ከ localStorage መውሰድ
   useEffect(() => {
     const storedUser = localStorage.getItem('user') || localStorage.getItem('username') || 'የፖኤሳ ሰራተኛ';
@@ -33,8 +38,8 @@ const EmployeeDashboard = () => {
   // 🚪 ከሲስተም መውጫ (Logout) ተግባር
   const handleLogout = () => {
     if (window.confirm(lang === 'am' ? "እርግጠኛ ነዎት ከሲስተሙ መውጣት ይፈልጋሉ?" : "Are you sure you want to logout?")) {
-      localStorage.clear(); // ሁሉንም የተቀመጡ ዳታዎች ማጽዳት
-      navigate('/login');   // ወደ ሎጊን ገጽ መመለስ
+      localStorage.clear();
+      navigate('/login');
     }
   };
 
@@ -51,14 +56,12 @@ const EmployeeDashboard = () => {
         padding: '10px 25px',
         borderBottom: '3px solid #3182ce'
       }}>
-        {/* የግራ ክፍል፡ የሲስተም ስም */}
         <div className="nav-left">
           <h3 style={{ margin: 0, color: '#63b3ed', letterSpacing: '1px', fontSize: '18px' }}>
             POESSA INTERNAL PORTAL
           </h3>
         </div>
 
-        {/* የቀኝ ክፍል፡ የቋንቋ መቀያየሪያ፣ የሰራተኛው ፕሮፋይል እና የLogout አዝራር */}
         <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           
           {/* 🌐 የቋንቋ መቀያየሪያ */}
@@ -69,7 +72,7 @@ const EmployeeDashboard = () => {
             {lang === 'am' ? 'English 🌐' : 'አማርኛ 🌐'}
           </button>
 
-          {/* 👤 የሰራተኛው መረጃ ሳጥን (በ CSS ውስጥ .employee-profile-box ተብሎ የተሰራው) */}
+          {/* 👤 የሰራተኛው መረጃ ሳጥን */}
           <div className="employee-profile-box" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {currentEmployee.profilePic ? (
               <img 
@@ -101,7 +104,7 @@ const EmployeeDashboard = () => {
             </div>
           </div>
 
-          {/* 🚪 የLogout አዝራር (በ CSS ውስጥ .logout-button ተብሎ የተሰራው) */}
+          {/* 🚪 የLogout አዝራር */}
           <button 
             onClick={handleLogout} 
             className="logout-button"
@@ -143,9 +146,57 @@ const EmployeeDashboard = () => {
             </div>
           </div>
 
-          {/* 📝 የጡረተኞች ማኔጅመንት (የተከፋፈለው ታብ ገጽ እዚህ ይገለጣል) */}
-          <div className="registration-section-wrapper">
-            <PensionerRegistration />
+          {/* 🔘 🔗 አዲስ፡ ሁለቱ ገፆች የሚገቡበት ዋና የሊንክ አዝራሮች (Navigation Hub) */}
+          <div className="subpage-navigation-hub no-print" style={{
+            display: 'flex',
+            gap: '20px',
+            margin: '30px 0',
+            justifyContent: 'flex-start'
+          }}>
+            <button 
+              onClick={() => setActiveSubPage('registration')}
+              style={{
+                padding: '14px 28px',
+                fontSize: '15px',
+                fontWeight: 'bold',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                backgroundColor: activeSubPage === 'registration' ? '#2b6cb0' : '#edf2f7',
+                color: activeSubPage === 'registration' ? 'white' : '#2d3748',
+                boxShadow: activeSubPage === 'registration' ? '0 4px 12px rgba(43, 108, 176, 0.3)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              📝 {lang === 'am' ? 'ወደ ጡረተኛ መመዝገቢያ ቅጽ' : 'Go to Registration Form'}
+            </button>
+
+            <button 
+              onClick={() => setActiveSubPage('search')}
+              style={{
+                padding: '14px 28px',
+                fontSize: '15px',
+                fontWeight: 'bold',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                backgroundColor: activeSubPage === 'search' ? '#2b6cb0' : '#edf2f7',
+                color: activeSubPage === 'search' ? 'white' : '#2d3748',
+                boxShadow: activeSubPage === 'search' ? '0 4px 12px rgba(43, 108, 176, 0.3)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              🔍 {lang === 'am' ? 'ወደ መረጃ መፈለጊያ እና መታወቂያ ክፍል' : 'Go to Search & ID Section'}
+            </button>
+          </div>
+
+          {/* 📝 🔍 ሁለቱ ገፆች በተለዋዋጭ ሁኔታ እዚህ ቦታ ላይ ይገባሉ (Dynamic Content Injection) */}
+          <div className="registration-section-wrapper" style={{ backgroundColor: '#fff', padding: '5px', borderRadius: '8px' }}>
+            {activeSubPage === 'registration' ? (
+              <PensionerRegistration />
+            ) : (
+              <IdCardGenerationAndSearch />
+            )}
           </div>
 
           {/* 🕒 በቅርብ ጊዜ የተረጋገጡ ጡረተኞች ዝርዝር ክፍል */}
