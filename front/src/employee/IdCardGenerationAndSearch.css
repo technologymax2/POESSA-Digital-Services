@@ -1,0 +1,389 @@
+/* ==========================================================================
+   🏠 1. የጋራ አቀማመጥ (Main Container & Navigation Tabs)
+   ========================================================================== */
+.id-generation-page-container {
+  padding: 25px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 🔝 Heading Route Navigation Tabs */
+.heading-route-tabs {
+  display: flex;
+  gap: 12px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 15px;
+  margin-bottom: 25px;
+}
+
+.route-btn {
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #edf2f7;
+  color: #2d3748;
+  transition: all 0.2s ease;
+}
+
+.route-btn:hover {
+  background-color: #cbd5e0;
+}
+
+.route-btn.active {
+  background-color: #2b6cb0;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(43, 108, 176, 0.3);
+}
+
+/* ==========================================================================
+   🔍 2. የፍለጋ ክፍል ስታይል (Search Section)
+   ========================================================================== */
+.search-section {
+  background-color: #f7fafc;
+  padding: 25px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.search-section h3 {
+  margin: 0 0 15px 0;
+  color: #1a365d;
+  font-size: 18px;
+}
+
+.search-submit-btn {
+  padding: 12px 28px;
+  background-color: #2b6cb0;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 15px;
+  transition: background-color 0.2s;
+}
+
+.search-submit-btn:hover {
+  background-color: #2c5282;
+}
+
+.status-indicator {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b6cb0;
+  margin: 12px 0 0 0;
+  text-align: left;
+}
+
+/* ==========================================================================
+   📝 3. የማስተካከያ ፎርም ስታይል (Edit Section & Form Grid)
+   ========================================================================== */
+.edit-form-section {
+  padding: 25px;
+  background-color: #fffaf0;
+  border-radius: 8px;
+  border: 1px solid #feebc8;
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.edit-form-section h3 {
+  margin: 0 0 20px 0;
+  color: #dd6b20;
+  font-size: 18px;
+}
+
+.save-btn {
+  padding: 12px 24px;
+  background-color: #38a169;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.save-btn:hover { background-color: #2f855a; }
+
+.cancel-btn {
+  padding: 12px 24px;
+  background-color: #e2e8f0;
+  color: #4a5568;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.cancel-btn:hover { background-color: #cbd5e0; }
+
+/* ==========================================================================
+   🪪 4. የዲጂታል መታወቂያ ካርድ ስታይል (POESSA Digital ID Card)
+   ========================================================================== */
+.id-card-wrapper-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 30px;
+  width: 100%;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 25px;
+}
+
+.edit-action-btn {
+  padding: 10px 20px;
+  background-color: #dd6b20;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.edit-action-btn:hover { background-color: #c05621; }
+
+.delete-action-btn {
+  padding: 10px 20px;
+  background-color: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.delete-action-btn:hover { background-color: #c53030; }
+
+/* 💳 እውነተኛው የመታወቂያ ሳጥን (ID Card Fixed Size) */
+.id-card {
+  width: 480px;
+  height: 290px;
+  background: #ffffff;
+  border: 3px solid #1a365d;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.id-card-header {
+  background-color: #1a365d;
+  color: white;
+  padding: 12px;
+  text-align: center;
+}
+
+.id-card-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+}
+
+.id-card-header p {
+  margin: 3px 0 0 0;
+  font-size: 10px;
+  color: #90cdf4;
+  font-weight: 600;
+}
+
+.id-card-body {
+  display: flex;
+  padding: 15px;
+  flex: 1;
+  gap: 15px;
+  align-items: center;
+  background-color: #fff;
+}
+
+/* 🖼️ የመታወቂያ ፎቶ ዞን */
+.id-photo-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.id-pensioner-img {
+  width: 105px;
+  height: 125px;
+  object-fit: cover;
+  border: 2px solid #cbd5e0;
+  border-radius: 6px;
+  background-color: #edf2f7;
+}
+
+.id-num {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  font-weight: bold;
+  color: #e53e3e;
+  margin: 0;
+  background-color: #fff5f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #fed7d7;
+}
+
+/* 📝 ዝርዝር መረጃ ማሳያ ዞን */
+.id-details-zone {
+  flex: 1;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.id-details-zone p {
+  margin: 0;
+  font-size: 12px;
+  color: #2d3748;
+  line-height: 1.4;
+}
+
+.id-details-zone strong {
+  color: #4a5568;
+  display: inline-block;
+  width: 90px;
+}
+
+/* 📱 የ QR ኮድ ዞን */
+.id-qr-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+.qr-label {
+  font-size: 8px;
+  font-weight: bold;
+  color: #718096;
+  letter-spacing: 0.5px;
+}
+
+.id-card-footer {
+  background-color: #edf2f7;
+  padding: 8px;
+  text-align: center;
+  border-top: 1px solid #e2e8f0;
+}
+
+.id-card-footer p {
+  margin: 0;
+  font-size: 9px;
+  color: #4a5568;
+  font-weight: 600;
+}
+
+/* ማተሚያ ቁልፍ */
+.print-btn {
+  margin-top: 25px;
+  padding: 14px 40px;
+  background-color: #1a365d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(26, 54, 93, 0.2);
+  transition: all 0.2s;
+}
+
+.print-btn:hover {
+  background-color: #2a4365;
+}
+
+/* ==========================================================================
+   📱 5. ለሞባይል ስክሪን የተደረገ ልዩ ማስተካከያ (Mobile Responsiveness)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .id-generation-page-container {
+    padding: 15px;
+  }
+
+  .heading-route-tabs {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .search-section form {
+    flex-direction: column;
+  }
+
+  /* 📱 በሞባይል ስክሪን መታወቂያው እንዳይቆራረጥ በትንሹ እንዲቀንስ (Scale) ማድረጊያ */
+  .id-card {
+    transform: scale(0.85);
+    margin: -20px 0; /* የscale ቅነሳውን ክፍተት ለማስተካከል */
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .id-card {
+    transform: scale(0.70);
+    margin: -40px 0;
+  }
+}
+
+/* ==========================================================================
+   🖨️ 6. የህትመት ማስተካከያ (Pure Print Optimization)
+   ========================================================================== */
+@media print {
+  /* መታወቂያው ሲታተም ከእሱ ውጭ ያሉትን ነገሮች (ናቭባር፣ ፎርም፣ ቁልፎች) በሙሉ ደብቅ */
+  .no-print, 
+  .heading-route-tabs, 
+  .search-section, 
+  .admin-actions, 
+  .edit-form-section,
+  .print-btn,
+  header,
+  footer,
+  .employee-sidebar {
+    display: none !important;
+  }
+  
+  html, body {
+    background-color: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* መታወቂያውን በህትመት ወረቀቱ መሃል ላይ በትክክል ማስቀመጥ */
+  .id-generation-page-container, 
+  .id-card-wrapper-section {
+    background: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    height: 100vh;
+  }
+
+  .id-card {
+    box-shadow: none !important;
+    border: 2.5px solid #1a365d !important;
+    transform: scale(1) !important; /* ሲታተም በትክክለኛው መጠን እንዲሆን */
+    margin: 0 !important;
+    page-break-inside: avoid;
+  }
+}
