@@ -1,18 +1,26 @@
 import React, { useState, useRef } from 'react';
-import { QRCodeSVG } from 'qrcode.react'; // QR ኮድ ለመፍጠር
+import { QRCodeSVG } from 'qrcode.react';
 import './PensionerRegistration.css';
 
 function PensionerRegistration() {
   const [formData, setFormData] = useState({
-    name: '', tin: '', phone: '', age: '', gender: '',
-    faydaNumber: '', poessaBranch: '', bankName: '', bankBranch: '', pensionAmount: ''
+    pensionId: '', name: '', tin: '', phone: '', age: '', gender: '',
+    faydaNumber: '', poessaBranch: '', bankName: '', bankBranch: '', pensionAmount: '',
+    address: '', issueDate: '', expiryDate: '' 
   });
 
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [status, setStatus] = useState('');
-  const [registeredData, setRegisteredData] = useState(null); // ለተመዘገበው ሰው መታወቂያ ማሳያ
+  const [loading, setLoading] = useState(false);
+  const [registeredData, setRegisteredData] = useState(null); 
   const fileInputRef = useRef(null);
+
+  // 🔍 የፍለጋ እና ማስተካከያ ስቴቶች
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchStatus, setSearchStatus] = useState('');
+  const [isEditing, setIsEditing] = useState(false); // ➕ አዲስ፡ ለማስተካከያ ሞድ ማግነጫ
+  const [editData, setEditData] = useState({}); // ➕ አዲስ፡ የሚታረመውን ዳታ መያዣ
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,18 +30,124 @@ function PensionerRegistration() {
     setFormData({ ...formData, [name]: value });
   };
 
+  // ➕ አዲስ፡ የማስተካከያ ሳጥን ለውጥ መቆጣጠሪያ
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditData({ ...editData, [name]: value });
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setStatus('⚠️ የፎቶው መጠን ከ 2MB መብለጥ የለበትም!');
+        return;
+      }
+      setStatus('');
       setImage(file);
       setImagePreview(URL.createObjectURL(file));
     }
   };
 
-  // 🔥 ሙሉ በሙሉ የተስተካከለውና መረጃን ወደ ዳታቤዝ የሚልከው ተግባር
+  // 🔍 መረጃ መፈለግ
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery) {
+      setSearchStatus('⚠️ እባክዎ መፈለጊያ ቁጥር ያስገቡ!');
+      return;
+    }
+
+    setSearchStatus('በመፈለግ ላይ...');
+    setRegisteredData(null);
+    setIsEditing(false);
+
+    try {
+      const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${searchQuery}`);
+      const result = await response.json();
+
+      if (result.success) {
+        setRegisteredData({
+          _id: result.data._id, // የዳታቤዝ መለያ ቁጥር
+          pensionerId: result.data.pensionerId,
+          name: result.data.name,
+          faydaNumber: result.data.faydaNumber,
+          poessaBranch: result.data.poessaBranch,
+          bankName: result.data.bankName,
+          bankBranch: result.data.bankBranch,
+          tin: result.data.tin,
+          age: result.data.age,
+          gender: result.data.gender,
+          pensionAmount: result.data.pensionAmount,
+          phone: result.data.phone,
+          address: result.data.address,
+          issueDate: result.data.issueDate,
+          expiryDate: result.data.expiryDate,
+          imageSrc: result.data.photoUrl 
+        });
+        setEditData(result.data); // የተገኘውን መረጃ ለማስተካከያ ዝግጁ ማድረግ
+        setSearchStatus('🎉 የጡረተኛው መረጃ ተገኝቷል!');
+      } else {
+        setSearchStatus(`❌ ${result.message}`);
+      }
+    } catch (err) {
+      setSearchStatus('❌ የፍለጋ ስህተት፡ ከሰርቨር ጋር መገናኘት አልተቻለም።');
+    }
+  };
+
+  // 📝 ➕ አዲስ፡ የተስተካከለውን መረጃ ወደ ሰርቨር መላክ (Update)
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setSearchStatus('መረጃው እየታረመ ነው...');
+
+    try {
+      const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/update/${registeredData._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setRegisteredData({ ...registeredData, ...result.data, imageSrc: result.data.photoUrl });
+        setIsEditing(false);
+        setSearchStatus(`🎉 ${result.message}`);
+      } else {
+        setSearchStatus(`❌ ስህተት፡ ${result.message}`);
+      }
+    } catch (err) {
+      setSearchStatus('❌ ስህተት፡ ማስተካከል አልተቻለም።');
+    }
+  };
+
+  // 🗑️ ➕ አዲስ፡ መረጃን ከዳታቤዝ ማጥፋት (Delete)
+  const handleDelete = async () => {
+    if (!window.confirm("🚨 ይህንን የጡረተኛ መረጃ ከዳታቤዝ ውስጥ ለዘላለም ማጥፋት ይፈልጋሉ?")) return;
+
+    setSearchStatus('መረጃው እየጠፋ ነው...');
+
+    try {
+      const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/delete/${registeredData._id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setRegisteredData(null);
+        setEditData({});
+        setSearchQuery('');
+        setSearchStatus(`🗑️ ${result.message}`);
+      } else {
+        setSearchStatus(`❌ ስህተት፡ ${result.message}`);
+      }
+    } catch (err) {
+      setSearchStatus('❌ ስህተት፡ ማጥፋት አልተቻለም።');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (formData.faydaNumber.length !== 16) {
       setStatus('⚠️ እባክዎ ትክክለኛ የፋይዳ ቁጥር (16 ዲጂት) ያስገቡ!');
       return;
@@ -43,44 +157,48 @@ function PensionerRegistration() {
       return;
     }
 
-    setStatus('የጡረተኛው መረጃ እና ፎቶ ወደ Render ሰርቨር እና MongoDB እየተላከ ነው...');
+    setStatus('የጡረተኛው መረጃ እና ፎቶ ወደ ዳታቤዝ እየተላከ ነው...');
+    setLoading(true);
 
-    // 📦 ፎቶ እና ጽሑፎችን በአንድ ላይ ለማስተላለፍ FormData ማዘጋጀት
     const dataToSend = new FormData();
-    dataToSend.append('photo', image); // በባክኤንድ upload.single('photo') የሚለውን ስም ይይዛል
-    
-    // ሁሉንም የጽሑፍ መረጃዎች መጫን
+    dataToSend.append('photo', image);
     Object.keys(formData).forEach(key => {
       dataToSend.append(key, formData[key]);
     });
 
     try {
-      // 🌐 የሬንደር ሰርቨርህን አዲሱን የጡረተኞች መመዝገቢያ ኤፒአይ መጥራት
       const response = await fetch('https://poessa-digital-services-1.onrender.com/api/pensioners/register', {
         method: 'POST',
-        body: dataToSend, // Content-Type በራሱ በFormData ይተካላል
+        body: dataToSend,
       });
 
       const result = await response.json();
 
       if (result.success) {
-        // ሰርቨሩ በዳታቤዝ መዝግቦ የመለሰልንን እውነተኛ መረጃ ለመታወቂያው መስጠት
         setRegisteredData({
+          _id: result.data._id,
           pensionerId: result.data.pensionerId,
           name: result.data.name,
           faydaNumber: result.data.faydaNumber,
           poessaBranch: result.data.poessaBranch,
           bankName: result.data.bankName,
+          bankBranch: result.data.bankBranch,
+          tin: result.data.tin,
+          age: result.data.age,
+          gender: result.data.gender,
           pensionAmount: result.data.pensionAmount,
-          imageSrc: result.data.photoUrl // ከImgBB የተገኘው ቋሚ የፎቶ ሊንክ
+          phone: result.data.phone,
+          address: result.data.address,
+          issueDate: result.data.issueDate,
+          expiryDate: result.data.expiryDate,
+          imageSrc: result.data.photoUrl 
         });
 
         setStatus(`🎉 ${result.message}`);
-        
-        // ፎርሙን ማጽዳት (ሰራተኛው ቀጣይ ሰው መመዝገብ እንዲችል)
         setFormData({
-          name: '', tin: '', phone: '', age: '', gender: '',
-          faydaNumber: '', poessaBranch: '', bankName: '', bankBranch: '', pensionAmount: ''
+          pensionId: '', name: '', tin: '', phone: '', age: '', gender: '',
+          faydaNumber: '', poessaBranch: '', bankName: '', bankBranch: '', pensionAmount: '',
+          address: '', issueDate: '', expiryDate: ''
         });
         setImage(null);
         setImagePreview(null);
@@ -88,71 +206,124 @@ function PensionerRegistration() {
         setStatus(`❌ ስህተት፡ ${result.message}`);
       }
     } catch (err) {
-      console.error("የግንኙነት ስህተት፡", err);
-      setStatus('❌ ስህተት፡ ከ Render ሰርቨር ጋር መገናኘት አልተቻለም። ሰርቨሩ መነሳቱን ያረጋግጡ።');
+      setStatus('❌ ስህተት፡ ከሰርቨር ጋር መገናኘት አልተቻለም።');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // መታወቂያውን ብቻ ለይቶ ለመፕሪንት (ለማተም)
   const handlePrint = () => {
     window.print();
   };
 
   return (
     <div className="registration-container">
-      <div className="no-print">
-        <h2 className="form-title">POESSA የጡረተኞች ምዝገባ ቅጽ</h2>
-        <p className="form-subtitle">የሰራተኞች መመዝገቢያ ዴስክ (የQR መታወቂያ ማውጫ ጨምሮ)</p>
-
-        <form onSubmit={handleSubmit} className="pensioner-form">
-          {/* የፎቶ መጫኛ ክፍል */}
-          <div className="image-upload-section">
-            <div className="image-preview-box" onClick={() => fileInputRef.current.click()}>
-              {imagePreview ? (
-                <img src={imagePreview} alt="Preview" className="preview-img" />
-              ) : (
-                <div className="upload-placeholder">
-                  <span className="upload-icon">📷</span>
-                  <span>የጡረተኛውን ፎቶ እዚህ ይጫኑ</span>
-                </div>
-              )}
-            </div>
-            <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} style={{ display: 'none' }} />
-          </div>
-
-          {/* የፎርም ፊልዶች */}
-          <div className="form-grid">
-            <div className="input-group"><label>ሙሉ ስም (Name)</label><input type="text" name="name" value={formData.name} onChange={handleChange} required /></div>
-            <div className="input-group"><label>የፋይዳ ቁጥር (16-Digit Fayda No)</label><input type="text" name="faydaNumber" value={formData.faydaNumber} onChange={handleChange} placeholder="16 ዲጂት ቁጥር" required /></div>
-            <div className="input-group"><label>የግብር ከፋይ መለያ (TIN)</label><input type="text" name="tin" value={formData.tin} onChange={handleChange} required /></div>
-            <div className="input-group"><label>ስልክ ቁጥር (Phone)</label><input type="tel" name="phone" value={formData.phone} onChange={handleChange} required /></div>
-            <div className="input-group"><label>ዕድሜ (Age)</label><input type="number" name="age" value={formData.age} onChange={handleChange} required /></div>
-            <div className="input-group">
-              <label>ጾታ (Gender)</label>
-              <select name="gender" value={formData.gender} onChange={handleChange} required>
-                <option value="">ይምረጡ</option>
-                <option value="Male">ወንድ (Male)</option>
-                <option value="Female">ሴት (Female)</option>
-              </select>
-            </div>
-            <div className="input-group"><label>የፖኤሳ ቅርንጫፍ (POESSA Branch)</label><input type="text" name="poessaBranch" value={formData.poessaBranch} onChange={handleChange} required /></div>
-            <div className="input-group"><label>የባንክ ስም (Bank Name)</label><input type="text" name="bankName" value={formData.bankName} onChange={handleChange} required /></div>
-            <div className="input-group"><label>የባንክ ቅርንጫፍ (Bank Branch)</label><input type="text" name="bankBranch" value={formData.bankBranch} onChange={handleChange} required /></div>
-            <div className="input-group"><label>የጡረታ አበል መጠን (Pension Amount)</label><input type="number" name="pensionAmount" value={formData.pensionAmount} onChange={handleChange} required /></div>
-          </div>
-
-          {status && <p className="status-message">{status}</p>}
-          <button type="submit" className="submit-btn">የጡረተኛውን መረጃ መዝግብ</button>
+      
+      {/* 🔍 የጡረተኛ መረጃ ፈልጎ ማውጫ ክፍል */}
+      <div className="search-section no-print" style={{ marginBottom: '30px', padding: '20px', backgroundColor: '#f0f4f8', borderRadius: '8px', border: '1px solid #d1d9e6' }}>
+        <h3 style={{ margin: '0 0 10px 0', color: '#1a365d' }}>🔍 የጡረተኛ መረጃ ማኔጅመንት (መፈለጊያ፣ ማስተካከያ እና ማጥፊያ)</h3>
+        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px' }}>
+          <input 
+            type="text" 
+            placeholder="የፋይዳ ቁጥር ወይም ስልክ ቁጥር ያስገቡ..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e0' }}
+          />
+          <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#2b6cb0', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>ፈልግ</button>
         </form>
+        {searchStatus && <p style={{ fontSize: '14px', marginTop: '10px', fontWeight: '500', color: '#2b6cb0' }}>{searchStatus}</p>}
       </div>
 
-      {/* 💳 የ QR ኮድ መታወቂያ卡 (የሚታየው ምዝገባ ሲጠናቀቅ ብቻ ነው) */}
+      {/* 📝 ➕ አዲስ፡ የመረጃ ማስተካከያ ፎርም (የሚታየው ሰራተኛው "አርም" ሲጫን ብቻ ነው) */}
+      {isEditing && (
+        <div className="edit-form-section no-print" style={{ padding: '20px', backgroundColor: '#fffaf0', borderRadius: '8px', border: '1px solid #feebc8', marginBottom: '30px' }}>
+          <h3 style={{ color: '#dd6b20', marginTop: 0 }}>📝 የተሳሳተ መረጃ ማስተካከያ ፎርም</h3>
+          <form onSubmit={handleUpdate} className="pensioner-form">
+            <div className="form-grid">
+              <div className="input-group"><label>ስም</label><input type="text" name="name" value={editData.name || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>ስልክ ቁጥር</label><input type="tel" name="phone" value={editData.phone || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>አድራሻ</label><input type="text" name="address" value={editData.address || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>የፖኤሳ ቅርንጫፍ</label><input type="text" name="poessaBranch" value={editData.poessaBranch || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>የባንክ ስም</label><input type="text" name="bankName" value={editData.bankName || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>የባንክ ቅርንጫፍ</label><input type="text" name="bankBranch" value={editData.bankBranch || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>የጡረታ አበል መጠን</label><input type="number" name="pensionAmount" value={editData.pensionAmount || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>የማብቂያ ጊዜ</label><input type="date" name="expiryDate" value={editData.expiryDate || ''} onChange={handleEditChange} required /></div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+              <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#38a169', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>ለውጦችን አስቀምጥ (Save)</button>
+              <button type="button" onClick={() => setIsEditing(false)} style={{ padding: '10px 20px', backgroundColor: '#e5e7eb', color: 'black', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>አንሳ (Cancel)</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* የምዝገባ ቅጽ (የድሮው) */}
+      {!isEditing && (
+        <div className="no-print">
+          <h2 className="form-title">POESSA የጡረተኞች ምዝገባ ቅጽ</h2>
+          <p className="form-subtitle">የሰራተኞች መመዝገቢያ ዴስክ (የQR መታወቂያ ማውጫ ጨምሮ)</p>
+
+          <form onSubmit={handleSubmit} className="pensioner-form">
+            <div className="image-upload-section">
+              <div className="image-preview-box" onClick={() => fileInputRef.current.click()}>
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Preview" className="preview-img" />
+                ) : (
+                  <div className="upload-placeholder">
+                    <span className="upload-icon">📷</span>
+                    <span>የጡረተኛውን ፎቶ እዚህ ይጫኑ</span>
+                  </div>
+                )}
+              </div>
+              <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} style={{ display: 'none' }} />
+            </div>
+
+            <div className="form-grid">
+              <div className="input-group"><label>የጡረታ መለያ ቁጥር (Pension ID)</label><input type="text" name="pensionId" value={formData.pensionId} onChange={handleChange} placeholder="ምሳሌ፡ PENS/1234" required /></div>
+              <div className="input-group"><label>ሙሉ ስም (Name)</label><input type="text" name="name" value={formData.name} onChange={handleChange} required /></div>
+              <div className="input-group"><label>የፋይዳ ቁጥር (16-Digit Fayda No)</label><input type="text" name="faydaNumber" value={formData.faydaNumber} onChange={handleChange} placeholder="16 ዲጂት ቁጥር" required /></div>
+              <div className="input-group"><label>የግብር ከፋይ መለያ (TIN)</label><input type="text" name="tin" value={formData.tin} onChange={handleChange} required /></div>
+              <div className="input-group"><label>ስልክ ቁጥር (Phone)</label><input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="09..." required /></div>
+              <div className="input-group"><label>ዕድሜ (Age)</label><input type="number" name="age" value={formData.age} onChange={handleChange} required /></div>
+              <div className="input-group">
+                <label>ጾታ (Gender)</label>
+                <select name="gender" value={formData.gender} onChange={handleChange} required>
+                  <option value="">ይምረጡ</option>
+                  <option value="Male">ወንድ (Male)</option>
+                  <option value="Female">ሴት (Female)</option>
+                </select>
+              </div>
+              <div className="input-group"><label>አድራሻ (Address)</label><input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="ክፍለ ከተማ፣ ወረዳ..." required /></div>
+              <div className="input-group"><label>የተሰጠበት ቀን (Issue Date)</label><input type="date" name="issueDate" value={formData.issueDate} onChange={handleChange} required /></div>
+              <div className="input-group"><label>የማብቂያ ጊዜ (Expiry Date)</label><input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} required /></div>
+              <div className="input-group"><label>የፖኤሳ ቅርንጫፍ (POESSA Branch)</label><input type="text" name="poessaBranch" value={formData.poessaBranch} onChange={handleChange} required /></div>
+              <div className="input-group"><label>የባንክ ስም (Bank Name)</label><input type="text" name="bankName" value={formData.bankName} onChange={handleChange} required /></div>
+              <div className="input-group"><label>የባንክ ቅርንጫፍ (Bank Branch)</label><input type="text" name="bankBranch" value={formData.bankBranch} onChange={handleChange} required /></div>
+              <div className="input-group"><label>የጡረታ አበል መጠን (Pension Amount)</label><input type="number" name="pensionAmount" value={formData.pensionAmount} onChange={handleChange} required /></div>
+            </div>
+
+            {status && <p className="status-message">{status}</p>}
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading ? 'እባክዎ ይጠብቁ፣ እየተመዘገበ ነው...' : 'የጡረተኛውን መረጃ መዝግብ'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* 💳 የ QR ኮድ መታወቂያ ካርድ ማሳያ እና የማስተዳደሪያ አዝራሮች */}
       {registeredData && (
         <div className="id-card-wrapper">
+          {/* ➕ አዲስ፡ ሰራተኛው መረጃውን እንዲያርም ወይም እንዲያጠፋ የሚረዱ አዝራሮች */}
+          <div className="admin-actions no-print" style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginBottom: '20px' }}>
+            <button onClick={() => setIsEditing(true)} style={{ padding: '10px 20px', backgroundColor: '#dd6b20', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>📝 መረጃውን አርም (Edit)</button>
+            <button onClick={handleDelete} style={{ padding: '10px 20px', backgroundColor: '#e53e3e', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>🗑️ ሙሉ በሙሉ አጥፋ (Delete)</button>
+          </div>
+
           <div className="id-card" id="pensioner-id-card">
             <div className="id-card-header">
               <h3>POESSA DIGITAL ID</h3>
-              <p>የጡረተኞች የህይወት ማረጋገጫ ሲስተም</p>
+              <p>የጡረተኞች የህይវត្ត ማረጋገጫ ሲስተም</p>
             </div>
             
             <div className="id-card-body">
@@ -164,9 +335,11 @@ function PensionerRegistration() {
               <div className="id-details-zone">
                 <p><strong>ስም:</strong> {registeredData.name}</p>
                 <p><strong>FAYDA No:</strong> {registeredData.faydaNumber}</p>
+                <p><strong>ስልክ ቁጥር:</strong> {registeredData.phone}</p>
+                <p><strong>አድራሻ:</strong> {registeredData.address}</p>
                 <p><strong>ቅርንጫፍ:</strong> {registeredData.poessaBranch}</p>
-                <p><strong>ባንክ:</strong> {registeredData.bankName}</p>
-                <p><strong>አበል:</strong> {registeredData.pensionAmount} ብር</p>
+                <p style={{fontSize: '11px', marginTop: '5px'}}><strong>የተሰጠበት ቀን:</strong> {registeredData.issueDate}</p>
+                <p style={{fontSize: '11px', color: 'red'}}><strong>የማብቂያ ጊዜ:</strong> {registeredData.expiryDate}</p>
               </div>
 
               <div className="id-qr-zone">
