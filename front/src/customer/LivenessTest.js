@@ -26,7 +26,7 @@ function LivenessTest() {
     setStatus("ሞዴሎች ከ Vercel ላይ እየተጫኑ ነው...");
 
     // በ Vercel ላይ ካለው የ public/models ፎልደር ጋር ፍጹም ማገናኛ
-    const modelPath = window.location.origin + '/models';
+    const modelPath = '/models';
 
     Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(modelPath),
