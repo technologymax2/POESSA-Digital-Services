@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require("multer");
 const axios = require("axios");
 
-// 🔄 እዚህ ጋር አዲሱን የፋይል ስም እና የሞዴል ስም በትክክል ተካነው
+// ✅ ትክክለኛው የሞዴል መገኛ አድራሻ (models/ ፎልደር ውስጥ)
 const UserPensioner = require("./models/UserPensioner"); 
 
 const storage = multer.memoryStorage();
@@ -20,7 +20,7 @@ router.post("/register", upload.single("photo"), async (req, res) => {
       return res.status(400).json({ success: false, message: "እባክዎ የጡረተኛውን ፎቶ ይጫኑ!" });
     }
 
-    // 🔄 እዚህም ጋ በUserPensioner እንፈልገዋለን
+    // በUserPensioner ሞዴል መፈለግ
     const existingPensioner = await UserPensioner.findOne({ faydaNumber });
     if (existingPensioner) {
       return res.status(400).json({ success: false, message: "⚠️ ይህ የፋይዳ ቁጥር ቀድሞ ተመዝግቧል!" });
@@ -36,7 +36,6 @@ router.post("/register", upload.single("photo"), async (req, res) => {
 
     const pensionerId = `PENS-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    // 🔄 እዚህም ጋ በአዲሱ ሞዴል ስም ሴቭ እናደርገዋለን
     const newPensioner = new UserPensioner({
       pensionerId, name, tin, phone, age, gender,
       faydaNumber, poessaBranch, bankName, bankBranch, pensionAmount,
