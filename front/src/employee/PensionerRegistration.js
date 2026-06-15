@@ -5,20 +5,9 @@ function PensionerRegistration() {
   const [currentEmployee, setCurrentEmployee] = useState('የፖኤሳ ሰራተኛ');
   
   const [formData, setFormData] = useState({
-    pensionerId: '',    
-    name: '', 
-    tin: '', 
-    phone: '', 
-    age: '', 
-    gender: '',
-    faydaNumber: '', 
-    poessaBranch: '', 
-    bankName: '', 
-    bankBranch: '', 
-    pensionAmount: '',
-    address: '', 
-    issueDate: '', 
-    expiryDate: '' 
+    pensionerId: '', name: '', tin: '', phone: '', age: '', gender: '',
+    faydaNumber: '', poessaBranch: '', bankName: '', bankBranch: '', pensionAmount: '',
+    address: '', issueDate: '', expiryDate: '' 
   });
 
   const [image, setImage] = useState(null);
@@ -28,16 +17,15 @@ function PensionerRegistration() {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user') || localStorage.getItem('username') || 'የፖኤሳ ሰራተኛ';
-    setCurrentEmployee(storedUser);
+    // ከLocalStorage ትክክለኛውን ስም ብቻ እንዲወስድ ይደረጋል
+    const storedName = localStorage.getItem('fullName') || localStorage.getItem('username');
+    if (storedName) setCurrentEmployee(storedName);
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'faydaNumber') {
-      if (value.length > 16 || (value && !/^\d+$/.test(value))) return;
-    }
-    setFormData({ ...formData, [name]: value });
+    if (name === 'faydaNumber' && value.length > 16) return;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleImageChange = (e) => {
@@ -47,40 +35,32 @@ function PensionerRegistration() {
         setStatus('⚠️ የፎቶው መጠን ከ 2MB መብለጥ የለበትም!');
         return;
       }
-      setStatus('');
       setImage(file);
       setImagePreview(URL.createObjectURL(file));
+      setStatus('');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const activeEmployee = localStorage.getItem('user') || localStorage.getItem('username') || currentEmployee;
-
     if (formData.faydaNumber.length !== 16) {
       setStatus('⚠️ እባክዎ ትክክለኛ የፋይዳ ቁጥር (16 ዲጂት) ያስገቡ!');
       return;
     }
     if (!image) {
-      setStatus('⚠️ እባክዎ የጡረተኛውን ማነጻጸሪያ ፎቶ ይጫኑ!');
+      setStatus('⚠️ እባክዎ የጡረተኛውን ፎቶ ይጫኑ!');
       return;
     }
 
-    setStatus('⏳ መረጃው ወደ ሰርቨር እየተላከ ነው...');
     setLoading(true);
+    setStatus('⏳ መረጃው ወደ ሰርቨር እየተላከ ነው...');
 
     const dataToSend = new FormData();
     dataToSend.append('photo', image); 
-    dataToSend.append('employeeName', activeEmployee); 
+    dataToSend.append('employeeName', currentEmployee); 
     
-    // 🚨 የቁጥር መረጃዎችን NaN እንዳይሆኑ ጥበቃ በማድረግ መጫን
     Object.keys(formData).forEach(key => {
-      if (key === 'age' || key === 'pensionAmount') {
-        dataToSend.append(key, formData[key] ? Number(formData[key]) : 0);
-      } else {
-        dataToSend.append(key, formData[key] || "");
-      }
+      dataToSend.append(key, formData[key]);
     });
 
     try {
@@ -88,124 +68,58 @@ function PensionerRegistration() {
         method: 'POST',
         body: dataToSend, 
       });
-      
       const result = await response.json();
       
       if (result.success) {
         setStatus(`🎉 ${result.message}`);
-        setFormData({
-          pensionerId: '', name: '', tin: '', phone: '', age: '', gender: '',
-          faydaNumber: '', poessaBranch: '', bankName: '', bankBranch: '', pensionAmount: '',
-          address: '', issueDate: '', expiryDate: ''
-        });
-        setImage(null);
-        setImagePreview(null);
+        setFormData({ pensionerId: '', name: '', tin: '', phone: '', age: '', gender: '', faydaNumber: '', poessaBranch: '', bankName: '', bankBranch: '', pensionAmount: '', address: '', issueDate: '', expiryDate: '' });
+        setImage(null); setImagePreview(null);
       } else {
         setStatus(`❌ ስህተት፡ ${result.message}`);
       }
     } catch (err) {
-      setStatus(`❌ ከሰርቨር ጋር መገናኘት አልተቻለም። ዝርዝር፡ ${err.message}`);
+      setStatus(`❌ ከሰርቨር ጋር መገናኘት አልተቻለም።`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="registration-container no-print" style={{ boxShadow: 'none', padding: '0' }}>
-      <h2 className="form-title">POESSA የጡረተኞች ምዝገባ ቅጽ</h2>
-      <p className="form-subtitle">የሰራተኞች መመዝገቢያ ዴስክ | ፈጻሚ፡ <span style={{color: '#2b6cb0', fontWeight: 'bold'}}>{currentEmployee}</span></p>
+    <div className="pr-reg-container">
+      <h2 className="pr-form-title">POESSA የጡረተኞች ምዝገባ</h2>
+      <p className="pr-form-subtitle">ፈጻሚ ባለሙያ: <strong>{currentEmployee}</strong></p>
 
-      <form onSubmit={handleSubmit} className="pensioner-form">
-        <div className="image-upload-section">
-          <div className="image-preview-box" onClick={() => fileInputRef.current && fileInputRef.current.click()} style={{ width: '130px', height: '150px' }}>
-            {imagePreview ? <img src={imagePreview} alt="Preview" className="preview-img" /> : (
-              <div className="upload-placeholder"><span className="upload-icon">📷</span><span>የጡረተኛውን ፎቶ ይጫኑ</span></div>
-            )}
+      <form onSubmit={handleSubmit} className="pr-main-form">
+        <div className="pr-image-section">
+          <div className="pr-image-box" onClick={() => fileInputRef.current?.click()}>
+            {imagePreview ? <img src={imagePreview} alt="Preview" className="pr-preview-img" /> : 
+              <div className="pr-placeholder">📷 ፎቶ ይምረጡ</div>}
           </div>
-          <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} style={{ display: 'none' }} />
+          <input type="file" ref={fileInputRef} onChange={handleImageChange} style={{ display: 'none' }} />
         </div>
 
-        <div className="form-grid">
-          <div className="input-group">
-            <label>የጡረታ መለያ ቁጥር (Pension ID)</label>
-            <input type="text" name="pensionerId" value={formData.pensionerId} onChange={handleChange} required />
-          </div>
-          <div className="input-group">
-            <label>ሙሉ ስም (Name)</label>
-            <input type="text" name="name" value={formData.name} onChange={handleChange} required />
-          </div>
-          <div className="input-group">
-            <label>የፋይዳ ቁጥር (16-Digit Fayda No)</label>
-            <input type="text" name="faydaNumber" value={formData.faydaNumber} onChange={handleChange} required />
-          </div>
-          <div className="input-group">
-            <label>የግብር ከፋይ መለያ (TIN)</label>
-            <input type="text" name="tin" value={formData.tin} onChange={handleChange} required />
-          </div>
-          <div className="input-group">
-            <label>ስልክ ቁጥር (Phone)</label>
-            <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required />
-          </div>
-          <div className="input-group">
-            <label>ዕድሜ (Age)</label>
-            <input type="number" name="age" value={formData.age} onChange={handleChange} required />
-          </div>
-          <div className="input-group">
-            <label>ጾታ (Gender)</label>
-            <select name="gender" value={formData.gender} onChange={handleChange} required>
-              <option value="">ይምረጡ</option>
-              <option value="Male">ወንድ (Male)</option>
-              <option value="Female">ሴት (Female)</option>
-            </select>
-          </div>
-          <div className="input-group">
-            <label>አድራሻ (Address)</label>
-            <input type="text" name="address" value={formData.address} onChange={handleChange} required />
-          </div>
-          <div className="input-group">
-            <label>የተሰጠበት ቀን</label>
-            <input type="date" name="issueDate" value={formData.issueDate} onChange={handleChange} required />
-          </div>
-          <div className="input-group">
-            <label>የማብቂያ ጊዜ</label>
-            <input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} required />
-          </div>
-          <div className="input-group">
-            <label>የፖኤሳ ቅርንጫፍ</label>
-            <input type="text" name="poessaBranch" value={formData.poessaBranch} onChange={handleChange} required />
-          </div>
-          <div className="input-group">
-            <label>የባንክ ስም</label>
-            <input type="text" name="bankName" value={formData.bankName} onChange={handleChange} required />
-          </div>
-          <div className="input-group">
-            <label>የባንክ ቅርንጫፍ</label>
-            <input type="text" name="bankBranch" value={formData.bankBranch} onChange={handleChange} required />
-          </div>
-          <div className="input-group">
-            <label>የጡረታ አበል መጠን</label>
-            <input type="number" name="pensionAmount" value={formData.pensionAmount} onChange={handleChange} required />
-          </div>
+        <div className="pr-grid">
+          {/* ለሁሉም input-ዎች ተመሳሳይ የሆነ className መጠቀም */}
+          <div className="pr-input-group"><label>Pension ID</label><input type="text" name="pensionerId" value={formData.pensionerId} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>ሙሉ ስም</label><input type="text" name="name" value={formData.name} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>የፋይዳ ቁጥር</label><input type="text" name="faydaNumber" value={formData.faydaNumber} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>TIN ቁጥር</label><input type="text" name="tin" value={formData.tin} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>ስልክ ቁጥር</label><input type="tel" name="phone" value={formData.phone} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>ዕድሜ</label><input type="number" name="age" value={formData.age} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>ጾታ</label><select name="gender" value={formData.gender} onChange={handleChange} required><option value="">ይምረጡ</option><option value="Male">ወንድ</option><option value="Female">ሴት</option></select></div>
+          <div className="pr-input-group"><label>አድራሻ</label><input type="text" name="address" value={formData.address} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>የተሰጠበት ቀን</label><input type="date" name="issueDate" value={formData.issueDate} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>የማብቂያ ቀን</label><input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>ቅርንጫፍ</label><input type="text" name="poessaBranch" value={formData.poessaBranch} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>ባንክ</label><input type="text" name="bankName" value={formData.bankName} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>ባንክ ቅርንጫፍ</label><input type="text" name="bankBranch" value={formData.bankBranch} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>የጡረታ መጠን</label><input type="number" name="pensionAmount" value={formData.pensionAmount} onChange={handleChange} required /></div>
         </div>
 
-        {status && (
-          <p className="status-message" style={{ 
-            padding: '10px', borderRadius: '4px', 
-            backgroundColor: status.includes('❌') || status.includes('⚠️') ? '#fff5f5' : '#f0fff4',
-            color: status.includes('❌') || status.includes('⚠️') ? '#e53e3e' : '#38a169',
-            fontWeight: 'bold', border: status.includes('❌') || status.includes('⚠️') ? '1px solid #fed7d7' : '1px solid #c6f6d5',
-            textAlign: 'left'
-          }}>
-            {status}
-          </p>
-        )}
-        
-        <button type="submit" className="submit-btn" disabled={loading} style={{ marginTop: '10px' }}>
-          {loading ? '⏳ መረጃው እየተላከ ነው...' : '💾 የጡረተኛውን መረጃ መዝግብ'}
-        </button>
+        {status && <div className="pr-status-msg">{status}</div>}
+        <button type="submit" className="pr-submit-btn" disabled={loading}>{loading ? 'እየተላከ ነው...' : 'መረጃውን መዝግብ'}</button>
       </form>
     </div>
   );
 }
-
 export default PensionerRegistration;
