@@ -2,8 +2,41 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const router = express.Router();
 const User = require("./models/User");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+// 📁 'uploads' ፎልደር በሰርቨሩ ላይ መኖሩን ማረጋገጥ፣ ከሌለ በራሱ ይፈጥረዋል
+const uploadDir = path.join(__dirname, "../uploads"); // እንደ ፕሮጀክትህ አወቃቀር መለወጥ ትችላለህ
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// ⚙️ የፎቶው ስም እንዳይደራረብ በራሱ ልዩ ስም (Unique Name) የሚሰጥ የ Multer ቅንብር
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // ለምሳሌ፡ 1718451234567-profile.jpg ያደርገዋል
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+// 🖼️ ምስል ብቻ እንዲቀበል መቆጣጠሪያ (Filter)
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("ምስል (Image) ፋይል ብቻ ነው የሚፈቀደው!"), false);
+  }
+};
+
+const upload = multer({ storage: storage, fileFilter: fileFilter });
 
 module.exports = (io, usersMap, busyAgents, forceDisconnectUser) => {
+  
   // ተጠቃሚዎችን ዝርዝር ማምጣት
   router.get("/users", async (req, res) => {
     try {
@@ -15,10 +48,12 @@ module.exports = (io, usersMap, busyAgents, forceDisconnectUser) => {
     }
   });
 
-  // ተጠቃሚ መፍጠር (fullName ተጨምሯል፣ role አድሚን እና ሰራተኛ ብቻ ነው)
-  router.post("/create-user", async (req, res) => {
+  // 🔥 አዲስ ተጠቃሚ በፎቶ ፋይል ጭምር መፍጠሪያ ራውት
+  // `upload.single("profilePicture")` የምትለዋን እዚህ ጋር እንጨምራለን
+  router.post("/create-user", upload.single("profilePicture"), async (req, res) => {
     try {
-      const { username, fullName, password, role, tinNumber, profilePicture } = req.body;
+      // 📝 ፎርም ዳታ ሲላክ ጽሑፎቹ በ req.body ውስጥ ይገባሉ
+      const { username, fullName, password, role, tinNumber } = req.body;
 
       if (!username || !fullName || !password || !role) {
         return res.status(400).json({ success: false, message: "All fields are required" });
@@ -29,13 +64,20 @@ module.exports = (io, usersMap, busyAgents, forceDisconnectUser) => {
         return res.status(400).json({ success: false, message: "User already exists" });
       }
 
+      // 📷 ፎቶው በትክክል ከተጫነ የሰርቨሩን ሙሉ ሊንክ (URL) እንሰራለን
+      let finalProfilePictureUrl = "";
+      if (req.file) {
+        // Render ላይ ያለህን የሰርቨር አድራሻ ተጠቅሞ የፎቶውን ሊንክ ይሰራዋል
+        finalProfilePictureUrl = `https://poessa-digital-services-1.onrender.com/uploads/${req.file.filename}`;
+      }
+
       const hashedPassword = await bcrypt.hash(password, 10);
       const newUser = new User({
         username,
         fullName,
-        password,
+        password: hashedPassword,
         role,
-        profilePicture: profilePicture || "",
+        profilePicture: finalProfilePictureUrl, // 🔗 እውነተኛው የሊንክ አድራሻ ዳታቤዝ ውስጥ ይገባል
         tinNumber: tinNumber || null,
         isBlocked: false,
       });
@@ -105,7 +147,7 @@ module.exports = (io, usersMap, busyAgents, forceDisconnectUser) => {
     }
   });
 
-  // ስታቲስቲክስ (pensioner ተወግዷል)
+  // ስታቲስቲክስ
   router.get("/statistics", async (req, res) => {
     try {
       const totalUsers = await User.countDocuments();
