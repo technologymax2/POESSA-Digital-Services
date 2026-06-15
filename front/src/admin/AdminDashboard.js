@@ -17,7 +17,6 @@ const AdminDashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [currentLang, setCurrentLang] = useState("am");
 
-  // ስቴቶች
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
@@ -25,11 +24,6 @@ const AdminDashboard = () => {
   const [profileFile, setProfileFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
 
-  const getAuthConfig = () => ({
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
-
-  // ምስል ወደ ImgBB የሚልክ ፋንክሽን
   const uploadToImgBB = async (file) => {
     const formData = new FormData();
     formData.append("image", file);
@@ -39,7 +33,10 @@ const AdminDashboard = () => {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/admin/users`, getAuthConfig());
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`${API_URL}/api/admin/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setUsers(res.data.users || []);
     } catch (err) {
       if (err.response?.status === 401) navigate("/login");
@@ -68,23 +65,32 @@ const AdminDashboard = () => {
     let imageUrl = "";
 
     try {
-      // ምስል ከተመረጠ ወደ ImgBB መላክ
       if (profileFile) {
         imageUrl = await uploadToImgBB(profileFile);
       }
 
-      // መረጃውን ወደ ሰርቨር መላክ
-      await axios.post(`${API_URL}/api/admin/create-user`, {
-        username, fullName, password, role,
-        profilePicture: imageUrl
-      }, getAuthConfig());
+      const token = localStorage.getItem("token");
+      // 🚨 JSON በመጠቀም መረጃውን ወደ ሰርቨር መላክ
+      await axios.post(`${API_URL}/api/admin/create-user`, 
+        {
+          username, fullName, password, role,
+          profilePicture: imageUrl,
+          tinNumber: null
+        }, 
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
 
       alert("ተጠቃሚው በስኬት ተመዝግቧል!");
-      // ፎርሙን ማጽዳት
       setUsername(""); setFullName(""); setPassword("");
       setRole("employee"); setProfileFile(null); setImagePreview("");
       fetchUsers();
     } catch (err) {
+      console.error(err);
       alert(err.response?.data?.message || "ምዝገባ አልተሳካም");
     } finally {
       setLoading(false);
@@ -92,8 +98,11 @@ const AdminDashboard = () => {
   };
 
   const toggleBlock = async (id, blocked) => {
+    const token = localStorage.getItem("token");
     try {
-      await axios.put(`${API_URL}/api/admin/${blocked ? "unblock" : "block"}/${id}`, {}, getAuthConfig());
+      await axios.put(`${API_URL}/api/admin/${blocked ? "unblock" : "block"}/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       fetchUsers();
     } catch {
       alert("Operation failed");
@@ -102,8 +111,11 @@ const AdminDashboard = () => {
 
   const deleteUser = async (id) => {
     if (!window.confirm("ይህንን ተጠቃሚ ለመሰረዝ እርግጠኛ ነዎት?")) return;
+    const token = localStorage.getItem("token");
     try {
-      await axios.delete(`${API_URL}/api/admin/delete/${id}`, getAuthConfig());
+      await axios.delete(`${API_URL}/api/admin/delete/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       fetchUsers();
     } catch {
       alert("Delete failed");
@@ -111,10 +123,13 @@ const AdminDashboard = () => {
   };
 
   const resetPassword = async (id) => {
-    const password = prompt("አዲስ የይለፍ ቃል ያስገቡ");
-    if (!password) return;
+    const newPassword = prompt("አዲስ የይለፍ ቃል ያስገቡ");
+    if (!newPassword) return;
+    const token = localStorage.getItem("token");
     try {
-      await axios.put(`${API_URL}/api/admin/reset-password/${id}`, { newPassword: password }, getAuthConfig());
+      await axios.put(`${API_URL}/api/admin/reset-password/${id}`, { newPassword }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       alert("Password Updated");
     } catch {
       alert("Failed");
@@ -127,17 +142,8 @@ const AdminDashboard = () => {
   return (
     <div className="dashboard-layout">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentLang={currentLang} toggleLanguage={() => setCurrentLang(prev => prev === "am" ? "en" : "am")} />
-      
       <main className="dashboard-main">
         <Header title="POESSA Admin Dashboard" />
-
-        <div className="stats-grid">
-          <div className="stat-card"><h2>{users.length}</h2><p>ጠቅላላ ተጠቃሚዎች</p></div>
-          <div className="stat-card"><h2>{admins.length}</h2><p>አድሚኖች</p></div>
-          <div className="stat-card"><h2>{employees.length}</h2><p>ሰራተኞች</p></div>
-          <div className="stat-card"><h2>{users.filter(u => !u.isBlocked).length}</h2><p>ንቁ ተጠቃሚዎች</p></div>
-        </div>
-
         <section className="user-form-card">
           <h3>አዲስ ተጠቃሚ መዝግብ</h3>
           <div className="admin-photo-upload-zone">
@@ -168,7 +174,6 @@ const AdminDashboard = () => {
 
         <h3 className="section-title">አድሚኖች</h3>
         <UserTable users={admins} toggleBlock={toggleBlock} deleteUser={deleteUser} resetPassword={resetPassword} />
-
         <h3 className="section-title">ሰራተኞች</h3>
         <UserTable users={employees} toggleBlock={toggleBlock} deleteUser={deleteUser} resetPassword={resetPassword} />
         <Footer />
@@ -182,11 +187,7 @@ const UserTable = ({ users, toggleBlock, deleteUser, resetPassword }) => (
     <table className="admin-table">
       <thead>
         <tr>
-          <th>ፎቶ</th>
-          <th>Username</th>
-          <th>ሙሉ ስም</th>
-          <th>ሁኔታ</th>
-          <th>ድርጊት</th>
+          <th>ፎቶ</th><th>Username</th><th>ሙሉ ስም</th><th>ሁኔታ</th><th>ድርጊት</th>
         </tr>
       </thead>
       <tbody>
