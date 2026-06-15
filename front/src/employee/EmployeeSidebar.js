@@ -1,36 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import './EmployeeSidebar.css'; // የስታይል ፋይል
+import './EmployeeSidebar.css';
 
 function EmployeeSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // 1. ሁለቱንም ስም እና ምስል state ውስጥ እናስገባለን
   const [employeeName, setEmployeeName] = useState('የፖኤሳ ሰራተኛ');
+  const [profilePic, setProfilePic] = useState('');
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user') || localStorage.getItem('username') || 'የፖኤሳ ሰራተኛ';
-    setEmployeeName(storedUser);
+    // 2. ከlocalStorage አዲሶቹን ቁልፎች እንጠራለን
+    const name = localStorage.getItem('fullName') || 'የፖኤሳ ሰራተኛ';
+    const pic = localStorage.getItem('profilePic') || '';
+    
+    setEmployeeName(name);
+    setProfilePic(pic);
   }, []);
 
   const handleLogout = () => {
     if (window.confirm("🔒 ከሲስተሙ መውጣት ይፈልጋሉ?")) {
       localStorage.clear();
-      navigate('/login'); // ወደ መግቢያ ገጽ ይመልሰዋል
+      navigate('/login');
     }
   };
 
   return (
     <div className="employee-sidebar">
-      {/* 👤 የሰራተኛው ፕሮፋይል አጭር መግለጫ */}
       <div className="sidebar-profile">
-        <div className="profile-icon">👤</div>
+        {/* 3. ምስሉን በስም ምትክ እናሳያለን (ካለ) */}
+        {profilePic ? (
+          <img src={profilePic} alt="Profile" className="profile-img" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', marginBottom: '10px' }} />
+        ) : (
+          <div className="profile-icon">👤</div>
+        )}
+        
+        {/* 4. እዚህ ስሙ በትክክል ይታያል */}
         <h4 className="employee-title">{employeeName}</h4>
         <span className="role-badge">ፈጻሚ ባለሙያ</span>
       </div>
 
       <hr className="sidebar-divider" />
 
-      {/* 🧭 የገጾች ዝርዝር (Navigation Links) */}
+      {/* የገጾች ዝርዝር... */}
       <div className="sidebar-menu">
         <button 
           className={`menu-item ${location.pathname.includes('pensioner-registration') ? 'active' : ''}`}
@@ -45,14 +58,8 @@ function EmployeeSidebar() {
         >
           🔍 መረጃ መፈለጊያና መታወቂያ
         </button>
-
-        {/* 🚀 ወደፊት ለሚጨመሩ ገጾች ማሳያ (placeholder) */}
-        <button className="menu-item disabled" disabled>
-          📞 የቪዲዮ ጥሪዎች (በቅርቡ)
-        </button>
       </div>
 
-      {/* 🚪 መውጫ ቁልፍ */}
       <button className="sidebar-logout-btn" onClick={handleLogout}>
         🚪 ከሲስተም ውጣ (Logout)
       </button>
