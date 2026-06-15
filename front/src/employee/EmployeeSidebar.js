@@ -1,67 +1,59 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios'; // አክሲዮስን ተጠቀም
 import './EmployeeSidebar.css';
+
+const API_URL = "https://poessa-digital-services-1.onrender.com";
 
 function EmployeeSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [employeeName, setEmployeeName] = useState('የፖኤሳ ሰራተኛ');
-  const [profilePic, setProfilePic] = useState('');
+  const [employee, setEmployee] = useState(null); // መረጃውን እዚህ እናስቀምጣለን
 
   useEffect(() => {
-    // 1. መረጃውን ከlocalStorage እንጠራለን
-    const storedFullName = localStorage.getItem('fullName');
-    const storedUserRaw = localStorage.getItem('user'); // እዚህ ውስጥ ነው ችግር ያለበት
-
-    // 2. ቅድሚያ fullName-ን እንጠቀማለን
-    if (storedFullName && storedFullName !== "undefined") {
-      setEmployeeName(storedFullName);
-    } else if (storedUserRaw) {
-      // 3. fullName ከሌለ 'user' የሚለውን object ፈትተን (parse) ስም እንፈልጋለን
+    const fetchUserData = async () => {
       try {
-        const userObj = JSON.parse(storedUserRaw);
-        // መረጃው JSON ከሆነ ከውስጡ fullName-ን እንወስዳለን
-        setEmployeeName(userObj.fullName || userObj.username || 'የፖኤሳ ሰራተኛ');
-      } catch (e) {
-        // መረጃው JSON ካልሆነ እንደ ተራ ጽሑፍ እንጠቀመዋለን
-        setEmployeeName(storedUserRaw);
+        const token = localStorage.getItem("token");
+        // ተጠቃሚን በ ID የሚለይበትን Endpoint ወይም Verify የሚለውን ጥራ
+        const res = await axios.get(`${API_URL}/api/auth/verify`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // እዚህ ጋር ከ Backend የመጣውን ትክክለኛ መረጃ ለስቴት እንሰጠዋለን
+        if (res.data.success) {
+          setEmployee(res.data.user); 
+        }
+      } catch (err) {
+        console.error("ዳታ መጫን አልተቻለም", err);
       }
-    }
+    };
 
-    // ምስሉን ከ localStorage እንወስዳለን
-    const storedPic = localStorage.getItem('profilePic');
-    if (storedPic && storedPic !== "undefined") {
-      setProfilePic(storedPic);
-    }
+    fetchUserData();
   }, []);
 
   const handleLogout = () => {
-    if (window.confirm("🔒 ከሲስተሙ መውጣት ይፈልጋሉ?")) {
-      localStorage.clear();
-      navigate('/login');
-    }
+    localStorage.clear();
+    navigate('/login');
   };
 
   return (
     <div className="employee-sidebar">
       <div className="sidebar-profile">
-        {profilePic ? (
-          <img src={profilePic} alt="Profile" className="sidebar-profile-img" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} />
+        {/* ከAPI የመጣውን ንጹህ መረጃ መጠቀም */}
+        {employee?.profilePicture ? (
+          <img src={employee.profilePicture} alt="Profile" className="sidebar-profile-img" />
         ) : (
           <div className="profile-icon">👤</div>
         )}
-        <h4 className="employee-title">{employeeName}</h4>
+        
+        {/* ኢሜይል ሳይሆን ሙሉ ስም */}
+        <h4 className="employee-title">{employee?.fullName || "ስም እየተጫነ ነው..."}</h4>
         <span className="role-badge">ፈጻሚ ባለሙያ</span>
       </div>
 
       <hr className="sidebar-divider" />
-
-      <div className="sidebar-menu">
-        <button className={`menu-item ${location.pathname.includes('pensioner-registration') ? 'active' : ''}`} onClick={() => navigate('/employee-dashboard/pensioner-registration')}>📝 አዲስ ጡረተኛ መመዝገቢያ</button>
-        <button className={`menu-item ${location.pathname.includes('idcard-generation-search') ? 'active' : ''}`} onClick={() => navigate('/employee-dashboard/idcard-generation-search')}>🔍 መረጃ መፈለጊያና መታወቂያ</button>
-      </div>
-
-      <button className="sidebar-logout-btn" onClick={handleLogout}>🚪 ከሲስተም ውጣ (Logout)</button>
+      
+      {/* ... የተቀረው ሜኑ ... */}
     </div>
   );
 }
