@@ -11,26 +11,26 @@ router.post("/register", async (req, res) => {
       username,
       password,
       role,
+      fullName, // አዲሱ መስክ
       tinNumber,
       email,
       phoneNumber,
     } = req.body;
 
-    if (!username || !password || !role) {
+    // fullName የግዴታ እንዲሆን ተደረገ
+    if (!username || !password || !role || !fullName) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required",
+        message: "All fields including Full Name are required",
       });
     }
 
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-])[A-Za-z\d@$!%*?&.#_-]{8,}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-])[A-Za-z\d@$!%*?&.#_-]{8,}$/;
 
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
         success: false,
-        message:
-          "Password must contain at least 8 characters, uppercase, lowercase, number and symbol",
+        message: "Password must contain at least 8 characters, uppercase, lowercase, number and symbol",
       });
     }
 
@@ -49,18 +49,17 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(
-      password,
-      10
-    );
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
       username,
+      fullName, // የተጨመረ
       password: hashedPassword,
       role,
       tinNumber: tinNumber || null,
       email: email || null,
       phoneNumber: phoneNumber || null,
+      profilePicture: "", // በነባሪ ባዶ
       isBlocked: false,
     });
 
@@ -70,10 +69,8 @@ router.post("/register", async (req, res) => {
       success: true,
       message: "Registration successful",
     });
-
   } catch (error) {
     console.error(error);
-
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -88,8 +85,7 @@ router.post("/login", async (req, res) => {
     if (!username || !password) {
       return res.status(400).json({
         success: false,
-        message:
-          "Username and Password required",
+        message: "Username and Password required",
       });
     }
 
@@ -111,15 +107,11 @@ router.post("/login", async (req, res) => {
     if (user.isBlocked) {
       return res.status(403).json({
         success: false,
-        message:
-          "Your account has been blocked by administrator",
+        message: "Your account has been blocked by administrator",
       });
     }
 
-    const isMatch = await bcrypt.compare(
-      password,
-      user.password
-    );
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(401).json({
@@ -143,12 +135,15 @@ router.post("/login", async (req, res) => {
       }
     );
 
+    // ✅ እዚህ ላይ ነው fullName እና profilePicture የተጨመሩት
     res.json({
       success: true,
       token,
       user: {
         id: user._id,
         username: user.username,
+        fullName: user.fullName,         // ተጨመረ
+        profilePicture: user.profilePicture || "", // ተጨመረ
         role: user.role,
         tinNumber: user.tinNumber,
         email: user.email,
@@ -157,7 +152,6 @@ router.post("/login", async (req, res) => {
 
   } catch (error) {
     console.error(error);
-
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -167,8 +161,7 @@ router.post("/login", async (req, res) => {
 
 router.get("/verify", async (req, res) => {
   try {
-    const authHeader =
-      req.headers.authorization;
+    const authHeader = req.headers.authorization;
 
     if (!authHeader) {
       return res.status(401).json({
@@ -177,8 +170,7 @@ router.get("/verify", async (req, res) => {
       });
     }
 
-    const token =
-      authHeader.split(" ")[1];
+    const token = authHeader.split(" ")[1];
 
     const decoded = jwt.verify(
       token,
@@ -189,7 +181,6 @@ router.get("/verify", async (req, res) => {
       success: true,
       user: decoded,
     });
-
   } catch (error) {
     res.status(401).json({
       success: false,
