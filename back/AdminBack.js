@@ -2,42 +2,10 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const router = express.Router();
 const User = require("./models/User");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-
-// 📁 'uploads' ፎልደር በሰርቨሩ ላይ መኖሩን ማረጋገጥ፣ ከሌለ በራሱ ይፈጥረዋል
-const uploadDir = path.join(__dirname, "../uploads"); // እንደ ፕሮጀክትህ አወቃቀር መለወጥ ትችላለህ
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// ⚙️ የፎቶው ስም እንዳይደራረብ በራሱ ልዩ ስም (Unique Name) የሚሰጥ የ Multer ቅንብር
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // ለምሳሌ፡ 1718451234567-profile.jpg ያደርገዋል
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-// 🖼️ ምስል ብቻ እንዲቀበል መቆጣጠሪያ (Filter)
-const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image/")) {
-    cb(null, true);
-  } else {
-    cb(new Error("ምስል (Image) ፋይል ብቻ ነው የሚፈቀደው!"), false);
-  }
-};
-
-const upload = multer({ storage: storage, fileFilter: fileFilter });
 
 module.exports = (io, usersMap, busyAgents, forceDisconnectUser) => {
   
-  // ተጠቃሚዎችን ዝርዝር ማምጣት
+  // 1. ተጠቃሚዎችን ዝርዝር ማምጣት
   router.get("/users", async (req, res) => {
     try {
       const users = await User.find({}, "-password").sort({ createdAt: -1 });
@@ -48,49 +16,41 @@ module.exports = (io, usersMap, busyAgents, forceDisconnectUser) => {
     }
   });
 
-  // 🔥 አዲስ ተጠቃሚ በፎቶ ፋይል ጭምር መፍጠሪያ ራውት
-  // `upload.single("profilePicture")` የምትለዋን እዚህ ጋር እንጨምራለን
-  router.post("/create-user", upload.single("profilePicture"), async (req, res) => {
+  // 2. አዲስ ተጠቃሚ መፍጠሪያ (ከImgBB የሚመጣውን URL ይቀበላል)
+  router.post("/create-user", async (req, res) => {
     try {
-      // 📝 ፎርም ዳታ ሲላክ ጽሑፎቹ በ req.body ውስጥ ይገባሉ
-      const { username, fullName, password, role, tinNumber } = req.body;
+      const { username, fullName, password, role, tinNumber, profilePicture } = req.body;
 
       if (!username || !fullName || !password || !role) {
-        return res.status(400).json({ success: false, message: "All fields are required" });
+        return res.status(400).json({ success: false, message: "ሁሉም መረጃዎች ያስፈልጋሉ" });
       }
 
       const existingUser = await User.findOne({ username });
       if (existingUser) {
-        return res.status(400).json({ success: false, message: "User already exists" });
-      }
-
-      // 📷 ፎቶው በትክክል ከተጫነ የሰርቨሩን ሙሉ ሊንክ (URL) እንሰራለን
-      let finalProfilePictureUrl = "";
-      if (req.file) {
-        // Render ላይ ያለህን የሰርቨር አድራሻ ተጠቅሞ የፎቶውን ሊንክ ይሰራዋል
-        finalProfilePictureUrl = `https://poessa-digital-services-1.onrender.com/uploads/${req.file.filename}`;
+        return res.status(400).json({ success: false, message: "ተጠቃሚው ቀድሞ ተመዝግቧል" });
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
+      
       const newUser = new User({
         username,
         fullName,
         password: hashedPassword,
         role,
-        profilePicture: finalProfilePictureUrl, // 🔗 እውነተኛው የሊንክ አድራሻ ዳታቤዝ ውስጥ ይገባል
+        profilePicture: profilePicture || "", // ከFrontend የሚመጣው የImgBB URL
         tinNumber: tinNumber || null,
         isBlocked: false,
       });
 
       await newUser.save();
-      res.status(201).json({ success: true, message: "User created successfully" });
+      res.status(201).json({ success: true, message: "ተጠቃሚው በስኬት ተመዝግቧል" });
     } catch (error) {
       console.error("CREATE USER ERROR:", error);
       res.status(500).json({ success: false, message: error.message });
     }
   });
 
-  // ተጠቃሚን መከልከል (Block)
+  // 3. ተጠቃሚን መከልከል (Block)
   router.put("/block/:id", async (req, res) => {
     try {
       const user = await User.findById(req.params.id);
@@ -105,7 +65,7 @@ module.exports = (io, usersMap, busyAgents, forceDisconnectUser) => {
     }
   });
 
-  // ተጠቃሚን መፍቀድ (Unblock)
+  // 4. ተጠቃሚን መፍቀድ (Unblock)
   router.put("/unblock/:id", async (req, res) => {
     try {
       const user = await User.findById(req.params.id);
@@ -119,7 +79,7 @@ module.exports = (io, usersMap, busyAgents, forceDisconnectUser) => {
     }
   });
 
-  // ተጠቃሚን መደምሰስ (Delete)
+  // 5. ተጠቃሚን መደምሰስ (Delete)
   router.delete("/delete/:id", async (req, res) => {
     try {
       const user = await User.findById(req.params.id);
@@ -133,7 +93,7 @@ module.exports = (io, usersMap, busyAgents, forceDisconnectUser) => {
     }
   });
 
-  // የይለፍ ቃል ዳግም ማስጀመሪያ
+  // 6. የይለፍ ቃል ዳግም ማስጀመሪያ
   router.put("/reset-password/:id", async (req, res) => {
     try {
       const { newPassword } = req.body;
@@ -147,7 +107,7 @@ module.exports = (io, usersMap, busyAgents, forceDisconnectUser) => {
     }
   });
 
-  // ስታቲስቲክስ
+  // 7. ስታቲስቲክስ
   router.get("/statistics", async (req, res) => {
     try {
       const totalUsers = await User.countDocuments();
