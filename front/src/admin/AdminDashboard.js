@@ -7,7 +7,7 @@ import Footer from "../components/Footer";
 import "./AdminDashboard.css";
 
 const API_URL = "https://poessa-digital-services-1.onrender.com";
-const IMGBB_API_KEY = "YOUR_IMGBB_API_KEY_HERE"; // 🔑 የራስህን የImgBB API Key እዚህ አስገባ
+const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408"; // 🔑 የራስህን የImgBB API Key እዚህ አስገባ
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
