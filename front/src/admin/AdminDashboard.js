@@ -7,6 +7,7 @@ import Footer from "../components/Footer";
 import "./AdminDashboard.css";
 
 const API_URL = "https://poessa-digital-services-1.onrender.com";
+const IMGBB_API_KEY = "YOUR_IMGBB_API_KEY_HERE"; // 🔑 የራስህን የImgBB API Key እዚህ አስገባ
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -16,17 +17,25 @@ const AdminDashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [currentLang, setCurrentLang] = useState("am");
 
-  // 📝 ስቴቱን ወደ መደበኛ እሴት እና የፋይል መያዣ እንቀይረዋለን
+  // ስቴቶች
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("employee");
-  const [profileFile, setProfileFile] = useState(null); // 🖼️ እውነተኛውን የፋይል ዳታ ለመያዝ
-  const [imagePreview, setImagePreview] = useState(""); // 👁️ የመረጥነውን ፎቶ ቀድሞ ለማየት
+  const [profileFile, setProfileFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
 
   const getAuthConfig = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
   });
+
+  // ምስል ወደ ImgBB የሚልክ ፋንክሽን
+  const uploadToImgBB = async (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await axios.post(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, formData);
+    return res.data.data.url;
+  };
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -41,16 +50,14 @@ const AdminDashboard = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // 📷 ፎቶው ሲመረጥ የሚሰራ ተግባር
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setProfileFile(file);
-      setImagePreview(URL.createObjectURL(file)); // ለቅድመ እይታ ጊዜያዊ ሊንክ መፍጠሪያ
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
-  // 💾 ተጠቃሚ በፎቶ ፋይል ጭምር መመዝገቢያ
   const createUser = async () => {
     if (!username || !fullName || !password) {
       alert("እባክዎ Username፣ ሙሉ ስም እና Password ያስገቡ");
@@ -58,34 +65,25 @@ const AdminDashboard = () => {
     }
 
     setLoading(true);
-
-    // 🔥 ፋይል ወደ ሰርቨር ለመላክ ግዴታ FormData መጠቀም አለብን!
-    const formData = new FormData();
-    formData.append("username", username);
-    formData.append("fullName", fullName);
-    formData.append("password", password);
-    formData.append("role", role);
-    if (profileFile) {
-      formData.append("profilePicture", profileFile); // ፋይሉን እዚህ እንጨምራለን
-    }
+    let imageUrl = "";
 
     try {
-      await axios.post(`${API_URL}/api/admin/create-user`, formData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "multipart/form-data", // 🚨 መልዕክቱ የፋይል ጭነት መሆኑን ለሰርቨር ማሳወቂያ
-        },
-      });
+      // ምስል ከተመረጠ ወደ ImgBB መላክ
+      if (profileFile) {
+        imageUrl = await uploadToImgBB(profileFile);
+      }
 
+      // መረጃውን ወደ ሰርቨር መላክ
+      await axios.post(`${API_URL}/api/admin/create-user`, {
+        username, fullName, password, role,
+        profilePicture: imageUrl
+      }, getAuthConfig());
+
+      alert("ተጠቃሚው በስኬት ተመዝግቧል!");
       // ፎርሙን ማጽዳት
-      setUsername("");
-      setFullName("");
-      setPassword("");
-      setRole("employee");
-      setProfileFile(null);
-      setImagePreview("");
+      setUsername(""); setFullName(""); setPassword("");
+      setRole("employee"); setProfileFile(null); setImagePreview("");
       fetchUsers();
-      alert("ተጠቃሚው በምስል ጭምር በተሳካ ሁኔታ ተመዝግቧል!");
     } catch (err) {
       alert(err.response?.data?.message || "ምዝገባ አልተሳካም");
     } finally {
@@ -142,8 +140,6 @@ const AdminDashboard = () => {
 
         <section className="user-form-card">
           <h3>አዲስ ተጠቃሚ መዝግብ</h3>
-          
-          {/* 🖼️ የፎቶ መስቀያ እና ቅድመ እይታ ክፍል */}
           <div className="admin-photo-upload-zone">
             <label htmlFor="admin-photo-file" className="admin-photo-label-box">
               {imagePreview ? (
@@ -160,7 +156,7 @@ const AdminDashboard = () => {
 
           <div className="form-grid">
             <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-            <input type="text" placeholder="ሙሉ ስም (Full Name)" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            <input type="text" placeholder="ሙሉ ስም" value={fullName} onChange={(e) => setFullName(e.target.value)} />
             <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
             <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="employee">ሰራተኛ (Employee)</option>
