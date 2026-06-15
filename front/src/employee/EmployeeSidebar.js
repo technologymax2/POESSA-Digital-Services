@@ -9,18 +9,29 @@ function EmployeeSidebar() {
   const [profilePic, setProfilePic] = useState('');
 
   useEffect(() => {
-    // 1. መረጃውን በቀጥታ ከምንጠቀምባቸው 'fullName' እና 'profilePic' ቁልፎች እንወስዳለን
-    const name = localStorage.getItem('fullName');
-    const pic = localStorage.getItem('profilePic');
+    // 1. መረጃውን ከlocalStorage እንጠራለን
+    const storedFullName = localStorage.getItem('fullName');
+    const storedUserRaw = localStorage.getItem('user'); // እዚህ ውስጥ ነው ችግር ያለበት
 
-    // 2. ስም ካለ እናስቀምጣለን፣ ከሌለ ነባሪ ስም እንጠቀማለን
-    if (name && name !== "undefined" && name !== "null") {
-      setEmployeeName(name);
+    // 2. ቅድሚያ fullName-ን እንጠቀማለን
+    if (storedFullName && storedFullName !== "undefined") {
+      setEmployeeName(storedFullName);
+    } else if (storedUserRaw) {
+      // 3. fullName ከሌለ 'user' የሚለውን object ፈትተን (parse) ስም እንፈልጋለን
+      try {
+        const userObj = JSON.parse(storedUserRaw);
+        // መረጃው JSON ከሆነ ከውስጡ fullName-ን እንወስዳለን
+        setEmployeeName(userObj.fullName || userObj.username || 'የፖኤሳ ሰራተኛ');
+      } catch (e) {
+        // መረጃው JSON ካልሆነ እንደ ተራ ጽሑፍ እንጠቀመዋለን
+        setEmployeeName(storedUserRaw);
+      }
     }
 
-    // 3. ምስል ካለ እናስቀምጣለን
-    if (pic && pic !== "undefined" && pic !== "null") {
-      setProfilePic(pic);
+    // ምስሉን ከ localStorage እንወስዳለን
+    const storedPic = localStorage.getItem('profilePic');
+    if (storedPic && storedPic !== "undefined") {
+      setProfilePic(storedPic);
     }
   }, []);
 
@@ -34,19 +45,11 @@ function EmployeeSidebar() {
   return (
     <div className="employee-sidebar">
       <div className="sidebar-profile">
-        {/* ምስል ካለ ያሳያል፣ ከሌለ 👤 ምልክት ያሳያል */}
         {profilePic ? (
-          <img 
-            src={profilePic} 
-            alt="Profile" 
-            className="sidebar-profile-img" 
-            style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', marginBottom: '10px' }} 
-          />
+          <img src={profilePic} alt="Profile" className="sidebar-profile-img" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} />
         ) : (
-          <div className="profile-icon" style={{ fontSize: '40px', marginBottom: '10px' }}>👤</div>
+          <div className="profile-icon">👤</div>
         )}
-        
-        {/* እዚህ ጋር ነው ስሙ የሚታየው */}
         <h4 className="employee-title">{employeeName}</h4>
         <span className="role-badge">ፈጻሚ ባለሙያ</span>
       </div>
@@ -54,28 +57,11 @@ function EmployeeSidebar() {
       <hr className="sidebar-divider" />
 
       <div className="sidebar-menu">
-        <button 
-          className={`menu-item ${location.pathname.includes('pensioner-registration') ? 'active' : ''}`}
-          onClick={() => navigate('/employee-dashboard/pensioner-registration')}
-        >
-          📝 አዲስ ጡረተኛ መመዝገቢያ
-        </button>
-
-        <button 
-          className={`menu-item ${location.pathname.includes('idcard-generation-search') ? 'active' : ''}`}
-          onClick={() => navigate('/employee-dashboard/idcard-generation-search')}
-        >
-          🔍 መረጃ መፈለጊያና መታወቂያ
-        </button>
-
-        <button className="menu-item disabled" disabled>
-          📞 የቪዲዮ ጥሪዎች (በቅርቡ)
-        </button>
+        <button className={`menu-item ${location.pathname.includes('pensioner-registration') ? 'active' : ''}`} onClick={() => navigate('/employee-dashboard/pensioner-registration')}>📝 አዲስ ጡረተኛ መመዝገቢያ</button>
+        <button className={`menu-item ${location.pathname.includes('idcard-generation-search') ? 'active' : ''}`} onClick={() => navigate('/employee-dashboard/idcard-generation-search')}>🔍 መረጃ መፈለጊያና መታወቂያ</button>
       </div>
 
-      <button className="sidebar-logout-btn" onClick={handleLogout}>
-        🚪 ከሲስተም ውጣ (Logout)
-      </button>
+      <button className="sidebar-logout-btn" onClick={handleLogout}>🚪 ከሲስተም ውጣ (Logout)</button>
     </div>
   );
 }
