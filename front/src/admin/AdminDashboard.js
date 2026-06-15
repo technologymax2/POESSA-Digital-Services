@@ -16,13 +16,13 @@ const AdminDashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [currentLang, setCurrentLang] = useState("am");
 
-  const [newUser, setNewUser] = useState({
-    username: "",
-    fullName: "",
-    password: "",
-    role: "employee",
-    profilePicture: ""
-  });
+  // 📝 ስቴቱን ወደ መደበኛ እሴት እና የፋይል መያዣ እንቀይረዋለን
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("employee");
+  const [profileFile, setProfileFile] = useState(null); // 🖼️ እውነተኛውን የፋይል ዳታ ለመያዝ
+  const [imagePreview, setImagePreview] = useState(""); // 👁️ የመረጥነውን ፎቶ ቀድሞ ለማየት
 
   const getAuthConfig = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -41,17 +41,51 @@ const AdminDashboard = () => {
     fetchUsers();
   }, [fetchUsers]);
 
+  // 📷 ፎቶው ሲመረጥ የሚሰራ ተግባር
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileFile(file);
+      setImagePreview(URL.createObjectURL(file)); // ለቅድመ እይታ ጊዜያዊ ሊንክ መፍጠሪያ
+    }
+  };
+
+  // 💾 ተጠቃሚ በፎቶ ፋይል ጭምር መመዝገቢያ
   const createUser = async () => {
-    if (!newUser.username || !newUser.fullName || !newUser.password) {
+    if (!username || !fullName || !password) {
       alert("እባክዎ Username፣ ሙሉ ስም እና Password ያስገቡ");
       return;
     }
 
     setLoading(true);
+
+    // 🔥 ፋይል ወደ ሰርቨር ለመላክ ግዴታ FormData መጠቀም አለብን!
+    const formData = new FormData();
+    formData.append("username", username);
+    formData.append("fullName", fullName);
+    formData.append("password", password);
+    formData.append("role", role);
+    if (profileFile) {
+      formData.append("profilePicture", profileFile); // ፋይሉን እዚህ እንጨምራለን
+    }
+
     try {
-      await axios.post(`${API_URL}/api/admin/create-user`, newUser, getAuthConfig());
-      setNewUser({ username: "", fullName: "", password: "", role: "employee", profilePicture: "" });
+      await axios.post(`${API_URL}/api/admin/create-user`, formData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "multipart/form-data", // 🚨 መልዕክቱ የፋይል ጭነት መሆኑን ለሰርቨር ማሳወቂያ
+        },
+      });
+
+      // ፎርሙን ማጽዳት
+      setUsername("");
+      setFullName("");
+      setPassword("");
+      setRole("employee");
+      setProfileFile(null);
+      setImagePreview("");
       fetchUsers();
+      alert("ተጠቃሚው በምስል ጭምር በተሳካ ሁኔታ ተመዝግቧል!");
     } catch (err) {
       alert(err.response?.data?.message || "ምዝገባ አልተሳካም");
     } finally {
@@ -108,15 +142,30 @@ const AdminDashboard = () => {
 
         <section className="user-form-card">
           <h3>አዲስ ተጠቃሚ መዝግብ</h3>
+          
+          {/* 🖼️ የፎቶ መስቀያ እና ቅድመ እይታ ክፍል */}
+          <div className="admin-photo-upload-zone">
+            <label htmlFor="admin-photo-file" className="admin-photo-label-box">
+              {imagePreview ? (
+                <img src={imagePreview} alt="Preview" className="admin-preview-img-circle" />
+              ) : (
+                <div className="admin-upload-placeholder-content">
+                  <span className="upload-icon-style">📷</span>
+                  <span>ፎቶ ምረጥ</span>
+                </div>
+              )}
+            </label>
+            <input type="file" id="admin-photo-file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+          </div>
+
           <div className="form-grid">
-            <input type="text" placeholder="Username" value={newUser.username} onChange={(e) => setNewUser({...newUser, username: e.target.value})} />
-            <input type="text" placeholder="ሙሉ ስም (Full Name)" value={newUser.fullName} onChange={(e) => setNewUser({...newUser, fullName: e.target.value})} />
-            <input type="password" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser({...newUser, password: e.target.value})} />
-            <select value={newUser.role} onChange={(e) => setNewUser({...newUser, role: e.target.value})}>
+            <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
+            <input type="text" placeholder="ሙሉ ስም (Full Name)" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="employee">ሰራተኛ (Employee)</option>
               <option value="admin">አድሚን (Admin)</option>
             </select>
-            <input type="text" placeholder="Profile Picture URL" value={newUser.profilePicture} onChange={(e) => setNewUser({...newUser, profilePicture: e.target.value})} />
             <button onClick={createUser}>{loading ? "በመመዝገብ ላይ..." : "ተጠቃሚ ፍጠር"}</button>
           </div>
         </section>
@@ -137,6 +186,7 @@ const UserTable = ({ users, toggleBlock, deleteUser, resetPassword }) => (
     <table className="admin-table">
       <thead>
         <tr>
+          <th>ፎቶ</th>
           <th>Username</th>
           <th>ሙሉ ስም</th>
           <th>ሁኔታ</th>
@@ -146,6 +196,13 @@ const UserTable = ({ users, toggleBlock, deleteUser, resetPassword }) => (
       <tbody>
         {users.map((user) => (
           <tr key={user._id}>
+            <td>
+              {user.profilePicture ? (
+                <img src={user.profilePicture} alt="User" style={{ width: '35px', height: '35px', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '35px', height: '35px', borderRadius: '50%', backgroundColor: '#cbd5e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>{user.username.charAt(0).toUpperCase()}</div>
+              )}
+            </td>
             <td>{user.username}</td>
             <td>{user.fullName || "N/A"}</td>
             <td>{user.isBlocked ? "ታግዷል" : "ንቁ"}</td>
