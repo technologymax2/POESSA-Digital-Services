@@ -8,12 +8,14 @@ const Login = () => {
     username: "",
     password: "",
   });
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+    setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -25,26 +27,29 @@ const Login = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password,
+        }),
       });
 
       const data = await response.json();
 
       if (!data.success) {
-        alert(data.message || "መግባት አልተሳካም");
+        alert(data.message);
         return;
       }
 
       // 1. የደህንነት Token
       localStorage.setItem("token", data.token);
 
-      // 2. አስፈላጊ መረጃዎችን ብቻ መርጠን ማስቀመጥ (Minimize data in LocalStorage)
+      // 2. ✅ ከBackend የመጡትን አዳዲስ መረጃዎች በሙሉ በLocalStorage እናስቀምጣለን
       localStorage.setItem("username", data.user.username);
-      localStorage.setItem("fullName", data.user.fullName || "N/A");
+      localStorage.setItem("fullName", data.user.fullName); // አዲሱ fullName
       localStorage.setItem("role", data.user.role);
-      localStorage.setItem("profilePic", data.user.profilePicture || "");
+      localStorage.setItem("profilePic", data.user.profilePicture || ""); // አዲሱ profilePicture
 
-      // 3. እንደ ተጠቃሚው አይነት ወደየራሳቸው ዳሽቦርድ መላክ
+      // 3. Redirect by role
       if (data.user.role === "admin") {
         navigate("/admin-dashboard");
       } else if (data.user.role === "employee") {
@@ -52,9 +57,10 @@ const Login = () => {
       } else if (data.user.role === "pensioner") {
         navigate("/customer-dashboard");
       }
+
     } catch (error) {
       console.error(error);
-      alert("ሰርቨር መገናኘት አልቻለም፣ እባክዎ እንደገና ይሞክሩ።");
+      alert("Login Failed");
     }
   };
 
@@ -93,6 +99,8 @@ const Login = () => {
               required
             />
           </div>
+
+          {error && <div className="error-message">{error}</div>}
 
           <button type="submit" className="login-btn">
             Login
