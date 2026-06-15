@@ -9,27 +9,18 @@ function EmployeeSidebar() {
   const [profilePic, setProfilePic] = useState('');
 
   useEffect(() => {
-    // 1. መረጃውን ከlocalStorage እንወስዳለን
-    const storedFullName = localStorage.getItem('fullName');
-    const storedPic = localStorage.getItem('profilePic');
-    const storedUserRaw = localStorage.getItem('user');
+    // 1. መረጃውን በቀጥታ ከምንጠቀምባቸው 'fullName' እና 'profilePic' ቁልፎች እንወስዳለን
+    const name = localStorage.getItem('fullName');
+    const pic = localStorage.getItem('profilePic');
 
-    // 2. fullName በራሱ ቁልፍ ከተቀመጠ እሱን ቅድሚያ እንሰጣለን
-    if (storedFullName && storedFullName !== "undefined") {
-      setEmployeeName(storedFullName);
-    } else if (storedUserRaw) {
-      // 3. ካልሆነ ግን 'user' በሚለው ቁልፍ ውስጥ ያለውን JSON እንፈታለን
-      try {
-        const userObj = JSON.parse(storedUserRaw);
-        setEmployeeName(userObj.fullName || userObj.username || 'የፖኤሳ ሰራተኛ');
-      } catch (e) {
-        setEmployeeName('የፖኤሳ ሰራተኛ');
-      }
+    // 2. ስም ካለ እናስቀምጣለን፣ ከሌለ ነባሪ ስም እንጠቀማለን
+    if (name && name !== "undefined" && name !== "null") {
+      setEmployeeName(name);
     }
 
-    // 4. የምስል መረጃ
-    if (storedPic && storedPic !== "undefined") {
-      setProfilePic(storedPic);
+    // 3. ምስል ካለ እናስቀምጣለን
+    if (pic && pic !== "undefined" && pic !== "null") {
+      setProfilePic(pic);
     }
   }, []);
 
@@ -43,7 +34,7 @@ function EmployeeSidebar() {
   return (
     <div className="employee-sidebar">
       <div className="sidebar-profile">
-        {/* ምስሉን በአግባቡ ማሳያ */}
+        {/* ምስል ካለ ያሳያል፣ ከሌለ 👤 ምልክት ያሳያል */}
         {profilePic ? (
           <img 
             src={profilePic} 
@@ -55,6 +46,7 @@ function EmployeeSidebar() {
           <div className="profile-icon" style={{ fontSize: '40px', marginBottom: '10px' }}>👤</div>
         )}
         
+        {/* እዚህ ጋር ነው ስሙ የሚታየው */}
         <h4 className="employee-title">{employeeName}</h4>
         <span className="role-badge">ፈጻሚ ባለሙያ</span>
       </div>
