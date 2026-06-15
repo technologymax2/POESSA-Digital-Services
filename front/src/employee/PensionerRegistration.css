@@ -1,64 +1,60 @@
-/* ==========================================================================
-   🏠 1. የዋናው ኮንቴይነር አቀማመጥ (Main Container)
-   ========================================================================== */
+/* ================================
+   MAIN CONTAINER
+================================ */
 .registration-container {
-  padding: 25px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   width: 100%;
+  padding: 25px;
+  background: #ffffff;
+  border-radius: 16px;
   box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
 }
 
 .form-title {
-  color: #1a365d;
-  margin: 0 0 5px 0;
-  font-size: 24px;
-  text-align: left;
+  color: #0f172a;
+  font-size: 30px;
   font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .form-subtitle {
-  color: #718096;
-  margin: 0 0 25px 0;
-  font-size: 14px;
-  text-align: left;
+  color: #64748b;
+  font-size: 15px;
+  margin-bottom: 25px;
 }
 
+/* ================================
+   FORM
+================================ */
 .pensioner-form {
   display: flex;
   flex-direction: column;
   gap: 25px;
-  width: 100%;
 }
 
-/* ==========================================================================
-   📷 2. የፎቶ መስቀያ እና ቅድመ-እይታ ክፍል (Image Upload Section)
-   ========================================================================== */
+/* ================================
+   IMAGE SECTION
+================================ */
 .image-upload-section {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;
-  margin-bottom: 10px;
 }
 
 .image-preview-box {
-  border: 2px dashed #cbd5e0;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  background-color: #f7fafc;
+  width: 150px !important;
+  height: 180px !important;
+  border: 2px dashed #3b82f6;
+  background: #f8fafc;
+  border-radius: 12px;
   overflow: hidden;
-  transition: all 0.2s ease-in-out;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+  cursor: pointer;
+  transition: .3s;
 }
 
 .image-preview-box:hover {
-  border-color: #2b6cb0;
-  background-color: #edf2f7;
+  border-color: #1d4ed8;
+  transform: translateY(-3px);
 }
 
 .preview-img {
@@ -68,131 +64,155 @@
 }
 
 .upload-placeholder {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  color: #718096;
-  font-size: 13px;
-  padding: 15px;
+  align-items: center;
+  color: #64748b;
   text-align: center;
-  gap: 5px;
+  padding: 10px;
 }
 
 .upload-icon {
-  font-size: 32px;
-  margin-bottom: 5px;
+  font-size: 40px;
+  margin-bottom: 10px;
 }
 
-/* ==========================================================================
-   🎛️ 3. የፎርም ግሪድ አቀማመጥ (Responsive Form Grid)
-   ========================================================================== */
+/* ================================
+   GRID
+================================ */
 .form-grid {
   display: grid;
-  /* 💻 ለትላልቅ ስክሪኖች የኮለምን አቀማመጥ */
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px,1fr));
   gap: 20px;
-  width: 100%;
-  text-align: left;
-  box-sizing: border-box;
 }
 
+/* ================================
+   INPUT GROUP
+================================ */
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  width: 100%;
 }
 
 .input-group label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #4a5568;
-}
-
-.input-group input, 
-.input-group select {
-  padding: 12px;
-  border: 1px solid #cbd5e0;
-  border-radius: 6px;
+  margin-bottom: 7px;
+  color: #1e293b;
   font-size: 14px;
-  color: #2d3748;
-  background-color: #fff;
-  transition: all 0.2s ease;
-  width: 100%;
-  box-sizing: border-box;
+  font-weight: 600;
 }
 
-.input-group input:focus, 
+.input-group input,
+.input-group select {
+  height: 50px;
+  padding: 0 15px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 15px;
+  background: white;
+  transition: .3s;
+}
+
+.input-group input:focus,
 .input-group select:focus {
   outline: none;
-  border-color: #2b6cb0;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37,99,235,.15);
 }
 
-/* ==========================================================================
-   💾 4. አዝራሮች እና መልዕክቶች (Buttons & Status)
-   ========================================================================== */
+/* ================================
+   STATUS MESSAGE
+================================ */
+.status-message {
+  padding: 15px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ================================
+   SUBMIT BUTTON
+================================ */
 .submit-btn {
-  padding: 14px;
-  background-color: #2b6cb0;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
   width: 100%;
-  margin-top: 15px;
-  box-shadow: 0 4px 6px rgba(43, 108, 176, 0.2);
+  height: 55px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg,#2563eb,#1d4ed8);
+  color: white;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .3s;
+  box-shadow: 0 8px 25px rgba(37,99,235,.3);
 }
 
 .submit-btn:hover {
-  background-color: #2c5282;
+  transform: translateY(-2px);
+  background: linear-gradient(135deg,#1d4ed8,#1e40af);
 }
 
 .submit-btn:disabled {
-  background-color: #a0aec0;
+  background: #94a3b8;
   cursor: not-allowed;
   box-shadow: none;
 }
 
-.status-message {
-  font-size: 14px;
-  font-weight: 600;
-  margin: 15px 0 5px 0;
-  width: 100%;
-  box-sizing: border-box;
+/* ================================
+   TABLET
+================================ */
+@media (max-width: 992px) {
+
+  .form-grid {
+    grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
+  }
+
 }
 
-/* ==========================================================================
-   📱 5. ለሞባይል ስክሪን የተደረገ ልዩ ማስተካከያ (Mobile Responsiveness)
-   ========================================================================== */
+/* ================================
+   MOBILE
+================================ */
 @media (max-width: 768px) {
+
   .registration-container {
     padding: 15px;
-    border-radius: 0; /* በሞባይል ሙሉ ስክሪን እንዲሆን */
   }
 
   .form-title {
-    font-size: 20px;
+    font-size: 23px;
+    text-align: center;
   }
 
-  /* 📱 በሞባይል ላይ ግሪዱን ወደ 1 ኮለምን መቀየር (ስብራት እንዳይኖር ያደርጋል) */
+  .form-subtitle {
+    text-align: center;
+  }
+
   .form-grid {
     grid-template-columns: 1fr;
     gap: 15px;
   }
 
-  .input-group input, 
+  .input-group input,
   .input-group select {
-    padding: 11px; /* ለሞባይል ንክኪ ምቹ የሆነ መጠን */
-    font-size: 15px; /* ዙም እንዳያደርግ የፎንት መጠን ማስተካከያ */
+    height: 48px;
+    font-size: 16px;
   }
 
   .submit-btn {
-    padding: 12px;
-    font-size: 15px;
+    height: 52px;
+    font-size: 16px;
   }
+
+}
+
+/* ================================
+   LARGE SCREEN
+================================ */
+@media (min-width: 1400px) {
+
+  .form-grid {
+    grid-template-columns: repeat(3,1fr);
+  }
+
 }
