@@ -7,7 +7,7 @@ import Footer from "../components/Footer";
 import "./AdminDashboard.css";
 
 const API_URL = "https://poessa-digital-services-1.onrender.com";
-const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408"; // 🔑 የራስህን የImgBB API Key እዚህ አስገባ
+const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408"; // 🔑 የራስዎ የImgBB API ቁልፍ
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -24,6 +24,7 @@ const AdminDashboard = () => {
   const [profileFile, setProfileFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
 
+  // ምስል ወደ ImgBB መላኪያ
   const uploadToImgBB = async (file) => {
     const formData = new FormData();
     formData.append("image", file);
@@ -70,7 +71,7 @@ const AdminDashboard = () => {
       }
 
       const token = localStorage.getItem("token");
-      // 🚨 JSON በመጠቀም መረጃውን ወደ ሰርቨር መላክ
+      // መረጃን እንደ JSON መላክ
       await axios.post(`${API_URL}/api/admin/create-user`, 
         {
           username, fullName, password, role,
@@ -142,8 +143,10 @@ const AdminDashboard = () => {
   return (
     <div className="dashboard-layout">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} currentLang={currentLang} toggleLanguage={() => setCurrentLang(prev => prev === "am" ? "en" : "am")} />
+      
       <main className="dashboard-main">
         <Header title="POESSA Admin Dashboard" />
+
         <section className="user-form-card">
           <h3>አዲስ ተጠቃሚ መዝግብ</h3>
           <div className="admin-photo-upload-zone">
@@ -174,6 +177,7 @@ const AdminDashboard = () => {
 
         <h3 className="section-title">አድሚኖች</h3>
         <UserTable users={admins} toggleBlock={toggleBlock} deleteUser={deleteUser} resetPassword={resetPassword} />
+
         <h3 className="section-title">ሰራተኞች</h3>
         <UserTable users={employees} toggleBlock={toggleBlock} deleteUser={deleteUser} resetPassword={resetPassword} />
         <Footer />
