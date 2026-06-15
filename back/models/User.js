@@ -8,6 +8,19 @@ const UserSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    
+    // የተጨመረው የሙሉ ስም መስክ
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    // የተጨመረው የፕሮፋይል ፎቶ URL (ወይም Path)
+    profilePicture: {
+      type: String,
+      default: "",
+    },
 
     password: {
       type: String,
@@ -16,11 +29,7 @@ const UserSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: [
-        "admin",
-        "employee",
-        "pensioner",
-      ],
+      enum: ["admin", "employee"], // pensioner ተወግዷል
       required: true,
     },
 
@@ -62,9 +71,6 @@ const UserSchema = new mongoose.Schema(
 
 const User =
   mongoose.models.User ||
-  mongoose.model(
-    "User",
-    UserSchema
-  );
+  mongoose.model("User", UserSchema);
 
 module.exports = User;
