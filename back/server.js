@@ -3,6 +3,7 @@ const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
+const path = require("path"); // 🚨 የተጨመረ፦ ለፎልደር መንገድ መፈለጊያ (Path module)
 require("dotenv").config();
 
 const app = express();
@@ -34,6 +35,12 @@ app.use(
 );
 
 app.use(express.json());
+
+/* ==========================================================================
+   🚨 የተጨመረ፦ የ UPLOADS ፎልደርን STATIC ማድረግ
+   ይህ መስመር የሪአክት ገጽህ በሊንክ የተጫኑትን የሰራተኛ ፎቶዎች በቀጥታ እንዲያይ ያደርገዋል
+   ========================================================================== */
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* =========================
    HOME ROUTE
@@ -207,8 +214,6 @@ io.on("connection", (socket) => {
 ========================= */
 app.use("/api/auth", require("./LoginBack"));
 app.use("/api/admin", require("./AdminBack")(io, users, busyAgents, forceDisconnectUser));
-
-// 🔥 አዲሱ የምዝገባ ኤፒአይ መስመር እዚህ ጋር በድል ተቀላቀለ (የጎደለው ዋናው ነገር ይህ ነበር)
 app.use("/api/pensioners", require("./PensionerRegistrationBack"));
 
 /* =========================
