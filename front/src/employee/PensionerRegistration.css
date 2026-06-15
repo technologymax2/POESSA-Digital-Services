@@ -1,7 +1,7 @@
 /* ================================
-   MAIN CONTAINER
+   MAIN CONTAINER (Namespace: pr-)
 ================================ */
-.registration-container {
+.pr-registration-container {
   width: 100%;
   padding: 25px;
   background: #ffffff;
@@ -10,14 +10,14 @@
   font-family: "Segoe UI", sans-serif;
 }
 
-.form-title {
+.pr-form-title {
   color: #0f172a;
   font-size: 30px;
   font-weight: 700;
   margin-bottom: 8px;
 }
 
-.form-subtitle {
+.pr-form-subtitle {
   color: #64748b;
   font-size: 15px;
   margin-bottom: 25px;
@@ -26,7 +26,7 @@
 /* ================================
    FORM
 ================================ */
-.pensioner-form {
+.pr-pensioner-form {
   display: flex;
   flex-direction: column;
   gap: 25px;
@@ -35,13 +35,13 @@
 /* ================================
    IMAGE SECTION
 ================================ */
-.image-upload-section {
+.pr-image-upload-section {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.image-preview-box {
+.pr-image-preview-box {
   width: 150px !important;
   height: 180px !important;
   border: 2px dashed #3b82f6;
@@ -52,18 +52,18 @@
   transition: .3s;
 }
 
-.image-preview-box:hover {
+.pr-image-preview-box:hover {
   border-color: #1d4ed8;
   transform: translateY(-3px);
 }
 
-.preview-img {
+.pr-preview-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.upload-placeholder {
+.pr-upload-placeholder {
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -74,37 +74,34 @@
   padding: 10px;
 }
 
-.upload-icon {
+.pr-upload-icon {
   font-size: 40px;
   margin-bottom: 10px;
 }
 
 /* ================================
-   GRID
+   GRID & INPUTS
 ================================ */
-.form-grid {
+.pr-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px,1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
 }
 
-/* ================================
-   INPUT GROUP
-================================ */
-.input-group {
+.pr-input-group {
   display: flex;
   flex-direction: column;
 }
 
-.input-group label {
+.pr-input-group label {
   margin-bottom: 7px;
   color: #1e293b;
   font-size: 14px;
   font-weight: 600;
 }
 
-.input-group input,
-.input-group select {
+.pr-input-group input,
+.pr-input-group select {
   height: 50px;
   padding: 0 15px;
   border: 1px solid #cbd5e1;
@@ -114,27 +111,24 @@
   transition: .3s;
 }
 
-.input-group input:focus,
-.input-group select:focus {
+.pr-input-group input:focus,
+.pr-input-group select:focus {
   outline: none;
   border-color: #2563eb;
   box-shadow: 0 0 0 4px rgba(37,99,235,.15);
 }
 
 /* ================================
-   STATUS MESSAGE
+   STATUS & BUTTONS
 ================================ */
-.status-message {
+.pr-status-message {
   padding: 15px;
   border-radius: 10px;
   font-weight: 600;
   font-size: 14px;
 }
 
-/* ================================
-   SUBMIT BUTTON
-================================ */
-.submit-btn {
+.pr-submit-btn {
   width: 100%;
   height: 55px;
   border: none;
@@ -148,71 +142,20 @@
   box-shadow: 0 8px 25px rgba(37,99,235,.3);
 }
 
-.submit-btn:hover {
+.pr-submit-btn:hover {
   transform: translateY(-2px);
   background: linear-gradient(135deg,#1d4ed8,#1e40af);
 }
 
-.submit-btn:disabled {
-  background: #94a3b8;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
 /* ================================
-   TABLET
+   MEDIA QUERIES
 ================================ */
 @media (max-width: 992px) {
-
-  .form-grid {
-    grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
-  }
-
+  .pr-form-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
 }
 
-/* ================================
-   MOBILE
-================================ */
 @media (max-width: 768px) {
-
-  .registration-container {
-    padding: 15px;
-  }
-
-  .form-title {
-    font-size: 23px;
-    text-align: center;
-  }
-
-  .form-subtitle {
-    text-align: center;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-
-  .input-group input,
-  .input-group select {
-    height: 48px;
-    font-size: 16px;
-  }
-
-  .submit-btn {
-    height: 52px;
-    font-size: 16px;
-  }
-
-}
-
-/* ================================
-   LARGE SCREEN
-================================ */
-@media (min-width: 1400px) {
-
-  .form-grid {
-    grid-template-columns: repeat(3,1fr);
-  }
-
+  .pr-registration-container { padding: 15px; }
+  .pr-form-title { font-size: 23px; text-align: center; }
+  .pr-form-grid { grid-template-columns: 1fr; }
 }
