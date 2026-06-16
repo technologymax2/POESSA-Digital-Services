@@ -12,7 +12,7 @@
   flex-direction: column;
   transition: 0.3s ease;
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-  z-index: 1500; /* ከዋናው ይዘት በላይ እንዲሆን */
+  z-index: 1500;
 }
 
 /* ================= COLLAPSED ================= */
@@ -34,7 +34,6 @@
   gap: 15px;
   padding: 25px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  height: 90px;
 }
 
 .logo-circle {
@@ -80,54 +79,46 @@
 /* ================= TOGGLE BUTTON ================= */
 .menu-toggle {
   position: fixed;
-  top: 22px;
-  left: 20px;
+  top: 20px;
+  left: 20px; /* መጀመሪያ ላይ በግራ በኩል ይጀምራል (Hamburger menu ሆኖ) */
   width: 45px;
   height: 45px;
   border: none;
-  border-radius: 50%; /* ወደ ክብ ተቀይሯል ውበት እንዲኖረው */
+  border-radius: 50%;
   background: white;
   color: #003366;
-  display: none; /* ዴስክቶፕ ላይ ይደበቃል */
+  display: none;
   justify-content: center;
   align-items: center;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  z-index: 2500; /* ከሳይድባሩም በላይ እንዲንሳፈፍ ትልቁ ቁጥር እዚህ ተሰጥቷል */
-  transition: 0.3s ease;
+  z-index: 2500; /* ሁልጊዜም ከሳይድባሩ በላይ እንዲንሳፈፍ */
+  transition: all 0.3s ease;
 }
 
 /* ================= MOBILE (ስልክ ላይ መደራረብን የሚከላከል) ================= */
 @media (max-width: 768px) {
   .menu-toggle {
-    display: flex; /* ስልክ ላይ እንዲታይ ያደርገዋል */
+    display: flex;
   }
 
-  /* ሜኑው በስልክ ሲከፈት የ"X" ምልክቱ በሳይድባሩ ላይ ሲቀመጥ ቀለሙ ነጭ ይሆናል */
+  /* ሳይድባሩ ሲከፈት (X ሲሆን) ወደ ቀኝ በኩል ይሻገራል */
   .menu-toggle.is-open {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
+    left: auto; /* የግራውን መለኪያ ያጠፋዋል */
+    right: 20px; /* በቀኝ በኩል 20px ርቆ ይቀመጣል */
+    background: rgba(255, 255, 255, 0.2); /* በሳይድባሩ ላይ ውበት እንዲኖረው በከፊል ግልጽ ይሆናል */
+    color: white; /* የ"X" ምልክቱ ነጭ ይሆናል */
   }
 
   .sidebar {
     position: fixed;
     top: 0;
-    left: -290px; /* ሙሉ በሙሉ ከስክሪኑ ውጭ ይደበቃል */
+    left: -290px;
+    z-index: 2000;
     transition: left 0.3s ease;
   }
 
   .sidebar.mobile-open {
     left: 0;
-  }
-
-  /* ስልክ ላይ አዝራሩና የ"P" ምልክት እንዳይደራረቡ "P" ን ይደብቀዋል */
-  .sidebar.mobile-open .logo-circle {
-    visibility: hidden;
-    opacity: 0;
-  }
-
-  /* ጽሑፉን ወደ ቀኝ ትንሽ ጠጋ ያደርገዋል */
-  .sidebar.mobile-open .brand-info {
-    margin-left: 35px;
   }
 }
