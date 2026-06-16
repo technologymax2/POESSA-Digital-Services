@@ -1,133 +1,495 @@
-/* 1. Global & Page Setup */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+*{
+
+    margin:0;
+
+    padding:0;
+
+    box-sizing:border-box;
+
 }
 
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
+
+
+body{
+
+    font-family:'Segoe UI',sans-serif;
+
+    overflow-x:hidden;
+
+    background:#f4f7fb;
+
 }
 
-.dashboard-page {
-  min-height: 100vh;
-  width: 100%;
-  background-image: url('../poessaImage.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  display: flex;
+
+
+/* ====================================
+
+   PAGE LAYOUT
+
+==================================== */
+
+.dashboard-page{
+
+    display:flex;
+
+    min-height:100vh;
+
+    width:100%;
+
+
+
+    background-image:url('../poessaImage.png');
+
+    background-size:cover;
+
+    background-position:center;
+
+    background-repeat:no-repeat;
+
+    background-attachment:fixed;
+
 }
 
-/* 2. Main Layout */
-.main-content {
-  flex-grow: 1;
-  margin-left: 280px; 
-  padding: 20px; /* ክፍተትን ለመቀነስ */
-  transition: all 0.3s ease;
-  min-height: 100vh;
+
+
+/* ====================================
+
+   MAIN CONTENT
+
+==================================== */
+
+.main-content{
+
+    flex:1;
+
+    min-width:0;
+
+
+
+    display:flex;
+
+    flex-direction:column;
+
+
+
+    padding:20px;
+
+
+
+    transition:.3s ease;
+
 }
 
-.dashboard-body {
-  display: flex;
-  flex-direction: column;
-  gap: 15px; /* በካርዶች እና በ footer መካከል ያለ ክፍተት */
+
+
+/* ====================================
+
+   BODY
+
+==================================== */
+
+.dashboard-body{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:20px;
+
 }
 
-/* 3. Glassmorphism Card Style */
-.stat-card, .employee-card, .action-card {
-  background: rgba(255, 255, 255, 0.65); 
-  backdrop-filter: blur(12px); 
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 20px; /* 25px የነበረውን ወደ 20px ዝቅ አድርገናል */
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease;
+
+
+/* ====================================
+
+   SECTION TITLES
+
+==================================== */
+
+.section-title{
+
+    font-size:22px;
+
+    font-weight:700;
+
+    color:#003366;
+
+    margin-bottom:15px;
+
 }
 
-.stat-card:hover, .employee-card:hover {
-  transform: translateY(-3px);
-  background: rgba(255, 255, 255, 0.85);
+
+
+/* ====================================
+
+   GLASS CARDS
+
+==================================== */
+
+.stat-card,
+
+.employee-card,
+
+.action-card{
+
+    background:rgba(255,255,255,.75);
+
+
+
+    backdrop-filter:blur(15px);
+
+    -webkit-backdrop-filter:blur(15px);
+
+
+
+    border-radius:20px;
+
+
+
+    border:1px solid rgba(255,255,255,.2);
+
+
+
+    padding:20px;
+
+
+
+    box-shadow:
+
+        0 8px 25px rgba(0,0,0,.08);
+
+
+
+    transition:.3s ease;
+
 }
 
-/* 4. Grid Sections */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 15px; /* አላስፈላጊ ክፍተትን ለመቀነስ */
+
+
+.stat-card:hover,
+
+.employee-card:hover,
+
+.action-card:hover{
+
+    transform:translateY(-4px);
+
+
+
+    background:rgba(255,255,255,.9);
+
 }
 
-.employees-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 15px;
+
+
+/* ====================================
+
+   STATISTICS GRID
+
+==================================== */
+
+.stats-grid{
+
+    display:grid;
+
+
+
+    grid-template-columns:
+
+    repeat(auto-fit,minmax(220px,1fr));
+
+
+
+    gap:20px;
+
 }
 
-/* 5. Typography & UI Elements */
-.section-title {
-  margin-bottom: 10px; /* ክፍተትን ለመቀነስ */
-  color: #003366;
-  font-size: 20px;
-  font-weight: 700;
+
+
+/* ====================================
+
+   EMPLOYEE GRID
+
+==================================== */
+
+.employees-grid{
+
+    display:grid;
+
+
+
+    grid-template-columns:
+
+    repeat(auto-fill,minmax(220px,1fr));
+
+
+
+    gap:20px;
+
 }
 
-.stat-number {
-  font-size: 28px;
-  font-weight: 700;
-  color: #003366;
+
+
+/* ====================================
+
+   NUMBERS
+
+==================================== */
+
+.stat-number{
+
+    font-size:32px;
+
+    font-weight:700;
+
+    color:#003366;
+
 }
 
-.employee-avatar {
-  width: 60px; /* ትንሽ አሳንሰነዋል */
-  height: 60px;
-  border-radius: 50%;
-  background: rgba(219, 230, 243, 0.8);
-  margin: 0 auto 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+
+
+/* ====================================
+
+   EMPLOYEE AVATAR
+
+==================================== */
+
+.employee-avatar{
+
+    width:65px;
+
+    height:65px;
+
+
+
+    border-radius:50%;
+
+
+
+    background:#dfe9f5;
+
+
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+
+
+    margin:0 auto 15px;
+
 }
 
-.status-badge {
-  display: inline-block;
-  margin-top: 8px;
-  background: rgba(46, 125, 50, 0.2);
-  color: #1b5e20;
-  padding: 4px 10px;
-  border-radius: 15px;
-  font-size: 11px;
-  font-weight: 700;
+
+
+/* ====================================
+
+   STATUS
+
+==================================== */
+
+.status-badge{
+
+    display:inline-block;
+
+
+
+    margin-top:10px;
+
+
+
+    padding:5px 14px;
+
+
+
+    border-radius:30px;
+
+
+
+    background:#e4f7e7;
+
+
+
+    color:#1b5e20;
+
+
+
+    font-size:12px;
+
+
+
+    font-weight:700;
+
 }
 
-.details-btn {
-  margin-top: 10px;
-  border: none;
-  background: #003366;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s;
+
+
+/* ====================================
+
+   BUTTONS
+
+==================================== */
+
+.details-btn{
+
+    margin-top:15px;
+
+
+
+    border:none;
+
+
+
+    background:#003366;
+
+
+
+    color:white;
+
+
+
+    padding:10px 18px;
+
+
+
+    border-radius:8px;
+
+
+
+    cursor:pointer;
+
+
+
+    font-size:14px;
+
+
+
+    transition:.3s;
+
 }
 
-.details-btn:hover {
-  background: #004d99;
+
+
+.details-btn:hover{
+
+    background:#0050a8;
+
 }
 
-/* 6. Responsive Design */
-@media (max-width: 992px) {
-  .main-content { margin-left: 240px; }
+
+
+/* ====================================
+
+   TABLET
+
+==================================== */
+
+@media screen and (max-width:992px){
+
+
+
+    .main-content{
+
+        padding:15px;
+
+    }
+
+
+
+    .stats-grid,
+
+    .employees-grid{
+
+        gap:15px;
+
+    }
+
+
+
 }
 
-@media (max-width: 768px) {
-  .main-content {
-    margin-left: 0;
-    padding: 15px;
-    padding-top: 70px;
-  }
-  .stats-grid, .employees-grid {
-    grid-template-columns: 1fr;
-  }
+
+
+/* ====================================
+
+   MOBILE
+
+==================================== */
+
+@media screen and (max-width:768px){
+
+
+
+    .dashboard-page{
+
+        flex-direction:column;
+
+    }
+
+
+
+    .main-content{
+
+        width:100%;
+
+        padding:15px;
+
+        margin-top:70px;
+
+    }
+
+
+
+    .stats-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+
+
+    .employees-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+
+
 }
+
+
+
+/* ====================================
+
+   SMALL MOBILE
+
+==================================== */
+
+@media screen and (max-width:480px){
+
+
+
+    .main-content{
+
+        padding:12px;
+
+    }
+
+
+
+    .section-title{
+
+        font-size:20px;
+
+    }
+
+
+
+    .stat-number{
+
+        font-size:28px;
+
+    }
