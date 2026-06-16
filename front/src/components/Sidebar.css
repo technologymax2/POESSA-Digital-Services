@@ -80,34 +80,29 @@
 .menu-toggle {
   position: fixed;
   top: 20px;
-  left: 20px; /* መጀመሪያ ላይ በግራ በኩል ይጀምራል (Hamburger menu ሆኖ) */
-  width: 45px;
-  height: 45px;
+  right: 20px; /* ሁልጊዜም በቀኝ በኩል እንዲሆን ተደርጓል */
   border: none;
-  border-radius: 50%;
-  background: white;
-  color: #003366;
+  background: transparent; /* የጀርባ ነጭ ክብ ቀለም ሙሉ በሙሉ ጠፍቷል */
+  color: #003366; /* መጀመሪያ ላይ በዳሽቦርዱ ላይ ጥቁር ሰማያዊ ይሆናል */
   display: none;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  z-index: 2500; /* ሁልጊዜም ከሳይድባሩ በላይ እንዲንሳፈፍ */
-  transition: all 0.3s ease;
+  z-index: 2500; /* ከሁሉም በላይ እንዲንሳፈፍ */
+  transition: color 0.2s ease;
+  padding: 5px;
 }
 
-/* ================= MOBILE (ስልክ ላይ መደራረብን የሚከላከል) ================= */
+/* ================= MOBILE (ስልክ ላይ አቀማመጥን የሚያስተካክል) ================= */
 @media (max-width: 768px) {
   .menu-toggle {
     display: flex;
   }
 
-  /* ሳይድባሩ ሲከፈት (X ሲሆን) ወደ ቀኝ በኩል ይሻገራል */
+  /* ሳይድባሩ ሲከፈት (የ X ምልክት ሲሆን) በሰማያዊው ጀርባ ላይ በግልጽ እንዲታይ ነጭ ይሆናል */
   .menu-toggle.is-open {
-    left: auto; /* የግራውን መለኪያ ያጠፋዋል */
-    right: 20px; /* በቀኝ በኩል 20px ርቆ ይቀመጣል */
-    background: rgba(255, 255, 255, 0.2); /* በሳይድባሩ ላይ ውበት እንዲኖረው በከፊል ግልጽ ይሆናል */
-    color: white; /* የ"X" ምልክቱ ነጭ ይሆናል */
+    color: white; 
+    right: 20px; /* ቦታውን ሳይቀይር በቀኝ በኩል ይቆያል */
   }
 
   .sidebar {
