@@ -26,7 +26,7 @@ const Sidebar = ({
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        window.innerWidth <= 768 &&
+        window.innerWidth <= 1024 &&
         !collapsed && 
         sidebarRef.current &&
         !sidebarRef.current.contains(event.target) &&
@@ -43,16 +43,17 @@ const Sidebar = ({
 
   const handleNavigation = (path) => {
     navigate(path);
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 1024) {
       setCollapsed(true); 
     }
   };
 
   const getSidebarClass = () => {
-    if (window.innerWidth <= 768) {
+    // በስልክ ወይም ታብሌት ላይ ክፍት ከሆነ 'mobile-open' ይሆናል፤ ፅሁፉ ግን መቼም አይጠፋም
+    if (window.innerWidth <= 1024) {
       return !collapsed ? "mobile-open" : ""; 
     }
-    return collapsed ? "desktop-collapsed" : ""; 
+    return ""; 
   };
 
   return (
