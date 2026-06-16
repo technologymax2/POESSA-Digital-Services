@@ -4,6 +4,7 @@
   width: 280px;
   min-width: 280px;
   height: 100vh;
+  position:fixed;
 
   background: linear-gradient(
     180deg,
