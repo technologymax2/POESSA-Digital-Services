@@ -25,8 +25,10 @@ const Sidebar = ({
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // ስልክ ላይ ሳይድባሩ ተከፍቶ ከሆነና ከሳይድባሩ ውጭ ከተነካ እንዲዘጋ ያደርጋል (setCollapsed ወደ false ይቀየራል)
       if (
         window.innerWidth <= 768 &&
+        collapsed && 
         sidebarRef.current &&
         !sidebarRef.current.contains(event.target)
       ) {
@@ -38,7 +40,15 @@ const Sidebar = ({
 
     return () =>
       document.removeEventListener("mousedown", handleClickOutside);
-  }, [setCollapsed]);
+  }, [collapsed, setCollapsed]);
+
+  // ስልክ ላይ ሊንኮችን ሲነኩ ወደ ሚፈልጉት ገጽ ወስዶ ሳይድባሩን በራሱ እንዲዘጋ የሚያደርግ ተግባር
+  const handleNavigation = (path) => {
+    navigate(path);
+    if (window.innerWidth <= 768) {
+      setCollapsed(false); 
+    }
+  };
 
   const getSidebarClass = () =>
     window.innerWidth <= 768
@@ -51,6 +61,7 @@ const Sidebar = ({
 
   return (
     <>
+      {/* የhamburger ማውጫ ቁልፍ (በስክሪን መጠኑ መሰረት ምልክቱ ይቀያየራል) */}
       <button
         className="menu-toggle"
         onClick={() => setCollapsed(!collapsed)}
@@ -69,21 +80,21 @@ const Sidebar = ({
         </div>
 
         <nav className="menu-list">
-          <div className="menu-item" onClick={() => navigate("/dashboard")}>
+          <div className="menu-item" onClick={() => handleNavigation("/dashboard")}>
             <Dashboard />
             <span>
               {currentLang === "am" ? "ዳሽቦርድ" : "Dashboard"}
             </span>
           </div>
 
-          <div className="menu-item" onClick={() => navigate("/delegations")}>
+          <div className="menu-item" onClick={() => handleNavigation("/delegations")}>
             <Description />
             <span>
               {currentLang === "am" ? "ውክልናዎች" : "Delegations"}
             </span>
           </div>
 
-          <div className="menu-item" onClick={() => navigate("/liveness")}>
+          <div className="menu-item" onClick={() => handleNavigation("/liveness")}>
             <VerifiedUser />
             <span>
               {currentLang === "am"
@@ -92,20 +103,14 @@ const Sidebar = ({
             </span>
           </div>
 
-          <div
-            className="menu-item"
-            onClick={() => navigate("/admin-dashboard")}
-          >
+          <div className="menu-item" onClick={() => handleNavigation("/admin-dashboard")}>
             <Assessment />
             <span>
               {currentLang === "am" ? "ሪፖርቶች" : "Reports"}
             </span>
           </div>
 
-          <div
-            className="menu-item"
-            onClick={() => navigate("/agent-call-center")}
-          >
+          <div className="menu-item" onClick={() => handleNavigation("/agent-call-center")}>
             <Videocam />
             <span>
               {currentLang === "am"
