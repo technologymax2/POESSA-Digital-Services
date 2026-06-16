@@ -59,7 +59,7 @@ const Sidebar = ({
 
   return (
     <>
-      {/* የToggle አዝራር - ሁልጊዜም ከሳይድባሩ በላይ እንዲንሳፈፍ ከላይ ተቀምጧል */}
+      {/* 'is-open' የሚለው ክላስ ሲጨምር አዝራሩ ወደ ቀኝ በኩል ይዞራል */}
       <button
         className={`menu-toggle ${collapsed ? "is-open" : ""}`}
         onClick={() => setCollapsed(!collapsed)}
@@ -69,10 +69,9 @@ const Sidebar = ({
 
       <aside ref={sidebarRef} className={`sidebar ${getSidebarClass()}`}>
         <div className="sidebar-header">
-          {/* ስልክ ላይ አዝራሩ "P" ን እንዳይሸፍነው ስልክ ላይ የ"P" አርማ ይደበቃል */}
           <div className="logo-circle">P</div>
 
-          <div className="brand-info">
+          <div>
             <h2>POESSA</h2>
             <p>Digital Services</p>
           </div>
