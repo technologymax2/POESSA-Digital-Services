@@ -9,8 +9,8 @@ function EmployeeDashboard() {
   const navigate = useNavigate();
 
   const [currentEmployee, setCurrentEmployee] = useState({
-    username: 'á‹¨á–áŠ¤áˆ³ áˆ°áˆ«á‰°áŠ›',
-    role: 'á‰£áˆˆáˆ™á‹«',
+    username: 'የፖኤሳ ሰራተኛ',
+    role: 'ባለሙያ',
     profilePic: null
   });
 
@@ -23,11 +23,11 @@ function EmployeeDashboard() {
     const storedUser =
       localStorage.getItem('fullName') ||
       localStorage.getItem('username') ||
-      'á‹¨á–áŠ¤áˆ³ áˆ°áˆ«á‰°áŠ›';
+      'የፖኤሳ ሰራተኛ';
 
     const storedRole =
       localStorage.getItem('role') ||
-      'á‰£áˆˆáˆ™á‹«';
+      'ባለሙያ';
 
     setCurrentEmployee({
       username: storedUser,
@@ -41,7 +41,7 @@ function EmployeeDashboard() {
     if (
       window.confirm(
         lang === 'am'
-          ? 'áŠ¥áˆ­áŒáŒ áŠ› áŠá‹Žá‰µ áŠ¨áˆ²áˆµá‰°áˆ™ áˆ˜á‹áŒ£á‰µ á‹­áˆáˆáŒ‹áˆ‰?'
+          ? 'እርግጠኛ ነዎት ከሲስተሙ መውጣት ይፈልጋሉ?'
           : 'Are you sure you want to logout?'
       )
     ) {
@@ -59,7 +59,7 @@ function EmployeeDashboard() {
           className="menu-toggle-btn"
           onClick={() => setIsMobileMenuOpen(true)}
         >
-          â˜°
+          ☰
         </button>
 
         <span className="mobile-portal-title">
@@ -74,7 +74,7 @@ function EmployeeDashboard() {
           className="close-menu-btn"
           onClick={() => setIsMobileMenuOpen(false)}
         >
-          âœ•
+          ✕
         </button>
 
         {/* Logo */}
@@ -102,7 +102,7 @@ function EmployeeDashboard() {
             />
           ) : (
             <div className="profile-placeholder">
-              {currentEmployee.username.charAt(0).toUpperCase()}
+              {currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : '👤'}
             </div>
           )}
 
@@ -129,8 +129,8 @@ function EmployeeDashboard() {
               setIsMobileMenuOpen(false);
             }}
           >
-            ðŸ“ {lang === 'am'
-              ? 'á‹³áˆ½á‰¦áˆ­á‹µ / áˆá‹áŒˆá‰£'
+            📝 {lang === 'am'
+              ? 'ዳሽቦርድ / ምዝገባ'
               : 'Dashboard / Register'}
           </button>
 
@@ -143,8 +143,8 @@ function EmployeeDashboard() {
               setIsMobileMenuOpen(false);
             }}
           >
-            ðŸ” {lang === 'am'
-              ? 'áˆ˜áˆ¨áŒƒ áˆ˜áˆáˆˆáŒŠá‹«áŠ“ áˆ˜á‰³á‹ˆá‰‚á‹«'
+            🔍 {lang === 'am'
+              ? 'መረጃ መፈለጊያና መታወቂያ'
               : 'Search & ID Card'}
           </button>
 
@@ -155,7 +155,7 @@ function EmployeeDashboard() {
           className="lang-switcher-btn"
           onClick={() => setLang(lang === 'am' ? 'en' : 'am')}
         >
-          ðŸŒ {lang === 'am' ? 'English' : 'áŠ áˆ›áˆ­áŠ›'}
+          🌐 {lang === 'am' ? 'English' : 'አማርኛ'}
         </button>
 
         {/* Logout */}
@@ -163,8 +163,8 @@ function EmployeeDashboard() {
           className="sidebar-logout-button"
           onClick={handleLogout}
         >
-          ðŸšª {lang === 'am'
-            ? 'áŠ¨áˆ²áˆµá‰°áˆ á‹áŒ£'
+          🚪 {lang === 'am'
+            ? 'ከሲስተም ውጣ'
             : 'Logout'}
         </button>
 
@@ -177,7 +177,7 @@ function EmployeeDashboard() {
         <div className="dashboard-header">
 
           <div>
-            <h2>áŠ¥áŠ•áŠ³áŠ• á‹°áˆ…áŠ“ áˆ˜áŒ¡</h2>
+            <h2>እንኳን ደህና መጡ</h2>
 
             <p>
               {currentEmployee.username}
@@ -192,7 +192,7 @@ function EmployeeDashboard() {
             />
           ) : (
             <div className="dashboard-profile-placeholder">
-              {currentEmployee.username.charAt(0).toUpperCase()}
+              {currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : 'U'}
             </div>
           )}
 
