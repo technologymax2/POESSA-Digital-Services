@@ -1,30 +1,21 @@
 /* ================= SIDEBAR ================= */
-
 .sidebar {
   width: 280px;
   min-width: 280px;
   height: 100vh;
-  position:fixed;
-
-  background: linear-gradient(
-    180deg,
-    #002855,
-    #003b73,
-    #004f99
-  );
-
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: linear-gradient(180deg, #002855, #003b73, #004f99);
   color: white;
-
   display: flex;
   flex-direction: column;
-
   transition: 0.3s ease;
-
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
 }
 
 /* ================= COLLAPSED ================= */
-
 .sidebar.desktop-collapsed {
   width: 80px;
   min-width: 80px;
@@ -37,38 +28,29 @@
 }
 
 /* ================= HEADER ================= */
-
 .sidebar-header {
   display: flex;
   align-items: center;
   gap: 15px;
-
   padding: 25px 20px;
-
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .logo-circle {
   width: 50px;
   height: 50px;
-
   min-width: 50px;
-
   border-radius: 50%;
-
   background: white;
   color: #003366;
-
   display: flex;
   justify-content: center;
   align-items: center;
-
   font-size: 22px;
   font-weight: bold;
 }
 
 /* ================= MENU ================= */
-
 .menu-list {
   flex: 1;
   padding: 20px 10px;
@@ -77,17 +59,11 @@
 .menu-item {
   display: flex;
   align-items: center;
-
   gap: 15px;
-
   padding: 14px 18px;
-
   border-radius: 12px;
-
   margin-bottom: 8px;
-
   cursor: pointer;
-
   transition: 0.3s ease;
 }
 
@@ -96,53 +72,41 @@
 }
 
 /* ================= FOOTER ================= */
-
 .sidebar-footer {
   padding: 15px;
 }
 
 /* ================= TOGGLE ================= */
-
 .menu-toggle {
   position: fixed;
-
   top: 20px;
   left: 20px;
-
   width: 45px;
   height: 45px;
-
   border: none;
   border-radius: 10px;
-
   background: white;
-
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-
-  z-index: 2000;
-
+  z-index: 2000; /* ከሁሉም በላይ እንዲሆን ያደርገዋል */
   display: none;
 }
 
-/* ================= MOBILE ================= */
-
+/* ================= MOBILE (ስልክ ላይ መደራረብን የሚከላከል) ================= */
 @media (max-width: 768px) {
-
   .menu-toggle {
     display: block;
   }
 
   .sidebar {
     position: fixed;
-
     top: 0;
-    left: -280px;
-
-    z-index: 1000;
-
-    transition: 0.3s ease;
+    left: -290px; /* ሙሉ በሙሉ ከስክሪኑ ውጭ ይደበቃል */
+    z-index: 2000;
+    transition: left 0.3s ease;
   }
 
+  /* ሜኑው በስልክ ሲከፈት በላዩ ላይ እንዲመጣ ያደርጋል */
   .sidebar.mobile-open {
     left: 0;
   }
