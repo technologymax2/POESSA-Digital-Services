@@ -1,186 +1,214 @@
-/* ====================================
-   RESET
-==================================== */
+/* ================= RESET ================= */
+
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-    font-family: 'Segoe UI', sans-serif;
-    overflow-x: hidden;
-    background: #f4f7fb;
+  font-family: "Segoe UI", sans-serif;
+  overflow-x: hidden;
+  background: #f4f7fb;
 }
 
-/* ====================================
-   PAGE LAYOUT
-==================================== */
+/* ================= PAGE LAYOUT ================= */
+
 .dashboard-page {
-    display: flex;
-    min-height: 100vh;
-    width: 100%;
-    background-image: url('../poessaImage.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+
+  background-image: url("../poessaImage.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
-/* ====================================
-   MAIN CONTENT (FIXED)
-==================================== */
+/* ================= MAIN CONTENT ================= */
+
 .main-content {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    transition: 0.3s ease;
-    margin-left: 280px; /* Space for Sidebar */
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 20px;
+
+  transition: 0.3s ease;
 }
 
-.main-content.collapsed {
-    margin-left: 80px; /* Space for collapsed Sidebar */
-}
+/* ================= BODY ================= */
 
-/* ====================================
-   BODY & CARDS
-==================================== */
 .dashboard-body {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
+
+/* ================= TITLES ================= */
 
 .section-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: #003366;
-    margin-bottom: 15px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #003366;
+  margin-bottom: 15px;
 }
+
+/* ================= GLASS CARDS ================= */
 
 .stat-card,
 .employee-card,
 .action-card {
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 20px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-    transition: 0.3s ease;
+  background: rgba(255, 255, 255, 0.8);
+
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+
+  border-radius: 20px;
+
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  padding: 20px;
+
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+
+  transition: 0.3s ease;
 }
 
 .stat-card:hover,
 .employee-card:hover,
 .action-card:hover {
-    transform: translateY(-4px);
-    background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.95);
 }
 
+/* ================= GRIDS ================= */
+
 .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
 }
 
 .employees-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
 }
+
+/* ================= NUMBERS ================= */
 
 .stat-number {
-    font-size: 32px;
-    font-weight: 700;
-    color: #003366;
+  font-size: 32px;
+  font-weight: 700;
+  color: #003366;
 }
+
+/* ================= AVATAR ================= */
 
 .employee-avatar {
-    width: 65px;
-    height: 65px;
-    border-radius: 50%;
-    background: #dfe9f5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 15px;
+  width: 65px;
+  height: 65px;
+
+  border-radius: 50%;
+
+  background: #dfe9f5;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  margin: 0 auto 15px;
 }
+
+/* ================= STATUS ================= */
 
 .status-badge {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 5px 14px;
-    border-radius: 30px;
-    background: #e4f7e7;
-    color: #1b5e20;
-    font-size: 12px;
-    font-weight: 700;
+  display: inline-block;
+
+  margin-top: 10px;
+
+  padding: 5px 14px;
+
+  border-radius: 30px;
+
+  background: #e4f7e7;
+  color: #1b5e20;
+
+  font-size: 12px;
+  font-weight: 700;
 }
 
+/* ================= BUTTON ================= */
+
 .details-btn {
-    margin-top: 15px;
-    border: none;
-    background: #003366;
-    color: white;
-    padding: 10px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: 0.3s;
+  margin-top: 15px;
+
+  border: none;
+
+  background: #003366;
+  color: white;
+
+  padding: 10px 18px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  transition: 0.3s;
 }
 
 .details-btn:hover {
-    background: #0050a8;
+  background: #0050a8;
 }
 
-/* ====================================
-   TABLET
-==================================== */
-@media screen and (max-width: 992px) {
-    .main-content {
-        padding: 15px;
-    }
-    .stats-grid,
-    .employees-grid {
-        gap: 15px;
-    }
+/* ================= TABLET ================= */
+
+@media (max-width: 992px) {
+  .main-content {
+    padding: 15px;
+  }
+
+  .stats-grid,
+  .employees-grid {
+    gap: 15px;
+  }
 }
 
-/* ====================================
-   MOBILE
-==================================== */
-@media screen and (max-width: 768px) {
-    .dashboard-page {
-        flex-direction: column;
-    }
-    .main-content {
-        width: 100%;
-        margin-left: 0;
-        margin-top: 70px;
-        padding: 15px;
-    }
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-    .employees-grid {
-        grid-template-columns: 1fr;
-    }
+/* ================= MOBILE ================= */
+
+@media (max-width: 768px) {
+  .dashboard-page {
+    flex-direction: column;
+  }
+
+  .main-content {
+    width: 100%;
+    padding: 15px;
+    margin-top: 70px;
+  }
+
+  .stats-grid,
+  .employees-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* ====================================
-   SMALL MOBILE
-==================================== */
-@media screen and (max-width: 480px) {
-    .main-content {
-        padding: 12px;
-    }
-    .section-title {
-        font-size: 20px;
-    }
-    .stat-number {
-        font-size: 28px;
-    }
-} /* Closing brace for Small Mobile block was missing */
+/* ================= SMALL MOBILE ================= */
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 12px;
+  }
+
+  .section-title {
+    font-size: 20px;
+  }
+
+  .stat-number {
+    font-size: 28px;
+  }
+}
