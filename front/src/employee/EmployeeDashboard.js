@@ -70,15 +70,18 @@ function EmployeeDashboard() {
       {/* Sidebar */}
       <div className={`employee-sidebar no-print ${isMobileMenuOpen ? 'open' : ''}`}>
 
-
-
-  
+        {/* Close Button for Mobile Menu */}
+        <button
+          className="close-menu-btn"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          ✕
+        </button>
 
         <hr className="sidebar-hr" />
 
         {/* Employee Profile */}
         <div className="sidebar-profile-box">
-
           {currentEmployee.profilePic ? (
             <img
               src={currentEmployee.profilePic}
@@ -89,15 +92,6 @@ function EmployeeDashboard() {
             <div className="profile-placeholder">
               {currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : '👤'}
             </div>
-
-        <button
-          className="close-menu-btn"
-          onClick={() => setIsMobileMenuOpen(false)}
-        >
-          ✕
-        </button>
-
-
           )}
 
           <div className="profile-info">
@@ -106,14 +100,12 @@ function EmployeeDashboard() {
               {currentEmployee.role}
             </span>
           </div>
-
         </div>
 
         <hr className="sidebar-hr" />
 
         {/* Menu */}
         <div className="sidebar-menu-items">
-
           <button
             className={`menu-btn-item ${
               activeSubPage === 'registration' ? 'active' : ''
@@ -123,9 +115,7 @@ function EmployeeDashboard() {
               setIsMobileMenuOpen(false);
             }}
           >
-            📝 {lang === 'am'
-              ? 'ዳሽቦርድ / ምዝገባ'
-              : 'Dashboard / Register'}
+            📝 {lang === 'am' ? 'ዳሽቦርድ / ምዝገባ' : 'Dashboard / Register'}
           </button>
 
           <button
@@ -137,11 +127,8 @@ function EmployeeDashboard() {
               setIsMobileMenuOpen(false);
             }}
           >
-            🔍 {lang === 'am'
-              ? 'መረጃ መፈለጊያና መታወቂያ'
-              : 'Search & ID Card'}
+            🔍 {lang === 'am' ? 'መረጃ መፈለጊያና መታወቂያ' : 'Search & ID Card'}
           </button>
-
         </div>
 
         {/* Language Button */}
@@ -157,9 +144,7 @@ function EmployeeDashboard() {
           className="sidebar-logout-button"
           onClick={handleLogout}
         >
-          🚪 {lang === 'am'
-            ? 'ከሲስተም ውጣ'
-            : 'Logout'}
+          🚪 {lang === 'am' ? 'ከሲስተም ውጣ' : 'Logout'}
         </button>
 
       </div>
@@ -169,13 +154,9 @@ function EmployeeDashboard() {
 
         {/* Welcome Section */}
         <div className="dashboard-header">
-
           <div>
             <h2>እንኳን ደህና መጡ</h2>
-
-            <p>
-              {currentEmployee.username}
-            </p>
+            <p>{currentEmployee.username}</p>
           </div>
 
           {currentEmployee.profilePic ? (
@@ -189,23 +170,16 @@ function EmployeeDashboard() {
               {currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : 'U'}
             </div>
           )}
-
         </div>
 
         <main className="dashboard-body">
-
           <div className="dynamic-content-area">
-
             {activeSubPage === 'registration' ? (
-              <PensionerRegistration
-                currentEmployee={currentEmployee.username}
-              />
+              <PensionerRegistration currentEmployee={currentEmployee.username} />
             ) : (
               <IdCardGenerationAndSearch />
             )}
-
           </div>
-
         </main>
 
         <Footer />
