@@ -1,4 +1,4 @@
-/* መደበኛ የሲኤስኤስ ቅንብሮች */
+/* 1. Reset & Base */
 * {
   margin: 0;
   padding: 0;
@@ -9,33 +9,43 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 280px;
   height: 100vh;
+  /* Sync this with Dashboard.css margin-left */
+  width: 280px; 
   background: linear-gradient(180deg, #002855, #003d80, #0050a8);
   color: white;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
+  transition: width 0.3s ease; /* Smooth width transition */
   z-index: 1000;
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
 }
 
-/* ዴስክቶፕ ላይ ሲቀነስ */
+/* 2. Desktop Collapsed State */
 .sidebar.desktop-collapsed {
-  width: 85px;
+  width: 80px; /* Must match the 80px in Dashboard.css */
 }
 
-/* የሄደር እና የሎጎ ስታይል */
+/* Hide text content when collapsed */
+.sidebar.desktop-collapsed .sidebar-header h2,
+.sidebar.desktop-collapsed .sidebar-header p,
+.sidebar.desktop-collapsed .menu-item span {
+  display: none;
+}
+
+/* 3. Sidebar Components */
 .sidebar-header {
   display: flex;
   align-items: center;
   gap: 15px;
   padding: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .logo-circle {
-  width: 50px;
+  min-width: 50px;
   height: 50px;
   background: white;
   color: #002855;
@@ -47,7 +57,6 @@
   font-size: 22px;
 }
 
-/* ሜኑ ሊስት */
 .menu-list {
   flex: 1;
   padding: 20px 10px;
@@ -62,30 +71,26 @@
   border-radius: 12px;
   cursor: pointer;
   transition: 0.3s;
+  overflow: hidden;
 }
 
 .menu-item:hover {
   background: rgba(255, 255, 255, 0.12);
 }
 
-.menu-item.active {
-  background: white;
-  color: #002855;
-  font-weight: bold;
+/* 4. Responsive & Mobile */
+@media (min-width: 769px) {
+  .menu-toggle {
+    display: none;
+  }
 }
 
-.sidebar-footer {
-  padding: 15px;
-}
-
-/* ሞባይል ስክሪን ስታይል */
 @media (max-width: 768px) {
   .menu-toggle {
     display: block !important;
     position: fixed;
     top: 20px; 
-    right: 20px;      /* አዝራሩ በቀኝ እንዲሆን */
-    left: auto;       /* ግራ በኩል እንዳይሆን */
+    right: 20px; 
     z-index: 9999;
     width: 45px;
     height: 45px;
@@ -98,18 +103,10 @@
 
   .sidebar {
     transform: translateX(-100%);
-    width: 260px;
+    width: 280px; /* Always full width on mobile when open */
   }
 
-  /* ሞባይል ላይ ሲከፈት */
   .sidebar.mobile-open {
     transform: translateX(0);
-  }
-}
-
-/* ዴስክቶፕ ላይ ሜኑ መክፈቻ ተደብቋል */
-@media (min-width: 769px) {
-  .menu-toggle {
-    display: none;
   }
 }
