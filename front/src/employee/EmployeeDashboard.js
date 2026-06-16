@@ -1,31 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PensionerRegistration from './PensionerRegistration';
 import IdCardGenerationAndSearch from './IdCardGenerationAndSearch';
 import './EmployeeDashboard.css';
 
-const EmployeeDashboard = () => {
+function EmployeeDashboard() {
   const navigate = useNavigate();
 
-  // 👤 Current Employee
   const [currentEmployee, setCurrentEmployee] = useState({
     username: 'የፖኤሳ ሰራተኛ',
     role: 'ባለሙያ',
     profilePic: null
   });
 
-  // 🌍 Language
   const [lang, setLang] = useState('am');
-
-  // 📱 Mobile Sidebar
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // 📄 Active Page
   const [activeSubPage, setActiveSubPage] = useState('registration');
 
-  // 📥 Load Employee Info
+  // Load employee info
   useEffect(() => {
     const storedUser =
       localStorage.getItem('fullName') ||
@@ -43,7 +36,7 @@ const EmployeeDashboard = () => {
     });
   }, []);
 
-  // 🚪 Logout
+  // Logout
   const handleLogout = () => {
     if (
       window.confirm(
@@ -60,7 +53,7 @@ const EmployeeDashboard = () => {
   return (
     <div className="dashboard-page">
 
-      {/* Mobile Header */}
+      {/* Mobile Top Bar */}
       <div className="mobile-top-bar no-print">
         <button
           className="menu-toggle-btn"
@@ -84,7 +77,7 @@ const EmployeeDashboard = () => {
           ✕
         </button>
 
-        {/* Brand */}
+        {/* Logo */}
         <div className="sidebar-brand-area">
           <div className="avatar-circle">P</div>
 
@@ -98,8 +91,9 @@ const EmployeeDashboard = () => {
 
         <hr className="sidebar-hr" />
 
-        {/* Profile */}
+        {/* Employee Profile */}
         <div className="sidebar-profile-box">
+
           {currentEmployee.profilePic ? (
             <img
               src={currentEmployee.profilePic}
@@ -118,6 +112,7 @@ const EmployeeDashboard = () => {
               {currentEmployee.role}
             </span>
           </div>
+
         </div>
 
         <hr className="sidebar-hr" />
@@ -155,20 +150,18 @@ const EmployeeDashboard = () => {
 
         </div>
 
-        {/* Language */}
+        {/* Language Button */}
         <button
           className="lang-switcher-btn"
-          onClick={() =>
-            setLang(lang === 'am' ? 'en' : 'am')
-          }
+          onClick={() => setLang(lang === 'am' ? 'en' : 'am')}
         >
           🌐 {lang === 'am' ? 'English' : 'አማርኛ'}
         </button>
 
         {/* Logout */}
         <button
-          onClick={handleLogout}
           className="sidebar-logout-button"
+          onClick={handleLogout}
         >
           🚪 {lang === 'am'
             ? 'ከሲስተም ውጣ'
@@ -180,15 +173,33 @@ const EmployeeDashboard = () => {
       {/* Main Content */}
       <div className="main-content">
 
-        <Header
-          title={
-            lang === 'am'
-              ? 'POESSA | ዲጂታል አገልግሎቶች'
-              : 'POESSA | Digital Services'
-          }
-        />
+        {/* Welcome Section */}
+        <div className="dashboard-header">
+
+          <div>
+            <h2>እንኳን ደህና መጡ</h2>
+
+            <p>
+              {currentEmployee.username}
+            </p>
+          </div>
+
+          {currentEmployee.profilePic ? (
+            <img
+              src={currentEmployee.profilePic}
+              alt="Profile"
+              className="dashboard-profile-image"
+            />
+          ) : (
+            <div className="dashboard-profile-placeholder">
+              {currentEmployee.username.charAt(0).toUpperCase()}
+            </div>
+          )}
+
+        </div>
 
         <main className="dashboard-body">
+
           <div className="dynamic-content-area">
 
             {activeSubPage === 'registration' ? (
@@ -200,9 +211,11 @@ const EmployeeDashboard = () => {
             )}
 
           </div>
+
         </main>
 
         <Footer />
+
       </div>
 
       {/* Overlay */}
@@ -212,8 +225,9 @@ const EmployeeDashboard = () => {
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
+
     </div>
   );
-};
+}
 
 export default EmployeeDashboard;
