@@ -27,12 +27,12 @@ const Sidebar = ({
     const handleClickOutside = (event) => {
       if (
         window.innerWidth <= 768 &&
-        !collapsed && // 💡 ማስተካከያ፡ ሳይድባሩ ክፍት ከሆነ (collapsed === false)
+        !collapsed && 
         sidebarRef.current &&
         !sidebarRef.current.contains(event.target) &&
         !event.target.closest(".menu-toggle")
       ) {
-        setCollapsed(true); // 💡 ሲነካ ይዘጋል
+        setCollapsed(true); 
       }
     };
 
@@ -44,21 +44,19 @@ const Sidebar = ({
   const handleNavigation = (path) => {
     navigate(path);
     if (window.innerWidth <= 768) {
-      setCollapsed(true); // 💡 ከሄደ በኋላ በሞባይል ይዘጋል
+      setCollapsed(true); 
     }
   };
 
-  // 💡 የክላስ አሰጣጥ ሎጂክ ማስተካከያ
   const getSidebarClass = () => {
     if (window.innerWidth <= 768) {
-      return !collapsed ? "mobile-open" : ""; // collapsed ካልሆነ ሞባይል ላይ ይከፈታል
+      return !collapsed ? "mobile-open" : ""; 
     }
-    return collapsed ? "desktop-collapsed" : ""; // desktop ላይ collapsed ከሆነ ያንሳል
+    return collapsed ? "desktop-collapsed" : ""; 
   };
 
   return (
     <>
-      {/* 💡 !collapsed ሲሆን ክፍት ነው (X ምልክት)፣ collapsed ሲሆን ዝግ ነው (Hamburger) */}
       <button
         className={`menu-toggle ${!collapsed ? "is-open" : ""}`}
         onClick={() => setCollapsed(!collapsed)}
@@ -115,7 +113,7 @@ const Sidebar = ({
             <span>{currentLang === "am" ? "መቼቶች" : "Settings"}</span>
           </div>
         </div>
-      </</aside>
+      </aside>
     </>
   );
 };
