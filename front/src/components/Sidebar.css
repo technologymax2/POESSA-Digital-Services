@@ -12,7 +12,7 @@
   flex-direction: column;
   transition: 0.3s ease;
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 1500; /* ከዋናው ይዘት በላይ እንዲሆን */
 }
 
 /* ================= COLLAPSED ================= */
@@ -34,6 +34,7 @@
   gap: 15px;
   padding: 25px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  height: 90px;
 }
 
 .logo-circle {
@@ -76,38 +77,57 @@
   padding: 15px;
 }
 
-/* ================= TOGGLE ================= */
+/* ================= TOGGLE BUTTON ================= */
 .menu-toggle {
   position: fixed;
-  top: 20px;
+  top: 22px;
   left: 20px;
   width: 45px;
   height: 45px;
   border: none;
-  border-radius: 10px;
+  border-radius: 50%; /* ወደ ክብ ተቀይሯል ውበት እንዲኖረው */
   background: white;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  color: #003366;
+  display: none; /* ዴስክቶፕ ላይ ይደበቃል */
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  z-index: 2000; /* ከሁሉም በላይ እንዲሆን ያደርገዋል */
-  display: none;
+  z-index: 2500; /* ከሳይድባሩም በላይ እንዲንሳፈፍ ትልቁ ቁጥር እዚህ ተሰጥቷል */
+  transition: 0.3s ease;
 }
 
 /* ================= MOBILE (ስልክ ላይ መደራረብን የሚከላከል) ================= */
 @media (max-width: 768px) {
   .menu-toggle {
-    display: block;
+    display: flex; /* ስልክ ላይ እንዲታይ ያደርገዋል */
+  }
+
+  /* ሜኑው በስልክ ሲከፈት የ"X" ምልክቱ በሳይድባሩ ላይ ሲቀመጥ ቀለሙ ነጭ ይሆናል */
+  .menu-toggle.is-open {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
   }
 
   .sidebar {
     position: fixed;
     top: 0;
     left: -290px; /* ሙሉ በሙሉ ከስክሪኑ ውጭ ይደበቃል */
-    z-index: 2000;
     transition: left 0.3s ease;
   }
 
-  /* ሜኑው በስልክ ሲከፈት በላዩ ላይ እንዲመጣ ያደርጋል */
   .sidebar.mobile-open {
     left: 0;
+  }
+
+  /* ስልክ ላይ አዝራሩና የ"P" ምልክት እንዳይደራረቡ "P" ን ይደብቀዋል */
+  .sidebar.mobile-open .logo-circle {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  /* ጽሑፉን ወደ ቀኝ ትንሽ ጠጋ ያደርገዋል */
+  .sidebar.mobile-open .brand-info {
+    margin-left: 35px;
   }
 }
