@@ -51,7 +51,7 @@ function EmployeeDashboard() {
   };
 
   return (
-    <div className="dashboard-page">
+    <div className="employee-dashboard-page">
 
       {/* Mobile Top Bar */}
       <div className="mobile-top-bar no-print">
