@@ -1,226 +1,232 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import Footer from '../components/Footer';
 import PensionerRegistration from './PensionerRegistration';
 import IdCardGenerationAndSearch from './IdCardGenerationAndSearch';
 import './EmployeeDashboard.css';
 
-const API_URL = "https://poessa-digital-services-1.onrender.com";
-
 function EmployeeDashboard() {
   const navigate = useNavigate();
 
-  // Unified application state variables
   const [currentEmployee, setCurrentEmployee] = useState({
-    username: 'የፖኤሳ ሰራተኛ',
-    role: 'ባለሙያ',
+    username: 'á‹¨á–áŠ¤áˆ³ áˆ°áˆ«á‰°áŠ›',
+    role: 'á‰£áˆˆáˆ™á‹«',
     profilePic: null
   });
-  
+
   const [lang, setLang] = useState('am');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSubPage, setActiveSubPage] = useState('registration');
-  const [loading, setLoading] = useState(true);
 
-  // Load employee info from both API and localStorage fallback
+  // Load employee info
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (token) {
-          const res = await axios.get(`${API_URL}/api/auth/verify`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          if (res.data && res.data.success) {
-            setCurrentEmployee({
-              username: res.data.user.fullName || res.data.user.username || 'የፖኤሳ ሰራተኛ',
-              role: 'ፈጻሚ ባለሙያ',
-              profilePic: res.data.user.profilePicture || null
-            });
-            setLoading(false);
-            return;
-          }
-        }
-      } catch (err) {
-        console.error("API data load failed, falling back to local storage:", err);
-      }
+    const storedUser =
+      localStorage.getItem('fullName') ||
+      localStorage.getItem('username') ||
+      'á‹¨á–áŠ¤áˆ³ áˆ°áˆ«á‰°áŠ›';
 
-      // Fallback logic if API fails or token is missing
-      const storedUser = localStorage.getItem('fullName') || localStorage.getItem('username') || 'የፖኤሳ ሰራተኛ';
-      const storedRole = localStorage.getItem('role') || 'ባለሙያ';
-      const storedPic = localStorage.getItem('profilePic') || null;
+    const storedRole =
+      localStorage.getItem('role') ||
+      'á‰£áˆˆáˆ™á‹«';
 
-      setCurrentEmployee({
-        username: storedUser,
-        role: storedRole,
-        profilePic: storedPic
-      });
-      setLoading(false);
-    };
-
-    fetchUserData();
+    setCurrentEmployee({
+      username: storedUser,
+      role: storedRole,
+      profilePic: localStorage.getItem('profilePic') || null
+    });
   }, []);
 
-  // System Logout Utility
+  // Logout
   const handleLogout = () => {
-    const confirmationMessage = lang === 'am' 
-      ? 'እርግጠኛ ነዎት ከሲስተሙ መውጣት ይፈልጋሉ?' 
-      : 'Are you sure you want to logout?';
-
-    if (window.confirm(confirmationMessage)) {
+    if (
+      window.confirm(
+        lang === 'am'
+          ? 'áŠ¥áˆ­áŒáŒ áŠ› áŠá‹Žá‰µ áŠ¨áˆ²áˆµá‰°áˆ™ áˆ˜á‹áŒ£á‰µ á‹­áˆáˆáŒ‹áˆ‰?'
+          : 'Are you sure you want to logout?'
+      )
+    ) {
       localStorage.clear();
       navigate('/login');
     }
   };
 
-  return React.createElement(
-    'div',
-    { className: 'employee-dashboard-page' },
+  return (
+    <div className="employee-dashboard-page">
 
-    /* Mobile Top Navigation bar */
-    React.createElement(
-      'div',
-      { className: 'mobile-top-bar no-print' },
-      React.createElement(
-        'button',
-        { className: 'menu-toggle-btn', onClick: () => setIsMobileMenuOpen(true) },
-        '☰'
-      ),
-      React.createElement('span', { className: 'mobile-portal-title' }, 'POESSA INTERNAL PORTAL')
-    ),
+      {/* Mobile Top Bar */}
+      <div className="mobile-top-bar no-print">
+        <button
+          className="menu-toggle-btn"
+          onClick={() => setIsMobileMenuOpen(true)}
+        >
+          â˜°
+        </button>
 
-    /* Primary Sidebar Container */
-    React.createElement(
-      'aside',
-      { className: `employee-sidebar no-print ${isMobileMenuOpen ? 'open' : ''}` },
-      
-      React.createElement(
-        'button',
-        { className: 'close-menu-btn', onClick: () => setIsMobileMenuOpen(false) },
-        '✕'
-      ),
+        <span className="mobile-portal-title">
+          POESSA INTERNAL PORTAL
+        </span>
+      </div>
 
-      /* Brand/Logo Area */
-      React.createElement(
-        'div',
-        { className: 'sidebar-brand-area' },
-        React.createElement('div', { className: 'avatar-circle' }, 'P'),
-        React.createElement(
-          'div',
-          { className: 'brand-text-wrapper' },
-          React.createElement('h3', null, 'POESSA'),
-          React.createElement('span', { className: 'brand-subtext' }, 'Digital Services')
-        )
-      ),
+      {/* Sidebar */}
+      <div className={`employee-sidebar no-print ${isMobileMenuOpen ? 'open' : ''}`}>
 
-      React.createElement('hr', { className: 'sidebar-hr' }),
+        <button
+          className="close-menu-btn"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          âœ•
+        </button>
 
-      /* Dynamic Employee Profile section */
-      React.createElement(
-        'div',
-        { className: 'sidebar-profile-box' },
-        currentEmployee.profilePic
-          ? React.createElement('img', { src: currentEmployee.profilePic, alt: 'Profile', className: 'profile-img' })
-          : React.createElement(
-              'div',
-              { className: 'profile-placeholder' },
-              currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : '👤'
-            ),
-        React.createElement(
-          'div',
-          { className: 'profile-info' },
-          React.createElement('h4', null, loading ? '...' : currentEmployee.username),
-          React.createElement('span', { className: 'role-tag' }, currentEmployee.role)
-        )
-      ),
+        {/* Logo */}
+        <div className="sidebar-brand-area">
+          <div className="avatar-circle">P</div>
 
-      React.createElement('hr', { className: 'sidebar-hr' }),
+          <div className="brand-text-wrapper">
+            <h3>POESSA</h3>
+            <span className="brand-subtext">
+              Digital Services
+            </span>
+          </div>
+        </div>
 
-      /* Dashboard Actions Links */
-      React.createElement(
-        'nav',
-        { className: 'sidebar-menu-items' },
-        React.createElement(
-          'button',
-          {
-            className: `menu-btn-item ${activeSubPage === 'registration' ? 'active' : ''}`,
-            onClick: () => {
+        <hr className="sidebar-hr" />
+
+        {/* Employee Profile */}
+        <div className="sidebar-profile-box">
+
+          {currentEmployee.profilePic ? (
+            <img
+              src={currentEmployee.profilePic}
+              alt="Profile"
+              className="profile-img"
+            />
+          ) : (
+            <div className="profile-placeholder">
+              {currentEmployee.username.charAt(0).toUpperCase()}
+            </div>
+          )}
+
+          <div className="profile-info">
+            <h4>{currentEmployee.username}</h4>
+            <span className="role-tag">
+              {currentEmployee.role}
+            </span>
+          </div>
+
+        </div>
+
+        <hr className="sidebar-hr" />
+
+        {/* Menu */}
+        <div className="sidebar-menu-items">
+
+          <button
+            className={`menu-btn-item ${
+              activeSubPage === 'registration' ? 'active' : ''
+            }`}
+            onClick={() => {
               setActiveSubPage('registration');
               setIsMobileMenuOpen(false);
-            }
-          },
-          `📝 ${lang === 'am' ? 'ዳሽቦርድ / ምዝገባ' : 'Dashboard / Register'}`
-        ),
-        React.createElement(
-          'button',
-          {
-            className: `menu-btn-item ${activeSubPage === 'search' ? 'active' : ''}`,
-            onClick: () => {
+            }}
+          >
+            ðŸ“ {lang === 'am'
+              ? 'á‹³áˆ½á‰¦áˆ­á‹µ / áˆá‹áŒˆá‰£'
+              : 'Dashboard / Register'}
+          </button>
+
+          <button
+            className={`menu-btn-item ${
+              activeSubPage === 'search' ? 'active' : ''
+            }`}
+            onClick={() => {
               setActiveSubPage('search');
               setIsMobileMenuOpen(false);
-            }
-          },
-          `🔍 ${lang === 'am' ? 'መረጃ መፈለጊያና መታወቂያ' : 'Search & ID Card'}`
-        )
-      ),
+            }}
+          >
+            ðŸ” {lang === 'am'
+              ? 'áˆ˜áˆ¨áŒƒ áˆ˜áˆáˆˆáŒŠá‹«áŠ“ áˆ˜á‰³á‹ˆá‰‚á‹«'
+              : 'Search & ID Card'}
+          </button>
 
-      /* Language Selection Switcher */
-      React.createElement(
-        'button',
-        { className: 'lang-switcher-btn', onClick: () => setLang(lang === 'am' ? 'en' : 'am') },
-        `🌐 ${lang === 'am' ? 'English' : 'አማርኛ'}`
-      ),
+        </div>
 
-      /* Session Termination Button */
-      React.createElement(
-        'button',
-        { className: 'sidebar-logout-button', onClick: handleLogout },
-        `🚪 ${lang === 'am' ? 'ከሲስተም ውጣ' : 'Logout'}`
-      )
-    ),
+        {/* Language Button */}
+        <button
+          className="lang-switcher-btn"
+          onClick={() => setLang(lang === 'am' ? 'en' : 'am')}
+        >
+          ðŸŒ {lang === 'am' ? 'English' : 'áŠ áˆ›áˆ­áŠ›'}
+        </button>
 
-    /* Main Dynamic View Content Workspace Area */
-    React.createElement(
-      'div',
-      { className: 'main-content' },
-      
-      React.createElement(
-        'header',
-        { className: 'dashboard-header' },
-        React.createElement(
-          'div',
-          { null: null },
-          React.createElement('h2', null, lang === 'am' ? 'እንኳን ደህና መጡ' : 'Welcome'),
-          React.createElement('p', null, loading ? '...' : currentEmployee.username)
-        ),
-        currentEmployee.profilePic
-          ? React.createElement('img', { src: currentEmployee.profilePic, alt: 'Profile', className: 'dashboard-profile-image' })
-          : React.createElement(
-              'div',
-              { className: 'dashboard-profile-placeholder' },
-              currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : 'U'
-            )
-      ),
+        {/* Logout */}
+        <button
+          className="sidebar-logout-button"
+          onClick={handleLogout}
+        >
+          ðŸšª {lang === 'am'
+            ? 'áŠ¨áˆ²áˆµá‰°áˆ á‹áŒ£'
+            : 'Logout'}
+        </button>
 
-      React.createElement(
-        'main',
-        { className: 'dashboard-body' },
-        React.createElement(
-          'div',
-          { className: 'dynamic-content-area' },
-          activeSubPage === 'registration'
-            ? React.createElement(PensionerRegistration, { currentEmployee: currentEmployee.username })
-            : React.createElement(IdCardGenerationAndSearch, null)
-        )
-      ),
+      </div>
 
-      React.createElement(Footer, null)
-    ),
+      {/* Main Content */}
+      <div className="main-content">
 
-    /* Side Overlay backdrop for mobile rendering viewports */
-    isMobileMenuOpen && React.createElement('div', { className: 'sidebar-overlay', onClick: () => setIsMobileMenuOpen(false) })
+        {/* Welcome Section */}
+        <div className="dashboard-header">
+
+          <div>
+            <h2>áŠ¥áŠ•áŠ³áŠ• á‹°áˆ…áŠ“ áˆ˜áŒ¡</h2>
+
+            <p>
+              {currentEmployee.username}
+            </p>
+          </div>
+
+          {currentEmployee.profilePic ? (
+            <img
+              src={currentEmployee.profilePic}
+              alt="Profile"
+              className="dashboard-profile-image"
+            />
+          ) : (
+            <div className="dashboard-profile-placeholder">
+              {currentEmployee.username.charAt(0).toUpperCase()}
+            </div>
+          )}
+
+        </div>
+
+        <main className="dashboard-body">
+
+          <div className="dynamic-content-area">
+
+            {activeSubPage === 'registration' ? (
+              <PensionerRegistration
+                currentEmployee={currentEmployee.username}
+              />
+            ) : (
+              <IdCardGenerationAndSearch />
+            )}
+
+          </div>
+
+        </main>
+
+        <Footer />
+
+      </div>
+
+      {/* Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+    </div>
   );
 }
 
