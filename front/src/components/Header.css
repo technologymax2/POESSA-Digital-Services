@@ -1,4 +1,7 @@
-/* Header.css */
+/* ==========================================================================
+   Dashboard Header Styles (White & Blue Modern Theme)
+   ========================================================================== */
+
 .dashboard-header {
   min-height: 70px;
   background: #ffffff;
@@ -9,23 +12,34 @@
   padding: 10px 40px;
   position: sticky;
   top: 0;
-  z-index: 1000;
-  box-shadow: 0 4px 20px rgba(0, 51, 102, 0.05); /* በጣም ለስላሳ ሰማያዊ ጥላ */
+  
+  /* CRITICAL: ማውጫው (Sidebar) ሲከፈት ከማውጫው በታች እንዲሆን z-index ዝቅ ተደርጓል */
+  z-index: 10; 
+  
+  box-shadow: 0 4px 20px rgba(0, 51, 102, 0.05); /* ለስላሳ ሰማያዊ ጥላ */
+  transition: all 0.3s ease;
 }
 
-/* የርዕስ ማስተካከያ */
+/* --- የርዕስ ቅጥ (Title) --- */
 .header-title h1 {
   font-size: 1.35rem;
-  color: #003366; /* ጥቁር ሰማያዊ */
+  color: #003366; /* ማራኪ ጥቁር ሰማያዊ */
   margin: 0;
   font-weight: 700;
   letter-spacing: -0.5px;
 }
 
+/* --- የተጠቃሚ ፕሮፋይል መያዣ --- */
 .user-profile {
   display: flex;
   align-items: center;
   gap: 20px;
+}
+
+.user-name {
+  color: #003366;
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
 .avatar {
@@ -37,20 +51,22 @@
   align-items: center;
   justify-content: center;
   border: 2px solid #0056b3;
+  font-size: 1.2rem;
 }
 
+/* --- የአዝራሮች መያዣ (Auth Actions) --- */
 .auth-actions {
   display: flex;
   gap: 15px;
   align-items: center;
 }
 
-/* ማራኪ የአዝራሮች አጠቃላይ ቅጥ */
+/* --- አጠቃላይ የአዝራሮች (Links) የጋራ ቅጥ --- */
 .auth-link {
   text-decoration: none;
   font-weight: 600;
   padding: 10px 24px;
-  border-radius: 8px; /* ይበልጥ ዘመናዊ የተጠጋጋ ጠርዝ */
+  border-radius: 8px; /* ዘመናዊ የተጠጋጋ ጠርዝ */
   font-size: 0.95rem;
   transition: all 0.25s ease-in-out;
   display: inline-flex;
@@ -60,21 +76,21 @@
   box-shadow: 0 2px 6px rgba(0, 51, 102, 0.08);
 }
 
-/* ማራኪ የ Login አዝራር (በነጩ ካርድ ውስጥ ጎልቶ የሚታይ) */
+/* --- ለ Login አዝራር ልዩ ቅጥ --- */
 .auth-link.login {
-  border: 2px solid #003366; /* ወፈር ያለ ሰማያዊ መስመር */
+  border: 2px solid #003366;
   color: #003366;
   background-color: #ffffff;
 }
 
 .auth-link.login:hover {
-  background-color: #003366; /* ማውዝ ሲያርፍበት ቀለሙ ይገላበጣል */
+  background-color: #003366; /* ማውዝ ሲያርፍበት ቀለሙ ይገለበጣል */
   color: #ffffff;
   box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2);
   transform: translateY(-1px); /* ትንሽ ወደ ላይ ከፍ የማለት ውበት */
 }
 
-/* ማራኪ የ Sign Up አዝራር */
+/* --- ለ Sign Up አዝራር ልዩ ቅጥ --- */
 .auth-link.signup {
   background-color: #003366;
   color: #ffffff;
@@ -92,21 +108,27 @@
   color: #d1d9e0;
 }
 
-/* --- ለሞባይል ስልክ (Responsive) ፍጹም ማስተካከያ --- */
+/* ==========================================================================
+   Responsive Styles (ለሞባይል ስልክ የተደረገ ፍጹም ማስተካከያ)
+   ========================================================================== */
 @media (max-width: 600px) {
   .dashboard-header {
-    flex-direction: column; /* ጽሑፉና አዝራሩ በሞባይል አንዱ ከሌላው በታች እንዲሆኑ */
+    flex-direction: column; /* ጽሑፉና አዝራሩ አንዱ ከሌላው በታች እንዲሆኑ */
     justify-content: center;
-    gap: 12px;
-    padding: 15px 20px;
+    gap: 14px;
+    padding: 18px 20px;
     border-radius: 16px; /* በፎቶው ላይ እንዳለው ነጩ ካርድ የተጠጋጋ ጠርዝ እንዲኖረው */
-    margin: 15px; /* ከስክሪኑ ጠርዝ እንዲርቅ */
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); /* ካርዱን ውብ አድርጎ የሚያጎላ ጥላ */
+    margin: 15px; /* ከጀርባው ካለው ህንጻ እና ከስክሪኑ ጠርዝ እንዲርቅ */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); /* ካርዱን ለይቶ የሚያጎላ ውብ ጥላ */
+    
+    /* ማውጫው ሲከፈት ሄደሩ በላዩ ላይ እንዳይደራረብ z-index እዚህም ተጠብቋል */
+    z-index: 10; 
   }
 
   .header-title h1 {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     text-align: center;
+    line-height: 1.4;
   }
 
   .user-profile {
@@ -119,11 +141,11 @@
     justify-content: center;
   }
 
-  /* በፎቶው ላይ ያለውን የ Login አዝራር ቅርፅ መሃል ላይ በትክክል ለማስቀመጥ */
+  /* የ Login አዝራር በነጩ ካርድ መሃል ላይ ውብ ሆኖ እንዲቀመጥ */
   .auth-link.login {
     width: auto;
-    min-width: 120px; /* የአዝራሩ ስፋት በሞባይል ውብ እንዲሆን */
-    padding: 6px 20px;
-    font-size: 0.85rem;
+    min-width: 130px; /* የአዝራሩ ስፋት በሞባይል ተለጣጭና ማራኪ እንዲሆን */
+    padding: 8px 22px;
+    font-size: 0.9rem;
   }
 }
