@@ -1,4 +1,4 @@
-/* ================= SIDEBAR ================= */
+/* ================= SIDEBAR PANEL ================= */
 .sidebar {
   width: 280px;
   min-width: 280px;
@@ -10,12 +10,12 @@
   color: white;
   display: flex;
   flex-direction: column;
-  transition: 0.3s ease;
+  transition: transform 0.3s ease, width 0.3s ease;
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-  z-index: 1500;
+  z-index: 2000; /* ከዋናው ይዘት በላይ */
 }
 
-/* ================= COLLAPSED ================= */
+/* ================= DESKTOP COLLAPSED ================= */
 .sidebar.desktop-collapsed {
   width: 80px;
   min-width: 80px;
@@ -27,30 +27,17 @@
   display: none;
 }
 
-/* ================= HEADER ================= */
+/* ================= SIDEBAR HEADER ================= */
 .sidebar-header {
   display: flex;
   align-items: center;
   gap: 15px;
   padding: 25px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  height: 90px;
 }
 
-.logo-circle {
-  width: 50px;
-  height: 50px;
-  min-width: 50px;
-  border-radius: 50%;
-  background: white;
-  color: #003366;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 22px;
-  font-weight: bold;
-}
-
-/* ================= MENU ================= */
+/* ================= LIST & ITEMS ================= */
 .menu-list {
   flex: 1;
   padding: 20px 10px;
@@ -71,51 +58,51 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
-/* ================= FOOTER ================= */
 .sidebar-footer {
   padding: 15px;
 }
 
-/* ================= TOGGLE BUTTON ================= */
+/* ================= TOGGLE BUTTON (የተስተካከለ) ================= */
 .menu-toggle {
   position: fixed;
   top: 20px;
   right: 20px; /* ሁልጊዜም በቀኝ በኩል ይቆያል */
   border: none;
-  background: transparent; /* ክብ ጀርባው ጠፍቷል */
-  color: #002855; /* ሜኑው ሳይከፈት (Hamburger እያለ) ጥቁር ሰማያዊ ቀለም */
-  display: none;
+  background: transparent !important; /* የጀርባ ነጭ ክብ ቀለም ሙሉ በሙሉ ጠፍቷል */
+  color: #003366; /* መጀመሪያ ላይ በዳሽቦርዱ ላይ ጥቁር ሰማያዊ ቀለም */
+  display: none; /* ዴስክቶፕ ላይ አይታይም */
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  z-index: 2500; /* ከሁሉም በላይ እንዲንሳፈፍ */
-  transition: color 0.2s ease;
+  z-index: 2500; /* ከሳይድባሩም በላይ እንዲንሳፈፍ ትልቁ ቁጥር */
   padding: 5px;
+  transition: color 0.2s ease;
 }
 
-/* ================= MOBILE ================= */
+/* ================= MOBILE RESPONSIVE (768px) ================= */
 @media (max-width: 768px) {
   .menu-toggle {
-    display: flex;
+    display: flex; /* ስልክ ላይ ብቻ አዝራሩ ይገለጣል */
   }
 
-  /* ዋናው ማስተካከያ፦ ሳይድባሩ ሲከፈት (X ምልክት ሲሆን) 
-    ከበስተጀርባው ያለው ነጭ ካርድ ላይ በግልጽ እንዲታይ ቀለሙን ጥቁር ሰማያዊ ያደርገዋል
-  */
+  /* ሳይድባሩ ሲከፈት (የ X ምልክት ሲሆን) ከበስተጀርባው ነጭ ካርድ ላይ በግልጽ እንዲታይ ቀለሙ ጥቁር ሰማያዊ ይሆናል */
   .menu-toggle.is-open {
-    color: #002855 !important; 
-    right: 20px; 
+    color: #002855 !important;
+    right: 20px; /* ቦታውን ሳይቀይር በቀኝ በኩል ይጸናል */
   }
 
+  /* ሳይድባሩ በስልክ ላይ ሙሉ በሙሉ ተደብቆ ይቆያል */
   .sidebar {
     position: fixed;
     top: 0;
-    left: -290px;
-    z-index: 2000;
-    transition: left 0.3s ease;
+    left: -290px; /* ከስክሪን ውጭ ይደበቃል */
+    width: 280px;
+    z-index: 2200;
+    transition: transform 0.3s ease;
   }
 
+  /* ሜኑው በስልክ ሲከፈት የ'Transform' ባህሪን ተጠቅሞ ወደ ውስጥ ይንሸራተታል (አይጨፈለቅም) */
   .sidebar.mobile-open {
-    left: 0;
+    transform: translateX(290px);
   }
 }
