@@ -15,18 +15,6 @@
   z-index: 1500;
 }
 
-/* ================= COLLAPSED ================= */
-.sidebar.desktop-collapsed {
-  width: 80px;
-  min-width: 80px;
-}
-
-.sidebar.desktop-collapsed h2,
-.sidebar.desktop-collapsed p,
-.sidebar.desktop-collapsed span {
-  display: none;
-}
-
 /* ================= HEADER ================= */
 .sidebar-header {
   display: flex;
@@ -65,6 +53,7 @@
   margin-bottom: 8px;
   cursor: pointer;
   transition: 0.3s ease;
+  white-space: nowrap; /* ፅሁፉ ወደ ታች እንዳይሰበር */
 }
 
 .menu-item:hover {
@@ -80,28 +69,25 @@
 .menu-toggle {
   position: fixed;
   top: 20px;
-  right: 20px; /* ሁልጊዜም በቀኝ በኩል ይቆያል */
+  right: 20px;
   border: none;
-  background: transparent; /* ክብ ጀርባው ጠፍቷል */
-  color: #002855; /* ሜኑው ሳይከፈት (Hamburger እያለ) ጥቁር ሰማያዊ ቀለም */
+  background: transparent;
+  color: #002855;
   display: none;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  z-index: 2500; /* ከሁሉም በላይ እንዲንሳፈፍ */
+  z-index: 2500;
   transition: color 0.2s ease;
   padding: 5px;
 }
 
-/* ================= MOBILE ================= */
-@media (max-width: 768px) {
+/* ================= MOBILE & DESKTOP SITE MODE ================= */
+@media (max-width: 1024px) {
   .menu-toggle {
     display: flex;
   }
 
-  /* ዋናው ማስተካከያ፦ ሳይድባሩ ሲከፈት (X ምልክት ሲሆን) 
-    ከበስተጀርባው ያለው ነጭ ካርድ ላይ በግልጽ እንዲታይ ቀለሙን ጥቁር ሰማያዊ ያደርገዋል
-  */
   .menu-toggle.is-open {
     color: #002855 !important; 
     right: 20px; 
@@ -110,12 +96,11 @@
   .sidebar {
     position: fixed;
     top: 0;
-    left: -290px;
+    left: -290px; /* በዲፎልት በስልክ/ታብሌት ይደበቃል */
     z-index: 2000;
-    transition: left 0.3s ease;
   }
 
   .sidebar.mobile-open {
-    left: 0;
+    left: 0; /* ሲከፈት ሙሉ ስፋቱን ይዞ (280px) ይወጣል */
   }
 }
