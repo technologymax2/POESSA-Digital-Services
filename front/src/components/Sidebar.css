@@ -84,7 +84,7 @@
   border: none;
   background: transparent; /* የጀርባ ነጭ ክብ ቀለም ሙሉ በሙሉ ጠፍቷል */
   color: #003366; /* መጀመሪያ ላይ በዳሽቦርዱ ላይ ጥቁር ሰማያዊ ይሆናል */
-  display: box;
+  display: none;
   justify-content: center;
   align-items: center;
   cursor: pointer;
