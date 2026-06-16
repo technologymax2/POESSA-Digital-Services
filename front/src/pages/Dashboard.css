@@ -8,7 +8,7 @@
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
-  overflow-x: hidden;
+  overflow-x: hidden; /* Prevents horizontal scroll during transitions */
 }
 
 .dashboard-page {
@@ -22,20 +22,18 @@ body {
   background-attachment: fixed;
 }
 
-/* 2. Main Layout - Fixed Transition Logic */
+/* 2. Main Layout - Responsive & Collapsible */
 .main-content {
-  flex-grow: 1;
-  /* Matches expanded sidebar width */
-  margin-left: 280px; 
+  flex: 1;
+  margin-left: 280px; /* Expanded state */
   padding: 20px;
-  transition: margin-left 0.3s ease;
+  transition: margin-left 0.3s ease, width 0.3s ease;
   min-height: 100vh;
   width: calc(100% - 280px);
 }
 
 .main-content.collapsed {
-  /* Matches collapsed sidebar width */
-  margin-left: 80px; 
+  margin-left: 80px; /* Collapsed state */
   width: calc(100% - 80px);
 }
 
@@ -74,7 +72,7 @@ body {
   gap: 15px;
 }
 
-/* 5. Typography & UI Elements */
+/* 5. UI Elements */
 .section-title {
   margin-bottom: 10px;
   color: #003366;
@@ -128,10 +126,11 @@ body {
 /* 6. Responsive Design */
 @media (max-width: 992px) {
   .main-content { margin-left: 240px; width: calc(100% - 240px); }
+  .main-content.collapsed { margin-left: 80px; width: calc(100% - 80px); }
 }
 
 @media (max-width: 768px) {
-  .main-content {
+  .main-content, .main-content.collapsed {
     margin-left: 0;
     width: 100%;
     padding: 15px;
