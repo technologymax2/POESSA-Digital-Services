@@ -7,7 +7,43 @@ import Footer from "../components/Footer";
 import "./AdminDashboard.css";
 
 const API_URL = "https://poessa-digital-services-1.onrender.com";
-const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408"; // 🔑 የራስዎ የImgBB API ቁልፍ
+const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408"; 
+
+// 💡 1. UserTableን ወደ ላይ ማምጣት ReferenceErrorን ያስቀራል
+const UserTable = ({ users, toggleBlock, deleteUser, resetPassword }) => (
+  <div className="table-wrapper">
+    <table className="admin-table">
+      <thead>
+        <tr>
+          <th>ፎቶ</th><th>Username</th><th>ሙሉ ስም</th><th>ሁኔታ</th><th>ድርጊት</th>
+        </tr>
+      </thead>
+      <tbody>
+        {users.map((user) => (
+          <tr key={user._id}>
+            <td>
+              {user.profilePicture ? (
+                <img src={user.profilePicture} alt="User" style={{ width: '35px', height: '35px', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '35px', height: '35px', borderRadius: '50%', backgroundColor: '#cbd5e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>
+                  {user.username ? user.username.charAt(0).toUpperCase() : "U"}
+                </div>
+              )}
+            </td>
+            <td>{user.username}</td>
+            <td>{user.fullName || "N/A"}</td>
+            <td>{user.isBlocked ? "ታግዷል" : "ንቁ"}</td>
+            <td>
+              <button className="danger-btn" onClick={() => toggleBlock(user._id, user.isBlocked)}>{user.isBlocked ? "አንቃ" : "አግድ"}</button>
+              <button className="warning-btn" onClick={() => resetPassword(user._id)}>የይለፍ ቃል ቀይር</button>
+              <button className="dark-btn" onClick={() => deleteUser(user._id)}>ሰርዝ</button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -24,7 +60,6 @@ const AdminDashboard = () => {
   const [profileFile, setProfileFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
 
-  // ምስል ወደ ImgBB መላኪያ
   const uploadToImgBB = async (file) => {
     const formData = new FormData();
     formData.append("image", file);
@@ -52,6 +87,8 @@ const AdminDashboard = () => {
     const file = e.target.files[0];
     if (file) {
       setProfileFile(file);
+      // የድሮው preview ካለ Memory ለማጽዳት
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
       setImagePreview(URL.createObjectURL(file));
     }
   };
@@ -71,7 +108,6 @@ const AdminDashboard = () => {
       }
 
       const token = localStorage.getItem("token");
-      // መረጃን እንደ JSON መላክ
       await axios.post(`${API_URL}/api/admin/create-user`, 
         {
           username, fullName, password, role,
@@ -87,8 +123,18 @@ const AdminDashboard = () => {
       );
 
       alert("ተጠቃሚው በስኬት ተመዝግቧል!");
-      setUsername(""); setFullName(""); setPassword("");
-      setRole("employee"); setProfileFile(null); setImagePreview("");
+      
+      // 💡 2. ፎቶው ሲጠፋ የፈጠረውን ObjectURL ከ Memory ላይ እናጠፋዋለን
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+
+      setUsername(""); 
+      setFullName(""); 
+      setPassword("");
+      setRole("employee"); 
+      setProfileFile(null); 
+      setImagePreview("");
       fetchUsers();
     } catch (err) {
       console.error(err);
@@ -171,7 +217,9 @@ const AdminDashboard = () => {
               <option value="employee">ሰራተኛ (Employee)</option>
               <option value="admin">አድሚን (Admin)</option>
             </select>
-            <button onClick={createUser}>{loading ? "በመመዝገብ ላይ..." : "ተጠቃሚ ፍጠር"}</button>
+            <button onClick={createUser} disabled={loading}>
+              {loading ? "በመመዝገብ ላይ..." : "ተጠቃሚ ፍጠር"}
+            </button>
           </div>
         </section>
 
@@ -185,38 +233,5 @@ const AdminDashboard = () => {
     </div>
   );
 };
-
-const UserTable = ({ users, toggleBlock, deleteUser, resetPassword }) => (
-  <div className="table-wrapper">
-    <table className="admin-table">
-      <thead>
-        <tr>
-          <th>ፎቶ</th><th>Username</th><th>ሙሉ ስም</th><th>ሁኔታ</th><th>ድርጊት</th>
-        </tr>
-      </thead>
-      <tbody>
-        {users.map((user) => (
-          <tr key={user._id}>
-            <td>
-              {user.profilePicture ? (
-                <img src={user.profilePicture} alt="User" style={{ width: '35px', height: '35px', borderRadius: '50%', objectFit: 'cover' }} />
-              ) : (
-                <div style={{ width: '35px', height: '35px', borderRadius: '50%', backgroundColor: '#cbd5e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>{user.username.charAt(0).toUpperCase()}</div>
-              )}
-            </td>
-            <td>{user.username}</td>
-            <td>{user.fullName || "N/A"}</td>
-            <td>{user.isBlocked ? "ታግዷል" : "ንቁ"}</td>
-            <td>
-              <button className="danger-btn" onClick={() => toggleBlock(user._id, user.isBlocked)}>{user.isBlocked ? "አንቃ" : "አግድ"}</button>
-              <button className="warning-btn" onClick={() => resetPassword(user._id)}>የይለፍ ቃል ቀይር</button>
-              <button className="dark-btn" onClick={() => deleteUser(user._id)}>ሰርዝ</button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
 
 export default AdminDashboard;
