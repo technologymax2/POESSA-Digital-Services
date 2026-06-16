@@ -77,17 +77,7 @@ function EmployeeDashboard() {
           ✕
         </button>
 
-        {/* Logo */}
-        <div className="sidebar-brand-area">
-          <div className="avatar-circle">P</div>
-
-          <div className="brand-text-wrapper">
-            <h3>POESSA</h3>
-            <span className="brand-subtext">
-              Digital Services
-            </span>
-          </div>
-        </div>
+  
 
         <hr className="sidebar-hr" />
 
