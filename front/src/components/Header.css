@@ -1,21 +1,23 @@
 /* Header.css */
 .dashboard-header {
-  height: 70px;
+  min-height: 70px; /* በሞባይል ይዘቱ ከበዛ ራሱን እንዲያሰፋ */
   background: #ffffff;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 30px;
-  position: sticky; /* ሄደሩ ከላይ እንዲቆይ */
+  padding: 10px 30px; /* ከላይና ከታች ትንሽ ፓዲንግ ጨምረናል */
+  position: sticky;
   top: 0;
-  z-index: 999;
+  z-index: 1000; /* ከሌሎች ካርዶች በላይ እንዲሆን ከፍ ተደርጓል */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* ለበለጠ ውበት */
 }
 
 .header-title h1 {
   font-size: 1.25rem;
   color: #333;
   margin: 0;
+  font-weight: 600;
 }
 
 .user-profile {
@@ -37,62 +39,59 @@
 
 .auth-actions {
   display: flex;
-  gap: 15px; /* በአዝራሮቹ መካከል ያለው ክፍተት */
+  gap: 12px;
   align-items: center;
 }
 
-/* አጠቃላይ የአዝራሮቹ ቅጥ */
+/* አጠቃላይ የሊንኮች ቅጥ */
 .auth-link {
   text-decoration: none;
-  color: #003366;
   font-weight: 500;
-  padding: 8px 16px;
+  padding: 8px 20px; /* የግራና ቀኝ ስፋት ጨምረነዋል */
   border-radius: 6px;
-  transition: all 0.3s ease; /* ለስላሳ ሽግግር */
-  border: 1px solid transparent;
+  font-size: 0.9rem;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* ለሁሉም አዝራሮች አጠቃላይ Hover (ቅደም ተከተሉ እዚህ መሆን አለበት) */
-.auth-link:hover {
-  background-color: #f0f7ff;
-  border-color: #003366;
-  text-decoration: none;
-}
-
-/* ለ Login አዝራር ልዩ ቅጥ */
+/* ለ Login አዝራር (በፎቶው ላይ እንዳለው መስመር ብቻ ያለው) */
 .auth-link.login {
   border: 1px solid #003366;
+  color: #003366;
+  background-color: transparent;
 }
 
-/* ለ Sign Up አዝራር ልዩ ቅጥ (የተሞላ ቀለም) */
+.auth-link.login:hover {
+  background-color: #f0f7ff;
+}
+
+/* ለ Sign Up አዝራር (የተሞላ ቀለም) */
 .auth-link.signup {
   background-color: #003366;
   color: #ffffff;
+  border: 1px solid #003366;
 }
 
-/* ለ Sign Up አዝራር ልዩ Hover */
 .auth-link.signup:hover {
-  background-color: #004a99;
-  border-color: #004a99;
-  color: #ffffff; /* ጽሑፉ ነጭ ሆኖ እንዲቀጥል */
+  background-color: #002244;
+  border-color: #002244;
 }
 
-.separator {
-  color: #ccc;
-}
-
-/* ለሞባይል ስልክ የተስተካከለ */
-@media (max-width: 480px) {
+/* --- ለሞባይል ስልክ የተደረገ ማስተካከያ (Responsive) --- */
+@media (max-width: 600px) {
   .dashboard-header {
-    padding: 0 15px; /* በሞባይል ትንሽ ቦታ ለመቆጠብ */
+    padding: 10px 15px; /* በሞባይል ጠርዝ ላይ ያለው ክፍተት ቀነሰ */
+    gap: 10px;
   }
-  
-  .auth-actions {
-    gap: 8px; /* በሞባይል አዝራሮቹ እንዳይራራቁ ክፍተቱን መቀነስ */
+
+  .header-title h1 {
+    font-size: 1rem; /* ጽሑፉ በሞባይል እንዳይጨናነቅ */
   }
 
   .auth-link {
-    font-size: 12px; /* በሞባይል ትንሽ እንዲያንስ */
-    padding: 6px 12px; /* የአዝራሩን መጠን በሞባይል ማነስ */
+    font-size: 0.8rem; /* የአዝራሩ ጽሑፍ መጠን */
+    padding: 6px 14px; /* የአዝራሩ መጠን በሞባይል ትንሽ እንዲያንስ */
   }
 }
