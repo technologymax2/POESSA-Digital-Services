@@ -19,7 +19,7 @@ const Header = ({ title, user }) => {
         ) : (
           <div className="auth-actions">
             <Link to="/login" className="auth-link login">Login</Link>
-            <Link to="/signup" className="auth-link signup">Sign Up</Link>
+            
           </div>
         )}
       </div>
