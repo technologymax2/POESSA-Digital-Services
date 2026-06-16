@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Sidebar from "./Sidebar";
+import Sidebar from "../components/Sidebar";
 import "./Dashboard.css";
 
 // ማስታወሻ፦ ይህንን አካል ከዋናው የዳሽቦርድ ገጽህ መዋቅር ጋር አዛምደው
