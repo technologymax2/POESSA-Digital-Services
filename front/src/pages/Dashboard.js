@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import './Dashboard.css';
 
 const Dashboard = () => {
+  // የቋንቋ ስቴት
   const [lang, setLang] = useState('am');
   const [collapsed, setCollapsed] = useState(false);
 
@@ -13,22 +14,25 @@ const Dashboard = () => {
     setLang(prev => (prev === 'am' ? 'en' : 'am'));
   };
 
-  return (
-    <div className="dashboard-page">
-      <Sidebar 
-        currentLang={lang} 
-        toggleLanguage={toggleLanguage}
-        collapsed={collapsed}
-        setCollapsed={setCollapsed}
-      />
-      {/* collapsed በሆነ ጊዜ የmain-content ህዳግ (margin) እንዲቀንስ የተደረገበት ክፍል */}
-      <div className={`main-content ${collapsed ? 'collapsed' : ''}`}>
-        <Header title={lang === 'am' ? "POESSA | ዲጂታል አገልግሎቶች" : "POESSA | Digital Services"} />
+
+return (
+  <div className="dashboard-page">
+    <Sidebar 
+      currentLang={lang} 
+      toggleLanguage={toggleLanguage}
+      collapsed={collapsed}
+      setCollapsed={setCollapsed}
+    />
+
+    <div className={`main-content ${collapsed ? 'collapsed' : ''}`}>
+      <Header title={lang === 'am' ? "POESSA | ዲጂታል አገልግሎቶች" : "POESSA | Digital Services"} />
+      
         <DashboardContent />
         <Footer />
-      </div>
+     
     </div>
-  );
+  </div>
+);
 };
 
 export default Dashboard;
