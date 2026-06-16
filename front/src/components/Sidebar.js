@@ -59,18 +59,17 @@ const Sidebar = ({
 
   return (
     <>
-      {/* 'is-open' የሚለው ክላስ ሲጨምር አዝራሩ ወደ ቀኝ በኩል ይዞራል */}
+      {/* የአዝራር መቀያየሪያ - ሁልጊዜም በቀኝ በኩል እንዲሆን 'is-open' ክላስን ይይዛል */}
       <button
         className={`menu-toggle ${collapsed ? "is-open" : ""}`}
         onClick={() => setCollapsed(!collapsed)}
       >
-        {collapsed ? <Close /> : <Menu />}
+        {collapsed ? <Close style={{ fontSize: 28 }} /> : <Menu style={{ fontSize: 28 }} />}
       </button>
 
       <aside ref={sidebarRef} className={`sidebar ${getSidebarClass()}`}>
         <div className="sidebar-header">
           <div className="logo-circle">P</div>
-
           <div>
             <h2>POESSA</h2>
             <p>Digital Services</p>
