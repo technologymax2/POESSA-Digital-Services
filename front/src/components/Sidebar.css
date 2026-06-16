@@ -1,29 +1,23 @@
-/* 1. Reset & Base */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* Sidebar.css */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
-  /* Sync this with Dashboard.css margin-left */
-  width: 280px; 
+  width: 280px;
   background: linear-gradient(180deg, #002855, #003d80, #0050a8);
   color: white;
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease; /* Smooth width transition */
+  transition: width 0.3s ease;
   z-index: 1000;
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
 }
 
-/* 2. Desktop Collapsed State */
 .sidebar.desktop-collapsed {
-  width: 80px; /* Must match the 80px in Dashboard.css */
+  width: 80px;
 }
 
 /* Hide text content when collapsed */
@@ -33,7 +27,7 @@
   display: none;
 }
 
-/* 3. Sidebar Components */
+/* Header & Logo */
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -57,10 +51,8 @@
   font-size: 22px;
 }
 
-.menu-list {
-  flex: 1;
-  padding: 20px 10px;
-}
+/* Menu List */
+.menu-list { flex: 1; padding: 20px 10px; }
 
 .menu-item {
   display: flex;
@@ -72,18 +64,15 @@
   cursor: pointer;
   transition: 0.3s;
   overflow: hidden;
+  white-space: nowrap;
 }
 
-.menu-item:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
+.menu-item:hover { background: rgba(255, 255, 255, 0.12); }
 
-/* 4. Responsive & Mobile */
-@media (min-width: 769px) {
-  .menu-toggle {
-    display: none;
-  }
-}
+.sidebar-footer { padding: 15px; }
+
+/* Responsive & Mobile */
+@media (min-width: 769px) { .menu-toggle { display: none; } }
 
 @media (max-width: 768px) {
   .menu-toggle {
@@ -100,13 +89,6 @@
     cursor: pointer;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   }
-
-  .sidebar {
-    transform: translateX(-100%);
-    width: 280px; /* Always full width on mobile when open */
-  }
-
-  .sidebar.mobile-open {
-    transform: translateX(0);
-  }
+  .sidebar { transform: translateX(-100%); width: 280px; }
+  .sidebar.mobile-open { transform: translateX(0); }
 }
