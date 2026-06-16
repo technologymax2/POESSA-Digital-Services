@@ -23,21 +23,21 @@ body {
   background-attachment: fixed;
 }
 
-/* ================= MAIN CONTENT (DESKTOP) ================= */
+/* ================= MAIN CONTENT (LARGE DESKTOP) ================= */
 .main-content {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   padding: 20px;
-  /* ዴስክቶፕ ላይ ይዘቱ ከሳይድባሩ (280px) ቀኝ ብሎ እንዲቀመጥ ያደርጋል */
+  /* በትልልቅ ስክሪኖች ላይ ብቻ ከሳይድባሩ ቀኝ ይላካል */
   margin-left: 280px; 
   transition: 0.3s ease;
   position: relative;
-  z-index: 10; /* አዝራሮች በትክክል ክሊክ እንዲሆኑ */
+  z-index: 10;
 }
 
-/* ዴስክቶፕ ላይ ሳይድባሩ ሲኮማተር ይዘቱ ወደ ግራ ይሰፋል */
+/* ሳይድባሩ ሲኮማተር ይዘቱ ወደ ግራ ይሰፋል */
 .main-content.collapsed {
   margin-left: 80px;
 }
@@ -133,7 +133,7 @@ body {
   border-radius: 8px;
   cursor: pointer;
   position: relative;
-  z-index: 20; /* ከማንኛውም ንብርብር በላይ ሆኖ ክሊክ እንዲሰራ */
+  z-index: 20;
   transition: 0.3s;
 }
 
@@ -150,29 +150,18 @@ body {
   height: 100vh;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(3px);
-  z-index: 1900; /* ከሳይድባሩ በታች ከይዘቱ በላይ እንዲሆን */
+  z-index: 1900;
 }
 
-/* ================= TABLET ================= */
-@media (max-width: 992px) {
-  .main-content {
-    padding: 15px;
-  }
-  .stats-grid,
-  .employees-grid {
-    gap: 15px;
-  }
-}
-
-/* ================= MOBILE (የተስተካከለው የሞባይል ክፍል) ================= */
-@media (max-width: 768px) {
+/* ================= TABLET & DESKTOP SITE MODE ON MOBILE ================= */
+@media (max-width: 1024px) {
   .dashboard-page {
-    display: block; /* Flex መዋቅሩ ስለሚጠፋ ሳይድባሩ ይዘቱን አይጋፋም */
+    display: block; 
   }
 
   .main-content,
   .main-content.collapsed {
-    margin-left: 0 !important; /* በስልክ/ዴስክቶፕ ሞድ ላይ ሙሉ ክፍተቱን ያጠፋዋል */
+    margin-left: 0 !important; /* በስልክ የዴስክቶፕ ሳይት ሲበራም ክፍተቱን ሙሉ በሙሉ ያጠፋዋል */
     width: 100% !important;
     padding: 15px;
     margin-top: 70px; /* ከላይ ከ Hamburger አዝራሩ በታች እንዲሆን */
@@ -182,7 +171,7 @@ body {
 
   .stats-grid,
   .employees-grid {
-    grid-template-columns: 1fr; /* ካርዶቹ በስልክ አንድ አንድ ሆነው እንዲደረደሩ */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* ይዘቶቹ ሳይጨፈለቁ እንዲታዩ */
   }
 }
 
@@ -196,5 +185,9 @@ body {
   }
   .stat-number {
     font-size: 28px;
+  }
+  .stats-grid,
+  .employees-grid {
+    grid-template-columns: 1fr;
   }
 }
