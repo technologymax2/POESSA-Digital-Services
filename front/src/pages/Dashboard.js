@@ -7,7 +7,8 @@ import "./Dashboard.css";
 
 const Dashboard = () => {
   const [lang, setLang] = useState("am");
-  const [collapsed, setCollapsed] = useState(false);
+  // 💡 በዲፎልት desktop ላይ ተከፍቶ እንዲነሳ collapsed = false ይሁን
+  const [collapsed, setCollapsed] = useState(false); 
 
   const toggleLanguage = () => {
     setLang((prev) => (prev === "am" ? "en" : "am"));
@@ -22,7 +23,6 @@ const Dashboard = () => {
         setCollapsed={setCollapsed}
       />
 
-      {/* ሳይድባሩ ሲዘጋ ወይም ሲከፈት ዲዛይኑን በሲኤስኤስ ለማስተካከል ክላስ ስም ተጨምሮበታል */}
       <div className={`main-content ${collapsed ? "collapsed" : ""}`}>
         <Header
           title={
@@ -36,11 +36,11 @@ const Dashboard = () => {
         <Footer />
       </div>
 
-      {/* OVERLAY: በሞባይል ላይ ሜኑው ሲከፈት ከጀርባ ያለውን የዳሽቦርድ ክፍል ለማደብዘዝ */}
-      {collapsed && window.innerWidth <= 768 && (
+      {/* 💡 ማስተካከያ፡ ሳይድባሩ ክፍት ከሆነ (!collapsed) እና በስልክ ከሆነ Overlayው ይታያል */}
+      {!collapsed && window.innerWidth <= 768 && (
         <div 
           className="sidebar-mobile-overlay" 
-          onClick={() => setCollapsed(false)} 
+          onClick={() => setCollapsed(true)} // ሲነካ ሳይድባሩን ይዘጋዋል (true ያደርገዋል)
         />
       )}
     </div>
