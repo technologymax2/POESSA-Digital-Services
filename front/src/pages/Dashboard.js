@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import DashboardContent from "./DashboardContent";
@@ -7,8 +7,26 @@ import "./Dashboard.css";
 
 const Dashboard = () => {
   const [lang, setLang] = useState("am");
-  // 💡 በዲፎልት desktop ላይ ተከፍቶ እንዲነሳ collapsed = false ይሁን
-  const [collapsed, setCollapsed] = useState(false); 
+  // በዲፎልት እውነተኛ ስክሪን እስኪለካ ድረስ ተዘግቶ (true) ይነሳ
+  const [collapsed, setCollapsed] = useState(true); 
+
+  // የስክሪኑን ስፋት በቋሚነት ለመከታተል
+  useEffect(() => {
+    const handleResize = () => {
+      // ስክሪኑ ከ 1024px በላይ ከሆነ ሳይድባሩ ይከፈት፣ ካልሆነ ግን በራሱ ይዘጋ (collapsed ይሁን)
+      if (window.innerWidth > 1024) {
+        setCollapsed(false);
+      } else {
+        setCollapsed(true);
+      }
+    };
+
+    // ገጹ ሲከፈት መጀመሪያ ለመለካት
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const toggleLanguage = () => {
     setLang((prev) => (prev === "am" ? "en" : "am"));
@@ -36,11 +54,11 @@ const Dashboard = () => {
         <Footer />
       </div>
 
-      {/* 💡 ማስተካከያ፡ ሳይድባሩ ክፍት ከሆነ (!collapsed) እና በስልክ ከሆነ Overlayው ይታያል */}
-      {!collapsed && window.innerWidth <= 768 && (
+      {/* OVERLAY: ሳይድባሩ ክፍት ከሆነ እና ስክሪኑ ከ 1024px በታች በሆነ ስልክ/ታብሌት ላይ ከጀርባ ያለውን ለማደብዘዝ */}
+      {!collapsed && window.innerWidth <= 1024 && (
         <div 
           className="sidebar-mobile-overlay" 
-          onClick={() => setCollapsed(true)} // ሲነካ ሳይድባሩን ይዘጋዋል (true ያደርገዋል)
+          onClick={() => setCollapsed(true)} 
         />
       )}
     </div>
