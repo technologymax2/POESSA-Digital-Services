@@ -27,12 +27,12 @@ const Sidebar = ({
     const handleClickOutside = (event) => {
       if (
         window.innerWidth <= 768 &&
-        collapsed && 
+        !collapsed && // 💡 ማስተካከያ፡ ሳይድባሩ ክፍት ከሆነ (collapsed === false)
         sidebarRef.current &&
         !sidebarRef.current.contains(event.target) &&
         !event.target.closest(".menu-toggle")
       ) {
-        setCollapsed(false);
+        setCollapsed(true); // 💡 ሲነካ ይዘጋል
       }
     };
 
@@ -44,27 +44,26 @@ const Sidebar = ({
   const handleNavigation = (path) => {
     navigate(path);
     if (window.innerWidth <= 768) {
-      setCollapsed(false); 
+      setCollapsed(true); // 💡 ከሄደ በኋላ በሞባይል ይዘጋል
     }
   };
 
-  const getSidebarClass = () =>
-    window.innerWidth <= 768
-      ? collapsed
-        ? "mobile-open"
-        : ""
-      : collapsed
-      ? "desktop-collapsed"
-      : "";
+  // 💡 የክላስ አሰጣጥ ሎጂክ ማስተካከያ
+  const getSidebarClass = () => {
+    if (window.innerWidth <= 768) {
+      return !collapsed ? "mobile-open" : ""; // collapsed ካልሆነ ሞባይል ላይ ይከፈታል
+    }
+    return collapsed ? "desktop-collapsed" : ""; // desktop ላይ collapsed ከሆነ ያንሳል
+  };
 
   return (
     <>
-      {/* የአዝራር መቀያየሪያ - ሁልጊዜም በቀኝ በኩል እንዲሆን 'is-open' ክላስን ይይዛል */}
+      {/* 💡 !collapsed ሲሆን ክፍት ነው (X ምልክት)፣ collapsed ሲሆን ዝግ ነው (Hamburger) */}
       <button
-        className={`menu-toggle ${collapsed ? "is-open" : ""}`}
+        className={`menu-toggle ${!collapsed ? "is-open" : ""}`}
         onClick={() => setCollapsed(!collapsed)}
       >
-        {collapsed ? <Close style={{ fontSize: 28 }} /> : <Menu style={{ fontSize: 28 }} />}
+        {!collapsed ? <Close style={{ fontSize: 28 }} /> : <Menu style={{ fontSize: 28 }} />}
       </button>
 
       <aside ref={sidebarRef} className={`sidebar ${getSidebarClass()}`}>
@@ -116,7 +115,7 @@ const Sidebar = ({
             <span>{currentLang === "am" ? "መቼቶች" : "Settings"}</span>
           </div>
         </div>
-      </aside>
+      </</aside>
     </>
   );
 };
