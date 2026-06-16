@@ -1,17 +1,11 @@
-/* ================= RESET & BASE ================= */
+/* ================= GLOBAL RESETS ================= */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-body {
-  font-family: "Segoe UI", sans-serif;
-  overflow-x: hidden;
-  background: #f4f7fb;
-}
-
-/* ================= PAGE LAYOUT ================= */
+/* ================= MAIN LAYOUT ================= */
 .dashboard-page {
   display: flex;
   min-height: 100vh;
@@ -30,17 +24,16 @@ body {
   display: flex;
   flex-direction: column;
   padding: 30px;
-  /* ዴስክቶፕ ላይ ከSideBar 280px ርቆ ቀኝ ላይ ይቆማል */
-  margin-left: 280px; 
+  margin-left: 280px; /* ዴስክቶፕ ላይ ለሳይድባሩ የተተወ ቦታ */
   transition: margin-left 0.3s ease;
+  z-index: 1; /* አዝራሮቹ ክሊክ እንዲሆኑ ከበስተጀርባው በላይ መሆን አለበት */
 }
 
-/* ዴስክቶፕ ላይ ሳይድባሩ ሲኮማተር ይዘቱ በሙሉ ሰፊ ቦታ ይይዛል */
 .main-content.collapsed {
   margin-left: 80px;
 }
 
-/* ================= TOP NAVBAR ================= */
+/* ================= TOP NAVBAR & BUTTONS ================= */
 .top-navbar {
   display: flex;
   justify-content: space-between;
@@ -53,12 +46,7 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-.portal-brand-title {
-  font-weight: 700;
-  color: #003366;
-  font-size: 16px;
-}
-
+/* የሎግኢን አዝራር ክሊክ መሆን እንዲችል */
 .login-nav-btn {
   background: transparent;
   border: 1px solid #003366;
@@ -67,6 +55,7 @@ body {
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
+  z-index: 10; 
   transition: 0.2s;
 }
 
@@ -75,7 +64,7 @@ body {
   color: white;
 }
 
-/* ================= BODY & GRIDS ================= */
+/* ================= GRIDS & CARDS ================= */
 .dashboard-body {
   display: flex;
   flex-direction: column;
@@ -88,102 +77,20 @@ body {
   gap: 25px;
 }
 
-/* ================= GLASS CARDS ================= */
 .stat-card {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 25px 20px;
   text-align: center;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-  transition: 0.3s ease;
 }
 
-.stat-card:hover {
-  transform: translateY(-5px);
-  background: rgba(255, 255, 255, 0.98);
-}
-
-.employee-avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: #dfe9f5;
-  color: #003366;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 24px;
-  margin: 0 auto 15px;
-}
-
-.stat-card h3 {
-  font-size: 16px;
-  color: #003366;
-  margin-bottom: 5px;
-}
-
-.card-sub-text {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 15px;
-}
-
-.details-btn {
-  border: none;
-  background: #003366;
-  color: white;
-  padding: 8px 20px;
-  border-radius: 6px;
-  font-weight: bold;
+/* የእያንዳንዱ ካርድ አዝራር በትክክል እንዲነካ */
+.details-btn, .video-start-btn {
   cursor: pointer;
-  width: 100%;
-  transition: 0.2s;
-}
-
-/* ================= WIDE VIDEO CARD ================= */
-.video-call-wide-card {
-  background: #002147;
-  color: white;
-  border-radius: 20px;
-  padding: 30px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-}
-
-.video-icon-box {
-  font-size: 35px;
-  color: #ffcc00;
-  margin-bottom: 10px;
-}
-
-.video-call-wide-card h2 {
-  font-size: 20px;
-  margin-bottom: 8px;
-}
-
-.video-call-wide-card p {
-  font-size: 13px;
-  opacity: 0.8;
-  margin-bottom: 20px;
-}
-
-.video-start-btn {
-  background: #ffcc00;
-  color: #002147;
-  border: none;
-  padding: 12px 30px;
-  border-radius: 30px;
-  font-weight: 700;
-  cursor: pointer;
-  font-size: 14px;
-  transition: 0.2s;
-}
-
-.video-start-btn:hover {
-  background: #ffe066;
+  z-index: 5;
+  position: relative;
 }
 
 /* ================= MOBILE OVERLAY ================= */
@@ -195,35 +102,25 @@ body {
   height: 100vh;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(3px);
-  z-index: 1800;
+  z-index: 1800; /* ከዋናው ይዘት በላይ ከሳይድባሩ በታች */
 }
 
-/* ================= MOBILE RESPONSIVE (768px) ================= */
+/* ================= MOBILE RESPONSIVE (スልክ ላይ) ================= */
 @media (max-width: 768px) {
   .dashboard-page {
-    display: block; /* Flex መዋቅሩ ይፈርሳል - መደራረብን ይከላከላል */
+    display: block; /* Flex መዋቅሩ ሲጠፋ ካርዶቹ አይጨፈለቁም */
   }
 
   .main-content,
   .main-content.collapsed {
-    margin-left: 0 !important; /* የግራውን ክፍተት ወደ 0 ይመልሳል (አይጨፈለቅም) */
+    margin-left: 0 !important; /* በስልክ ላይ የግራውን ክፍተት ያጠፋዋል */
     width: 100% !important;
     padding: 15px;
-    margin-top: 65px; /* ከ Hamburger አዝራሩ በታች እንዲጀምር */
-  }
-
-  .top-navbar {
-    padding: 12px 15px;
-    margin-bottom: 20px;
-  }
-
-  .portal-brand-title {
-    font-size: 13px;
-    padding-right: 40px; /* አዝራሩ ጽሑፉ ላይ እንዳይደረብበት */
+    margin-top: 70px; /* ከ Hamburger ሜኑ በታች እንዲሆን */
   }
 
   .stats-grid {
-    grid-template-columns: 1fr; /* ካርዶቹ አንድ አንድ ሆነው ይደረደራሉ */
+    grid-template-columns: 1fr; /* ካርዶቹ በስልክ አንድ አንድ ሆነው እንዲደረደሩ */
     gap: 15px;
   }
 }
