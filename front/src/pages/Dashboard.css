@@ -34,7 +34,7 @@ body {
   margin-left: 280px; 
   transition: 0.3s ease;
   position: relative;
-  z-index: 10; /* አዝራሮች በ MERN ላይ በትክክል ክሊክ እንዲሆኑ */
+  z-index: 10; /* አዝራሮች በትክክል ክሊክ እንዲሆኑ */
 }
 
 /* ዴስክቶፕ ላይ ሳይድባሩ ሲኮማተር ይዘቱ ወደ ግራ ይሰፋል */
@@ -150,7 +150,7 @@ body {
   height: 100vh;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(3px);
-  z-index: 999; /* ከሳይድባሩ በታች ከይዘቱ በላይ */
+  z-index: 1900; /* ከሳይድባሩ በታች ከይዘቱ በላይ እንዲሆን */
 }
 
 /* ================= TABLET ================= */
@@ -164,18 +164,20 @@ body {
   }
 }
 
-/* ================= MOBILE (ስልክ ላይ መጨፍለቅን የሚከላከል) ================= */
+/* ================= MOBILE (የተስተካከለው የሞባይል ክፍል) ================= */
 @media (max-width: 768px) {
   .dashboard-page {
-    display: block; /* Flex መዋቅሩ ሲጠፋ በግራ በኩል ሳይድባሩ ቦታ አይሻማም */
+    display: block; /* Flex መዋቅሩ ስለሚጠፋ ሳይድባሩ ይዘቱን አይጋፋም */
   }
 
   .main-content,
   .main-content.collapsed {
-    margin-left: 0 !important; /* በስልክ ላይ የግራውን ክፍተት ያጠፋዋል (አይጨምቅም) */
+    margin-left: 0 !important; /* በስልክ/ዴስክቶፕ ሞድ ላይ ሙሉ ክፍተቱን ያጠፋዋል */
     width: 100% !important;
     padding: 15px;
     margin-top: 70px; /* ከላይ ከ Hamburger አዝራሩ በታች እንዲሆን */
+    position: relative;
+    z-index: 1;
   }
 
   .stats-grid,
