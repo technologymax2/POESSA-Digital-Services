@@ -1,5 +1,4 @@
 /* ================= RESET ================= */
-
 * {
   margin: 0;
   padding: 0;
@@ -13,12 +12,10 @@ body {
 }
 
 /* ================= PAGE LAYOUT ================= */
-
 .dashboard-page {
   display: flex;
   min-height: 100vh;
   width: 100%;
-
   background-image: url("../poessaImage.png");
   background-size: cover;
   background-position: center;
@@ -26,22 +23,25 @@ body {
   background-attachment: fixed;
 }
 
-/* ================= MAIN CONTENT ================= */
-
+/* ================= MAIN CONTENT (DESKTOP) ================= */
 .main-content {
   flex: 1;
   min-width: 0;
-
   display: flex;
   flex-direction: column;
-
   padding: 20px;
+  
+  /* ዴስክቶፕ ላይ ከSideBar ጋር እንዳይደራረብ ወደ ቀኝ ይገፋዋል */
+  margin-left: 280px; 
+  transition: margin-left 0.3s ease;
+}
 
-  transition: 0.3s ease;
+/* ሳይድባሩ ሲኮማተር (Collapsed ሲሆን) ሜኑው ቦታ እንዲሰፋ ያደርጋል */
+.main-content.collapsed {
+  margin-left: 80px;
 }
 
 /* ================= BODY ================= */
-
 .dashboard-body {
   display: flex;
   flex-direction: column;
@@ -49,7 +49,6 @@ body {
 }
 
 /* ================= TITLES ================= */
-
 .section-title {
   font-size: 22px;
   font-weight: 700;
@@ -58,23 +57,16 @@ body {
 }
 
 /* ================= GLASS CARDS ================= */
-
 .stat-card,
 .employee-card,
 .action-card {
   background: rgba(255, 255, 255, 0.8);
-
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
-
   border-radius: 20px;
-
   border: 1px solid rgba(255, 255, 255, 0.2);
-
   padding: 20px;
-
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-
   transition: 0.3s ease;
 }
 
@@ -86,7 +78,6 @@ body {
 }
 
 /* ================= GRIDS ================= */
-
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -100,7 +91,6 @@ body {
 }
 
 /* ================= NUMBERS ================= */
-
 .stat-number {
   font-size: 32px;
   font-weight: 700;
@@ -108,56 +98,38 @@ body {
 }
 
 /* ================= AVATAR ================= */
-
 .employee-avatar {
   width: 65px;
   height: 65px;
-
   border-radius: 50%;
-
   background: #dfe9f5;
-
   display: flex;
   justify-content: center;
   align-items: center;
-
   margin: 0 auto 15px;
 }
 
 /* ================= STATUS ================= */
-
 .status-badge {
   display: inline-block;
-
   margin-top: 10px;
-
   padding: 5px 14px;
-
   border-radius: 30px;
-
   background: #e4f7e7;
   color: #1b5e20;
-
   font-size: 12px;
   font-weight: 700;
 }
 
 /* ================= BUTTON ================= */
-
 .details-btn {
   margin-top: 15px;
-
   border: none;
-
   background: #003366;
   color: white;
-
   padding: 10px 18px;
-
   border-radius: 8px;
-
   cursor: pointer;
-
   transition: 0.3s;
 }
 
@@ -166,29 +138,28 @@ body {
 }
 
 /* ================= TABLET ================= */
-
 @media (max-width: 992px) {
   .main-content {
     padding: 15px;
   }
-
   .stats-grid,
   .employees-grid {
     gap: 15px;
   }
 }
 
-/* ================= MOBILE ================= */
-
+/* ================= MOBILE (ስልክ ላይ ሙሉ በሙሉ እንዲስተካከል) ================= */
 @media (max-width: 768px) {
   .dashboard-page {
-    flex-direction: column;
+    display: block; /* Flex layout ግጭትን ያስወግዳል */
   }
 
-  .main-content {
-    width: 100%;
+  .main-content,
+  .main-content.collapsed {
+    width: 100% !important;
+    margin-left: 0 !important; /* ስልክ ላይ ይሄን ወደ 0 ይመልሰዋል */
     padding: 15px;
-    margin-top: 70px;
+    margin-top: 80px; /* ከhamburger icon በታች እንዲሆን ያደርገዋል */
   }
 
   .stats-grid,
@@ -198,16 +169,13 @@ body {
 }
 
 /* ================= SMALL MOBILE ================= */
-
 @media (max-width: 480px) {
   .main-content {
     padding: 12px;
   }
-
   .section-title {
     font-size: 20px;
   }
-
   .stat-number {
     font-size: 28px;
   }
