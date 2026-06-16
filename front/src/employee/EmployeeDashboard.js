@@ -70,12 +70,7 @@ function EmployeeDashboard() {
       {/* Sidebar */}
       <div className={`employee-sidebar no-print ${isMobileMenuOpen ? 'open' : ''}`}>
 
-        <button
-          className="close-menu-btn"
-          onClick={() => setIsMobileMenuOpen(false)}
-        >
-          ✕
-        </button>
+
 
   
 
@@ -94,6 +89,15 @@ function EmployeeDashboard() {
             <div className="profile-placeholder">
               {currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : '👤'}
             </div>
+
+        <button
+          className="close-menu-btn"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          ✕
+        </button>
+
+
           )}
 
           <div className="profile-info">
