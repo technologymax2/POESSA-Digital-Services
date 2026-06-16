@@ -25,24 +25,22 @@ const Sidebar = ({
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // ስልክ ላይ ሳይድባሩ ተከፍቶ ከሆነና ከሳይድባሩ ውጭ ከተነካ እንዲዘጋ ያደርጋል (setCollapsed ወደ false ይቀየራል)
       if (
         window.innerWidth <= 768 &&
         collapsed && 
         sidebarRef.current &&
-        !sidebarRef.current.contains(event.target)
+        !sidebarRef.current.contains(event.target) &&
+        !event.target.closest(".menu-toggle")
       ) {
         setCollapsed(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-
     return () =>
       document.removeEventListener("mousedown", handleClickOutside);
   }, [collapsed, setCollapsed]);
 
-  // ስልክ ላይ ሊንኮችን ሲነኩ ወደ ሚፈልጉት ገጽ ወስዶ ሳይድባሩን በራሱ እንዲዘጋ የሚያደርግ ተግባር
   const handleNavigation = (path) => {
     navigate(path);
     if (window.innerWidth <= 768) {
@@ -61,9 +59,9 @@ const Sidebar = ({
 
   return (
     <>
-      {/* የhamburger ማውጫ ቁልፍ (በስክሪን መጠኑ መሰረት ምልክቱ ይቀያየራል) */}
+      {/* የToggle አዝራር - ሁልጊዜም ከሳይድባሩ በላይ እንዲንሳፈፍ ከላይ ተቀምጧል */}
       <button
-        className="menu-toggle"
+        className={`menu-toggle ${collapsed ? "is-open" : ""}`}
         onClick={() => setCollapsed(!collapsed)}
       >
         {collapsed ? <Close /> : <Menu />}
@@ -71,9 +69,10 @@ const Sidebar = ({
 
       <aside ref={sidebarRef} className={`sidebar ${getSidebarClass()}`}>
         <div className="sidebar-header">
+          {/* ስልክ ላይ አዝራሩ "P" ን እንዳይሸፍነው ስልክ ላይ የ"P" አርማ ይደበቃል */}
           <div className="logo-circle">P</div>
 
-          <div>
+          <div className="brand-info">
             <h2>POESSA</h2>
             <p>Digital Services</p>
           </div>
@@ -82,41 +81,27 @@ const Sidebar = ({
         <nav className="menu-list">
           <div className="menu-item" onClick={() => handleNavigation("/dashboard")}>
             <Dashboard />
-            <span>
-              {currentLang === "am" ? "ዳሽቦርድ" : "Dashboard"}
-            </span>
+            <span>{currentLang === "am" ? "ዳሽቦርድ" : "Dashboard"}</span>
           </div>
 
           <div className="menu-item" onClick={() => handleNavigation("/delegations")}>
             <Description />
-            <span>
-              {currentLang === "am" ? "ውክልናዎች" : "Delegations"}
-            </span>
+            <span>{currentLang === "am" ? "ውክልናዎች" : "Delegations"}</span>
           </div>
 
           <div className="menu-item" onClick={() => handleNavigation("/liveness")}>
             <VerifiedUser />
-            <span>
-              {currentLang === "am"
-                ? "የህይወት ማረጋገጫ"
-                : "Life Verification"}
-            </span>
+            <span>{currentLang === "am" ? "የህይወት ማረጋገጫ" : "Life Verification"}</span>
           </div>
 
           <div className="menu-item" onClick={() => handleNavigation("/admin-dashboard")}>
             <Assessment />
-            <span>
-              {currentLang === "am" ? "ሪፖርቶች" : "Reports"}
-            </span>
+            <span>{currentLang === "am" ? "ሪፖርቶች" : "Reports"}</span>
           </div>
 
           <div className="menu-item" onClick={() => handleNavigation("/agent-call-center")}>
             <Videocam />
-            <span>
-              {currentLang === "am"
-                ? "የጥሪ ማስተናገጃ"
-                : "Call Management"}
-            </span>
+            <span>{currentLang === "am" ? "የጥሪ ማስተናገጃ" : "Call Management"}</span>
           </div>
         </nav>
 
