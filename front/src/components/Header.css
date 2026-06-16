@@ -34,12 +34,14 @@
   justify-content: center;
   border: 1px solid #0073e6;
 }
+
 .auth-actions {
   display: flex;
-  gap: 15px; /* ክፍተቱን ትንሽ አስፋው */
+  gap: 15px; /* በአዝራሮቹ መካከል ያለው ክፍተት */
   align-items: center;
 }
 
+/* አጠቃላይ የአዝራሮቹ ቅጥ */
 .auth-link {
   text-decoration: none;
   color: #003366;
@@ -50,7 +52,14 @@
   border: 1px solid transparent;
 }
 
-/* ለ Login አዝራር ልዩ ቅጥ (በጣም ጎልቶ እንዲታይ) */
+/* ለሁሉም አዝራሮች አጠቃላይ Hover (ቅደም ተከተሉ እዚህ መሆን አለበት) */
+.auth-link:hover {
+  background-color: #f0f7ff;
+  border-color: #003366;
+  text-decoration: none;
+}
+
+/* ለ Login አዝራር ልዩ ቅጥ */
 .auth-link.login {
   border: 1px solid #003366;
 }
@@ -61,26 +70,29 @@
   color: #ffffff;
 }
 
-.auth-link:hover {
-  background-color: #f0f7ff;
-  border-color: #003366;
-  text-decoration: none;
-}
-
+/* ለ Sign Up አዝራር ልዩ Hover */
 .auth-link.signup:hover {
   background-color: #004a99;
   border-color: #004a99;
+  color: #ffffff; /* ጽሑፉ ነጭ ሆኖ እንዲቀጥል */
 }
 
 .separator {
   color: #ccc;
 }
+
+/* ለሞባይል ስልክ የተስተካከለ */
 @media (max-width: 480px) {
   .dashboard-header {
     padding: 0 15px; /* በሞባይል ትንሽ ቦታ ለመቆጠብ */
   }
   
+  .auth-actions {
+    gap: 8px; /* በሞባይል አዝራሮቹ እንዳይራራቁ ክፍተቱን መቀነስ */
+  }
+
   .auth-link {
     font-size: 12px; /* በሞባይል ትንሽ እንዲያንስ */
+    padding: 6px 12px; /* የአዝራሩን መጠን በሞባይል ማነስ */
   }
 }
