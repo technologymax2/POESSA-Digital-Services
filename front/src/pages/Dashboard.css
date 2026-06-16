@@ -8,9 +8,11 @@
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
+  overflow-x: hidden;
 }
 
 .dashboard-page {
+  display: flex;
   min-height: 100vh;
   width: 100%;
   background-image: url('../poessaImage.png');
@@ -18,22 +20,29 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
-  display: flex;
 }
 
-/* 2. Main Layout */
+/* 2. Main Layout - Fixed Transition Logic */
 .main-content {
   flex-grow: 1;
+  /* Matches expanded sidebar width */
   margin-left: 280px; 
-  padding: 20px; /* ክፍተትን ለመቀነስ */
-  transition: all 0.3s ease;
+  padding: 20px;
+  transition: margin-left 0.3s ease;
   min-height: 100vh;
+  width: calc(100% - 280px);
+}
+
+.main-content.collapsed {
+  /* Matches collapsed sidebar width */
+  margin-left: 80px; 
+  width: calc(100% - 80px);
 }
 
 .dashboard-body {
   display: flex;
   flex-direction: column;
-  gap: 15px; /* በካርዶች እና በ footer መካከል ያለ ክፍተት */
+  gap: 15px;
 }
 
 /* 3. Glassmorphism Card Style */
@@ -41,7 +50,7 @@ body {
   background: rgba(255, 255, 255, 0.65); 
   backdrop-filter: blur(12px); 
   border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 20px; /* 25px የነበረውን ወደ 20px ዝቅ አድርገናል */
+  padding: 20px;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease;
@@ -56,7 +65,7 @@ body {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 15px; /* አላስፈላጊ ክፍተትን ለመቀነስ */
+  gap: 15px;
 }
 
 .employees-grid {
@@ -67,7 +76,7 @@ body {
 
 /* 5. Typography & UI Elements */
 .section-title {
-  margin-bottom: 10px; /* ክፍተትን ለመቀነስ */
+  margin-bottom: 10px;
   color: #003366;
   font-size: 20px;
   font-weight: 700;
@@ -80,7 +89,7 @@ body {
 }
 
 .employee-avatar {
-  width: 60px; /* ትንሽ አሳንሰነዋል */
+  width: 60px;
   height: 60px;
   border-radius: 50%;
   background: rgba(219, 230, 243, 0.8);
@@ -118,12 +127,13 @@ body {
 
 /* 6. Responsive Design */
 @media (max-width: 992px) {
-  .main-content { margin-left: 240px; }
+  .main-content { margin-left: 240px; width: calc(100% - 240px); }
 }
 
 @media (max-width: 768px) {
   .main-content {
     margin-left: 0;
+    width: 100%;
     padding: 15px;
     padding-top: 70px;
   }
