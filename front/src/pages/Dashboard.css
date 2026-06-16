@@ -14,6 +14,7 @@ body {
 /* ================= PAGE LAYOUT ================= */
 .dashboard-page {
   display: flex;
+  margn-left:200px;
   min-height: 100vh;
   width: 100%;
   background-image: url("../poessaImage.png");
