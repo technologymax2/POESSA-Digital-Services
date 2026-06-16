@@ -13,11 +13,13 @@ body {
   overflow-x: hidden;
 }
 
+/* Master Grid Wrapper Container */
 .employee-dashboard-page {
   display: flex;
   min-height: 100vh;
   width: 100vw;
   background: #f4f6f9;
+  gap: 0; /* Forces absolute zero spacing between sidebar and content */
 }
 
 /* ===================================================
@@ -25,7 +27,7 @@ body {
 =================================================== */
 .employee-sidebar {
   width: 280px;
-  min-width: 280px; /* Locks layout on desktop monitors */
+  min-width: 280px;   /* Locks sidebar desktop layout proportions */
   background: #002b55;
   color: #ffffff;
   display: flex;
@@ -33,6 +35,7 @@ body {
   padding: 20px;
   z-index: 1000;
   position: relative;
+  margin: 0;          /* Guarantees no extra external margins are created */
 }
 
 .sidebar-brand-area {
@@ -116,7 +119,7 @@ body {
   border-radius: 4px;
 }
 
-/* MENU LINKS CONFIGURATIONS */
+/* MENU BUTTON PROPERTIES */
 .sidebar-menu-items {
   flex: 1;
   display: flex;
@@ -185,18 +188,20 @@ body {
 }
 
 .close-menu-btn {
-  display: none; /* Hidden on Desktop UI Workspace layouts */
+  display: none; /* Hidden on Desktop view */
 }
 
 /* ===================================================
-   MAIN CONTENT WORKSPACE PANELS
+   MAIN WORKSPACE PANEL (FLUSH TO SIDEBAR EDGE)
 =================================================== */
-.main-content {
+.main-content, 
+.dashboard-main-content {
   flex: 1;
-  padding: 24px;
+  padding: 24px 24px 24px 24px; /* Balanced layout margins; no awkward gaps */
+  margin: 0;                     /* Ensures it sits completely flush to the sidebar */
   display: flex;
   flex-direction: column;
-  min-width: 0; /* Prevents overflow layout bugs */
+  min-width: 0;                  /* Prevents content layout breakouts */
 }
 
 .dashboard-header {
@@ -256,7 +261,7 @@ body {
 }
 
 /* ===================================================
-   MEDIA INTERFACE SCREEN SIZES QUERY BREAKPOINTS (MOBILE & TABLET)
+   MEDIA INTERFACE BREAKPOINTS (MOBILE & TABLET VIEWS)
 =================================================== */
 @media (max-width: 768px) {
   .employee-dashboard-page {
@@ -301,7 +306,6 @@ body {
     min-width: 280px;
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: none;
   }
 
   .employee-sidebar.open {
@@ -327,8 +331,9 @@ body {
     z-index: 1001;
   }
 
-  .main-content {
-    margin-top: 55px; /* Ensures dynamic modules stay beneath fixed mobile banner header */
+  .main-content,
+  .dashboard-main-content {
+    margin-top: 55px; /* Keeps onboarding panels safely under the mobile nav banner */
     padding: 16px;
   }
 
@@ -355,12 +360,13 @@ body {
   }
 }
 
-/* Optimization for layout items printing */
+/* Printer settings optimizations */
 @media print {
   .no-print {
     display: none !important;
   }
-  .main-content {
+  .main-content,
+  .dashboard-main-content {
     margin: 0 !important;
     padding: 0 !important;
   }
