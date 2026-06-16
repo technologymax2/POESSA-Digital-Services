@@ -1,269 +1,414 @@
-/* --- አጠቃላይ ሌይአውት --- */
-.dashboard-page {
-  display: flex;
-  min-height: 100vh;
-  background-color: #f4f6f9;
+/* ===================================================
+   GENERAL LAYOUT
+=================================================== */
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
 }
 
-.main-content {
-  flex: 1;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  overflow-x: hidden;
+body{
+  background:#f4f6f9;
+  font-family:"Segoe UI",sans-serif;
 }
 
-.dashboard-body {
-  flex: 1;
-  margin-top: 15px;
+.dashboard-page{
+  display:flex;
+  min-height:100vh;
+  background:#f4f6f9;
 }
 
-/* --- 📱 የሞባይል የላይኛው ባር (Mobile Top Bar) --- */
-.mobile-top-bar {
-  display: none; /* በኮምፒውተር ላይ አይታይም */
-  background-color: #0d3866;
-  color: white;
-  padding: 12px 20px;
-  align-items: center;
-  justify-content: space-between;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 999;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+/* ===================================================
+   MAIN CONTENT
+=================================================== */
+.main-content{
+  flex:1;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  overflow-x:hidden;
 }
 
-.menu-toggle-btn {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 24px;
-  cursor: pointer;
+.dashboard-body{
+  flex:1;
 }
 
-.mobile-portal-title {
-  font-size: 14px;
-  font-weight: bold;
-  letter-spacing: 1px;
+.dynamic-content-area{
+  width:100%;
 }
 
-/* --- ⬅️ የሳይድባር ዲዛይን (Sidebar Area) --- */
-.employee-sidebar {
-  width: 280px;
-  background-color: #002b55; /* የፎቶህ አይነት ጥቁር ሰማያዊ ከለር */
-  color: white;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  position: relative;
-  transition: transform 0.3s ease;
-  z-index: 1000;
+/* ===================================================
+   DASHBOARD HEADER
+=================================================== */
+.dashboard-header{
+  background:#fff;
+  border-radius:18px;
+  padding:20px 25px;
+  margin-bottom:20px;
+
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  box-shadow:
+  0 4px 20px rgba(0,0,0,.08);
 }
 
-/* ✕ የማጥፊያ ቁልፍ */
-.close-menu-btn {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background-color: white;
-  color: #333;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+.dashboard-header h2{
+  color:#0d3866;
+  font-size:28px;
+  margin-bottom:5px;
 }
 
-/* የአርማው ዲዛይን */
-.sidebar-brand-area {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 10px 5px;
+.dashboard-header p{
+  color:#64748b;
+  font-size:15px;
+  font-weight:600;
 }
 
-.avatar-circle {
-  width: 45px;
-  height: 45px;
-  background-color: white;
-  color: #002b55;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: bold;
+/* ===================================================
+   HEADER PROFILE
+=================================================== */
+.dashboard-profile-image{
+  width:65px;
+  height:65px;
+  border-radius:50%;
+  object-fit:cover;
+  border:3px solid #3182ce;
 }
 
-.brand-text-wrapper h3 {
-  margin: 0;
-  font-size: 18px;
-  letter-spacing: 1px;
+.dashboard-profile-placeholder{
+  width:65px;
+  height:65px;
+  border-radius:50%;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:linear-gradient(
+      135deg,
+      #0d3866,
+      #3182ce
+  );
+
+  color:white;
+  font-size:24px;
+  font-weight:bold;
 }
 
-.brand-subtext {
-  font-size: 12px;
-  color: #90cdf4;
+/* ===================================================
+   MOBILE TOP BAR
+=================================================== */
+.mobile-top-bar{
+  display:none;
+  background:#0d3866;
+  color:white;
+  padding:12px 20px;
+
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+
+  z-index:999;
+
+  align-items:center;
+  justify-content:space-between;
+
+  box-shadow:0 2px 10px rgba(0,0,0,.15);
 }
 
-.sidebar-hr {
-  border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin: 15px 0;
+.menu-toggle-btn{
+  background:none;
+  border:none;
+  color:white;
+  font-size:24px;
+  cursor:pointer;
 }
 
-/* የሰራተኛ ፕሮፋይል ሳጥን */
-.sidebar-profile-box {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 5px;
+.mobile-portal-title{
+  font-size:14px;
+  font-weight:700;
 }
 
-.profile-img {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #63b3ed;
+/* ===================================================
+   SIDEBAR
+=================================================== */
+.employee-sidebar{
+  width:280px;
+  background:#002b55;
+  color:white;
+
+  display:flex;
+  flex-direction:column;
+
+  padding:20px;
+
+  transition:.3s;
+  z-index:1000;
 }
 
-.profile-placeholder {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  background-color: #3182ce;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 16px;
+/* ===================================================
+   CLOSE BUTTON
+=================================================== */
+.close-menu-btn{
+  position:absolute;
+  top:15px;
+  right:15px;
+
+  width:32px;
+  height:32px;
+
+  border:none;
+  border-radius:50%;
+
+  background:white;
+  color:#333;
+
+  font-weight:bold;
+  cursor:pointer;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
-.profile-info h4 {
-  margin: 0;
-  font-size: 14px;
+/* ===================================================
+   BRAND AREA
+=================================================== */
+.sidebar-brand-area{
+  display:flex;
+  align-items:center;
+  gap:15px;
 }
 
-.role-tag {
-  font-size: 11px;
-  color: #cbd5e0;
+.avatar-circle{
+  width:50px;
+  height:50px;
+  border-radius:50%;
+
+  background:white;
+  color:#002b55;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:24px;
+  font-weight:bold;
 }
 
-/* የገጽ መቀያየሪያ ቁልፎች */
-.sidebar-menu-items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-  margin-top: 10px;
+.brand-text-wrapper h3{
+  margin:0;
+  font-size:18px;
 }
 
-.menu-btn-item {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  width: 100%;
-  padding: 12px 15px;
-  background: none;
-  border: none;
-  color: #cbd5e0;
-  font-size: 14px;
-  text-align: left;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.brand-subtext{
+  font-size:12px;
+  color:#90cdf4;
 }
 
-.menu-btn-item:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  color: white;
+/* ===================================================
+   DIVIDER
+=================================================== */
+.sidebar-hr{
+  border:none;
+  border-top:1px solid rgba(255,255,255,.1);
+  margin:18px 0;
 }
 
-.menu-btn-item.active {
-  background-color: rgba(255, 255, 255, 0.15);
-  color: white;
-  font-weight: bold;
-  border-left: 4px solid #ecc94b; /* ቢጫ መስመር ማሳያ */
+/* ===================================================
+   PROFILE SECTION
+=================================================== */
+.sidebar-profile-box{
+  display:flex;
+  align-items:center;
+  gap:12px;
 }
 
-.menu-btn-item.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.profile-img{
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid #63b3ed;
 }
 
-/* ቋንቋ መቀያየሪያ */
-.lang-switcher-btn {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: none;
-  padding: 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  margin-bottom: 15px;
+.profile-placeholder{
+  width:50px;
+  height:50px;
+  border-radius:50%;
+
+  background:#3182ce;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  font-size:18px;
+  font-weight:bold;
 }
 
-/* ውጣ ቁልፍ */
-.sidebar-logout-button {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background-color: #e53e3e;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
+.profile-info h4{
+  font-size:14px;
+  margin-bottom:5px;
 }
 
-.sidebar-logout-button:hover {
-  background-color: #c53030;
+.role-tag{
+  font-size:11px;
+  color:#cbd5e0;
 }
 
-/* --- 📱 የሞባይል ስክሪን ማስተካከያ (Responsive Media Queries) --- */
-@media (max-width: 768px) {
-  .mobile-top-bar {
-    display: flex; /* በሞባይል ላይ የላይኛው ባር እንዲታይ ማድረግ */
+/* ===================================================
+   MENU
+=================================================== */
+.sidebar-menu-items{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:10px;
+}
+
+.menu-btn-item{
+  width:100%;
+  border:none;
+  background:none;
+
+  color:#cbd5e0;
+
+  padding:13px 15px;
+
+  border-radius:10px;
+
+  cursor:pointer;
+
+  text-align:left;
+
+  display:flex;
+  align-items:center;
+  gap:12px;
+
+  transition:.3s;
+}
+
+.menu-btn-item:hover{
+  background:rgba(255,255,255,.08);
+  color:white;
+}
+
+.menu-btn-item.active{
+  background:rgba(255,255,255,.15);
+  color:white;
+  border-left:4px solid #ecc94b;
+  font-weight:700;
+}
+
+.menu-btn-item.disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+
+/* ===================================================
+   LANGUAGE BUTTON
+=================================================== */
+.lang-switcher-btn{
+  border:none;
+  background:rgba(255,255,255,.08);
+
+  color:white;
+
+  padding:12px;
+
+  border-radius:10px;
+
+  cursor:pointer;
+
+  margin-bottom:15px;
+}
+
+/* ===================================================
+   LOGOUT BUTTON
+=================================================== */
+.sidebar-logout-button{
+  border:none;
+  background:#e53e3e;
+
+  color:white;
+
+  padding:13px;
+
+  border-radius:10px;
+
+  cursor:pointer;
+
+  font-weight:bold;
+
+  transition:.3s;
+}
+
+.sidebar-logout-button:hover{
+  background:#c53030;
+}
+
+/* ===================================================
+   OVERLAY
+=================================================== */
+.sidebar-overlay{
+  position:fixed;
+  top:0;
+  bottom:0;
+  left:0;
+  right:0;
+
+  background:rgba(0,0,0,.5);
+
+  z-index:998;
+}
+
+/* ===================================================
+   RESPONSIVE
+=================================================== */
+@media(max-width:768px){
+
+  .mobile-top-bar{
+      display:flex;
   }
 
-  .main-content {
-    margin-top: 55px; /* ከላይኛው ባር ስር እንዲጀምር */
-    padding: 15px;
+  .main-content{
+      margin-top:60px;
+      padding:15px;
   }
 
-  /* ሳይድባሩን ከገጹ ውጭ መደበቅ (Drawer style) */
-  .employee-sidebar {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    transform: translateX(-100%); /* ተደብቆ ይቆያል */
-    box-shadow: none;
+  .dashboard-header{
+      flex-direction:column;
+      text-align:center;
+      gap:15px;
   }
 
-  /* ሜኑው ሲከፈት ወደ ውስጥ ይገባል */
-  .employee-sidebar.open {
-    transform: translateX(0);
-    box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+  .dashboard-header h2{
+      font-size:22px;
   }
 
-  /* ከበስተጀርባ ያለውን ማጨለሚያ */
-  .sidebar-overlay {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: rgba(0,0,0,0.5);
-    z-index: 998;
+  .dashboard-profile-image,
+  .dashboard-profile-placeholder{
+      width:55px;
+      height:55px;
+      font-size:20px;
+  }
+
+  .employee-sidebar{
+      position:fixed;
+      top:0;
+      left:0;
+      bottom:0;
+
+      transform:translateX(-100%);
+  }
+
+  .employee-sidebar.open{
+      transform:translateX(0);
+      box-shadow:5px 0 20px rgba(0,0,0,.3);
   }
 }
