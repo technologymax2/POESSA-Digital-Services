@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Dashboard,
@@ -20,28 +20,13 @@ const Sidebar = ({
   collapsed,
   setCollapsed,
 }) => {
-  const sidebarRef = useRef(null);
+  const sidebarRef = useRef();
   const navigate = useNavigate();
 
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
-  // Detect screen size changes
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        isMobile &&
-        collapsed &&
+        window.innerWidth <= 768 &&
         sidebarRef.current &&
         !sidebarRef.current.contains(event.target)
       ) {
@@ -53,11 +38,19 @@ const Sidebar = ({
 
     return () =>
       document.removeEventListener("mousedown", handleClickOutside);
-  }, [collapsed, isMobile, setCollapsed]);
+  }, [setCollapsed]);
+
+  const getSidebarClass = () =>
+    window.innerWidth <= 768
+      ? collapsed
+        ? "mobile-open"
+        : ""
+      : collapsed
+      ? "desktop-collapsed"
+      : "";
 
   return (
     <>
-      {/* Toggle Button */}
       <button
         className="menu-toggle"
         onClick={() => setCollapsed(!collapsed)}
@@ -65,20 +58,7 @@ const Sidebar = ({
         {collapsed ? <Close /> : <Menu />}
       </button>
 
-      {/* Sidebar */}
-      <aside
-        ref={sidebarRef}
-        className={`sidebar ${
-          isMobile
-            ? collapsed
-              ? "mobile-open"
-              : ""
-            : collapsed
-            ? "desktop-collapsed"
-            : ""
-        }`}
-      >
-        {/* Header */}
+      <aside ref={sidebarRef} className={`sidebar ${getSidebarClass()}`}>
         <div className="sidebar-header">
           <div className="logo-circle">P</div>
 
@@ -88,7 +68,6 @@ const Sidebar = ({
           </div>
         </div>
 
-        {/* Menu */}
         <nav className="menu-list">
           <div className="menu-item" onClick={() => navigate("/dashboard")}>
             <Dashboard />
@@ -136,7 +115,6 @@ const Sidebar = ({
           </div>
         </nav>
 
-        {/* Footer */}
         <div className="sidebar-footer">
           <div className="menu-item">
             <LanguageSwitcher
@@ -147,9 +125,7 @@ const Sidebar = ({
 
           <div className="menu-item">
             <Settings />
-            <span>
-              {currentLang === "am" ? "መቼቶች" : "Settings"}
-            </span>
+            <span>{currentLang === "am" ? "መቼቶች" : "Settings"}</span>
           </div>
         </div>
       </aside>
