@@ -80,10 +80,10 @@
 .menu-toggle {
   position: fixed;
   top: 20px;
-  right: 20px; /* ሁልጊዜም በቀኝ በኩል እንዲሆን ተደርጓል */
+  right: 20px; /* ሁልጊዜም በቀኝ በኩል ይቆያል */
   border: none;
-  background: transparent; /* የጀርባ ነጭ ክብ ቀለም ሙሉ በሙሉ ጠፍቷል */
-  color: #003366; /* መጀመሪያ ላይ በዳሽቦርዱ ላይ ጥቁር ሰማያዊ ይሆናል */
+  background: transparent; /* ክብ ጀርባው ጠፍቷል */
+  color: #002855; /* ሜኑው ሳይከፈት (Hamburger እያለ) ጥቁር ሰማያዊ ቀለም */
   display: none;
   justify-content: center;
   align-items: center;
@@ -93,16 +93,18 @@
   padding: 5px;
 }
 
-/* ================= MOBILE (ስልክ ላይ አቀማመጥን የሚያስተካክል) ================= */
+/* ================= MOBILE ================= */
 @media (max-width: 768px) {
   .menu-toggle {
     display: flex;
   }
 
-  /* ሳይድባሩ ሲከፈት (የ X ምልክት ሲሆን) በሰማያዊው ጀርባ ላይ በግልጽ እንዲታይ ነጭ ይሆናል */
+  /* ዋናው ማስተካከያ፦ ሳይድባሩ ሲከፈት (X ምልክት ሲሆን) 
+    ከበስተጀርባው ያለው ነጭ ካርድ ላይ በግልጽ እንዲታይ ቀለሙን ጥቁር ሰማያዊ ያደርገዋል
+  */
   .menu-toggle.is-open {
-    color: white; 
-    right: 20px; /* ቦታውን ሳይቀይር በቀኝ በኩል ይቆያል */
+    color: #002855 !important; 
+    right: 20px; 
   }
 
   .sidebar {
