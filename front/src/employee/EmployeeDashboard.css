@@ -1,414 +1,367 @@
 /* ===================================================
-   GENERAL LAYOUT
+   GENERAL LAYOUT BASE RESET
 =================================================== */
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-body{
-  background:#f4f6f9;
-  font-family:"Segoe UI",sans-serif;
+body {
+  background: #f4f6f9;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
 }
 
-.employee-dashboard-page{
-  display:flex;
-  min-height:100vh;
-  background:#f4f6f9;
+.employee-dashboard-page {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  background: #f4f6f9;
 }
 
 /* ===================================================
-   MAIN CONTENT
+   PRIMARY APPLICATION SIDE NAVIGATION BAR
 =================================================== */
-.main-content{
-  flex:1;
-  padding:20px;
-  display:flex;
-  flex-direction:column;
-  overflow-x:hidden;
+.employee-sidebar {
+  width: 280px;
+  min-width: 280px; /* Locks layout on desktop monitors */
+  background: #002b55;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  z-index: 1000;
+  position: relative;
 }
 
-.dashboard-body{
-  flex:1;
+.sidebar-brand-area {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
-.dynamic-content-area{
-  width:100%;
+.avatar-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #002b55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.brand-text-wrapper h3 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+}
+
+.brand-subtext {
+  font-size: 12px;
+  color: #90cdf4;
+}
+
+.sidebar-hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 18px 0;
+}
+
+/* PROFILE BLOCK INSIDE SIDEBAR */
+.sidebar-profile-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #63b3ed;
+}
+
+.profile-placeholder {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #3182ce;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.profile-info h4 {
+  font-size: 14px;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+
+.role-tag {
+  font-size: 11px;
+  color: #cbd5e0;
+  background-color: rgba(49, 130, 206, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* MENU LINKS CONFIGURATIONS */
+.sidebar-menu-items {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.menu-btn-item {
+  width: 100%;
+  border: none;
+  background: none;
+  color: #cbd5e0;
+  padding: 13px 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.menu-btn-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.menu-btn-item.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border-left: 4px solid #ecc94b;
+  font-weight: 700;
+}
+
+.lang-switcher-btn {
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 15px;
+  text-align: center;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.lang-switcher-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-logout-button {
+  border: none;
+  background: #e53e3e;
+  color: #ffffff;
+  padding: 13px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.sidebar-logout-button:hover {
+  background: #c53030;
+}
+
+.close-menu-btn {
+  display: none; /* Hidden on Desktop UI Workspace layouts */
 }
 
 /* ===================================================
-   DASHBOARD HEADER
+   MAIN CONTENT WORKSPACE PANELS
 =================================================== */
-.dashboard-header{
-  background:#fff;
-  border-radius:18px;
-  padding:20px 25px;
-  margin-bottom:20px;
-
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-
-  box-shadow:
-  0 4px 20px rgba(0,0,0,.08);
+.main-content {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Prevents overflow layout bugs */
 }
 
-.dashboard-header h2{
-  color:#0d3866;
-  font-size:28px;
-  margin-bottom:5px;
+.dashboard-header {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 20px 25px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-.dashboard-header p{
-  color:#64748b;
-  font-size:15px;
-  font-weight:600;
+.dashboard-header h2 {
+  color: #0d3866;
+  font-size: 26px;
+  margin-bottom: 5px;
+}
+
+.dashboard-header p {
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.dashboard-profile-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #3182ce;
+}
+
+.dashboard-profile-placeholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0d3866, #3182ce);
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.dashboard-body {
+  flex: 1;
+}
+
+.dynamic-content-area {
+  width: 100%;
+}
+
+.mobile-top-bar {
+  display: none;
 }
 
 /* ===================================================
-   HEADER PROFILE
+   MEDIA INTERFACE SCREEN SIZES QUERY BREAKPOINTS (MOBILE & TABLET)
 =================================================== */
-.dashboard-profile-image{
-  width:65px;
-  height:65px;
-  border-radius:50%;
-  object-fit:cover;
-  border:3px solid #3182ce;
-}
-
-.dashboard-profile-placeholder{
-  width:65px;
-  height:65px;
-  border-radius:50%;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  background:linear-gradient(
-      135deg,
-      #0d3866,
-      #3182ce
-  );
-
-  color:white;
-  font-size:24px;
-  font-weight:bold;
-}
-
-/* ===================================================
-   MOBILE TOP BAR
-=================================================== */
-.mobile-top-bar{
-  display:none;
-  background:#0d3866;
-  color:white;
-  padding:12px 20px;
-
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-
-  z-index:999;
-
-  align-items:center;
-  justify-content:space-between;
-
-  box-shadow:0 2px 10px rgba(0,0,0,.15);
-}
-
-.menu-toggle-btn{
-  background:none;
-  border:none;
-  color:white;
-  font-size:24px;
-  cursor:pointer;
-}
-
-.mobile-portal-title{
-  font-size:14px;
-  font-weight:700;
-}
-
-/* ===================================================
-   SIDEBAR
-=================================================== */
-.employee-sidebar{
-  width:280px;
-  background:#002b55;
-  color:white;
-
-  display:flex;
-  flex-direction:column;
-
-  padding:20px;
-
-  transition:.3s;
-  z-index:1000;
-}
-
-/* ===================================================
-   CLOSE BUTTON
-=================================================== */
-.close-menu-btn{
-  position:absolute;
-  top:15px;
-  right:15px;
-
-  width:32px;
-  height:32px;
-
-  border:none;
-  border-radius:50%;
-
-  background:white;
-  color:#333;
-
-  font-weight:bold;
-  cursor:pointer;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-/* ===================================================
-   BRAND AREA
-=================================================== */
-.sidebar-brand-area{
-  display:flex;
-  align-items:center;
-  gap:15px;
-}
-
-.avatar-circle{
-  width:50px;
-  height:50px;
-  border-radius:50%;
-
-  background:white;
-  color:#002b55;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  font-size:24px;
-  font-weight:bold;
-}
-
-.brand-text-wrapper h3{
-  margin:0;
-  font-size:18px;
-}
-
-.brand-subtext{
-  font-size:12px;
-  color:#90cdf4;
-}
-
-/* ===================================================
-   DIVIDER
-=================================================== */
-.sidebar-hr{
-  border:none;
-  border-top:1px solid rgba(255,255,255,.1);
-  margin:18px 0;
-}
-
-/* ===================================================
-   PROFILE SECTION
-=================================================== */
-.sidebar-profile-box{
-  display:flex;
-  align-items:center;
-  gap:12px;
-}
-
-.profile-img{
-  width:50px;
-  height:50px;
-  border-radius:50%;
-  object-fit:cover;
-  border:2px solid #63b3ed;
-}
-
-.profile-placeholder{
-  width:50px;
-  height:50px;
-  border-radius:50%;
-
-  background:#3182ce;
-
-  display:flex;
-  justify-content:center;
-  align-items:center;
-
-  font-size:18px;
-  font-weight:bold;
-}
-
-.profile-info h4{
-  font-size:14px;
-  margin-bottom:5px;
-}
-
-.role-tag{
-  font-size:11px;
-  color:#cbd5e0;
-}
-
-/* ===================================================
-   MENU
-=================================================== */
-.sidebar-menu-items{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  margin-top:10px;
-}
-
-.menu-btn-item{
-  width:100%;
-  border:none;
-  background:none;
-
-  color:#cbd5e0;
-
-  padding:13px 15px;
-
-  border-radius:10px;
-
-  cursor:pointer;
-
-  text-align:left;
-
-  display:flex;
-  align-items:center;
-  gap:12px;
-
-  transition:.3s;
-}
-
-.menu-btn-item:hover{
-  background:rgba(255,255,255,.08);
-  color:white;
-}
-
-.menu-btn-item.active{
-  background:rgba(255,255,255,.15);
-  color:white;
-  border-left:4px solid #ecc94b;
-  font-weight:700;
-}
-
-.menu-btn-item.disabled{
-  opacity:.4;
-  cursor:not-allowed;
-}
-
-/* ===================================================
-   LANGUAGE BUTTON
-=================================================== */
-.lang-switcher-btn{
-  border:none;
-  background:rgba(255,255,255,.08);
-
-  color:white;
-
-  padding:12px;
-
-  border-radius:10px;
-
-  cursor:pointer;
-
-  margin-bottom:15px;
-}
-
-/* ===================================================
-   LOGOUT BUTTON
-=================================================== */
-.sidebar-logout-button{
-  border:none;
-  background:#e53e3e;
-
-  color:white;
-
-  padding:13px;
-
-  border-radius:10px;
-
-  cursor:pointer;
-
-  font-weight:bold;
-
-  transition:.3s;
-}
-
-.sidebar-logout-button:hover{
-  background:#c53030;
-}
-
-/* ===================================================
-   OVERLAY
-=================================================== */
-.sidebar-overlay{
-  position:fixed;
-  top:0;
-  bottom:0;
-  left:0;
-  right:0;
-
-  background:rgba(0,0,0,.5);
-
-  z-index:998;
-}
-
-/* ===================================================
-   RESPONSIVE
-=================================================== */
-@media(max-width:768px){
-
-  .mobile-top-bar{
-      display:flex;
+@media (max-width: 768px) {
+  .employee-dashboard-page {
+    flex-direction: column;
   }
 
-  .main-content{
-      margin-top:60px;
-      padding:15px;
+  .mobile-top-bar {
+    display: flex;
+    background: #002b55;
+    color: #ffffff;
+    padding: 14px 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
   }
 
-  .dashboard-header{
-      flex-direction:column;
-      text-align:center;
-      gap:15px;
+  .menu-toggle-btn {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 24px;
+    cursor: pointer;
   }
 
-  .dashboard-header h2{
-      font-size:22px;
+  .mobile-portal-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
   }
 
-  .dashboard-profile-image,
-  .dashboard-profile-placeholder{
-      width:55px;
-      height:55px;
-      font-size:20px;
+  .employee-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    min-width: 280px;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
   }
 
-  .employee-sidebar{
-      position:fixed;
-      top:0;
-      left:0;
-      bottom:0;
-
-      transform:translateX(-100%);
+  .employee-sidebar.open {
+    transform: translateX(0);
+    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
   }
 
-  .employee-sidebar.open{
-      transform:translateX(0);
-      box-shadow:5px 0 20px rgba(0,0,0,.3);
+  .close-menu-btn {
+    display: flex;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #333333;
+    font-weight: bold;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+  }
+
+  .main-content {
+    margin-top: 55px; /* Ensures dynamic modules stay beneath fixed mobile banner header */
+    padding: 16px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .dashboard-header h2 {
+    font-size: 22px;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 998;
+    backdrop-filter: blur(2px);
+  }
+}
+
+/* Optimization for layout items printing */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }
