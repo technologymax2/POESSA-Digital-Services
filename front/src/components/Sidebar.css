@@ -1,128 +1,324 @@
-/* ====================================
-   RESET
-==================================== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+*{
+
+  margin:0;
+
+  padding:0;
+
+  box-sizing:border-box;
+
 }
 
-/* ====================================
-   SIDEBAR BASE
-==================================== */
-.sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 280px;
-    height: 100vh;
-    background: linear-gradient(180deg, #002855, #003b73, #004f99);
-    color: white;
-    display: flex;
-    flex-direction: column;
-    transition: width 0.3s ease;
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
-    overflow: hidden; /* ሲጠብ የውስጥ ይዘቶች እንዳይታዩ ያደርጋል */
+
+
+/* ================= SIDEBAR ================= */
+
+
+
+.sidebar{
+
+  width:280px;
+
+  min-width:280px;
+
+  height:100vh;
+
+
+
+  background:linear-gradient(
+
+      180deg,
+
+      #002855,
+
+      #003b73,
+
+      #004f99
+
+  );
+
+
+
+  color:white;
+
+
+
+  display:flex;
+
+  flex-direction:column;
+
+
+
+  transition:.3s;
+
+
+
+  box-shadow:
+
+      4px 0 20px rgba(0,0,0,.15);
+
 }
 
-/* ====================================
-   COLLAPSED STATE
-==================================== */
-.sidebar.desktop-collapsed {
-    width: 80px;
+
+
+/* ================= COLLAPSED ================= */
+
+
+
+.sidebar.desktop-collapsed{
+
+  width:80px;
+
+  min-width:80px;
+
 }
 
-/* ሲጠብ ጽሁፎችን መደበቅ */
+
+
+/* hide texts */
+
+
+
 .sidebar.desktop-collapsed h2,
+
 .sidebar.desktop-collapsed p,
-.sidebar.desktop-collapsed span {
-    display: none;
+
+.sidebar.desktop-collapsed span{
+
+  display:none;
+
 }
 
-/* ====================================
-   HEADER & LOGO
-==================================== */
-.sidebar-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 25px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+
+/* ================= HEADER ================= */
+
+
+
+.sidebar-header{
+
+  display:flex;
+
+  align-items:center;
+
+  gap:15px;
+
+
+
+  padding:25px 20px;
+
+
+
+  border-bottom:
+
+      1px solid rgba(255,255,255,.1);
+
 }
 
-.logo-circle {
-    width: 50px;
-    height: 50px;
-    min-width: 50px;
-    background: white;
-    color: #003366;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 22px;
-    font-weight: bold;
+
+
+.logo-circle{
+
+  width:50px;
+
+  height:50px;
+
+
+
+  min-width:50px;
+
+
+
+  background:white;
+
+
+
+  color:#003366;
+
+
+
+  border-radius:50%;
+
+
+
+  display:flex;
+
+  justify-content:center;
+
+  align-items:center;
+
+
+
+  font-size:22px;
+
+  font-weight:bold;
+
 }
 
-/* ====================================
-   MENU ITEMS
-==================================== */
-.menu-list {
-    flex: 1;
-    padding: 20px 10px;
+
+
+/* ================= MENU ================= */
+
+
+
+.menu-list{
+
+  flex:1;
+
+
+
+  padding:20px 10px;
+
 }
 
-.menu-item {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 14px 18px;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: 0.3s;
-    white-space: nowrap; /* ጽሁፍ እንዳይሰበር ይረዳል */
+
+
+.menu-item{
+
+  display:flex;
+
+  align-items:center;
+
+
+
+  gap:15px;
+
+
+
+  padding:14px 18px;
+
+
+
+  border-radius:12px;
+
+
+
+  margin-bottom:8px;
+
+
+
+  cursor:pointer;
+
+
+
+  transition:.3s;
+
 }
 
-.menu-item:hover {
-    background: rgba(255, 255, 255, 0.12);
+
+
+.menu-item:hover{
+
+  background:rgba(255,255,255,.12);
+
 }
 
-/* ====================================
-   FOOTER
-==================================== */
-.sidebar-footer {
-    padding: 15px;
+
+
+/* ================= FOOTER ================= */
+
+
+
+.sidebar-footer{
+
+  padding:15px;
+
 }
 
-/* ====================================
-   TOGGLE & MOBILE RESPONSIVE
-==================================== */
-.menu-toggle {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    width: 45px;
-    height: 45px;
-    border: none;
-    border-radius: 10px;
-    background: white;
-    cursor: pointer;
-    z-index: 2000;
-    display: none;
+
+
+/* ================= TOGGLE ================= */
+
+
+
+.menu-toggle{
+
+  position:fixed;
+
+
+
+  top:20px;
+
+  left:20px;
+
+
+
+  width:45px;
+
+  height:45px;
+
+
+
+  border:none;
+
+
+
+  border-radius:10px;
+
+
+
+  background:white;
+
+
+
+  cursor:pointer;
+
+
+
+  z-index:2000;
+
+
+
+  display:none;
+
 }
 
-@media screen and (max-width: 768px) {
-    .menu-toggle {
-        display: block;
-    }
 
-    .sidebar {
-        left: -280px; /* በሞባይል መጀመሪያ ተደብቆ እንዲኖር */
-    }
 
-    .sidebar.mobile-open {
-        left: 0; /* ሲከፈት እንዲታይ */
-    }
-}
+/* ================= MOBILE ================= */
+
+
+
+@media(max-width:768px){
+
+
+
+  .menu-toggle{
+
+      display:block;
+
+  }
+
+
+
+  .sidebar{
+
+      position:fixed;
+
+
+
+      left:-280px;
+
+
+
+      top:0;
+
+
+
+      z-index:1000;
+
+
+
+      transition:.3s;
+
+  }
+
+
+
+  .sidebar.mobile-open{
+
+      left:0;
+
+  }
+
+} 
+
