@@ -1,79 +1,131 @@
-/* Sidebar.css */
+/* ==========================================================
+   SIDEBAR COMPONENT - COMPLETE STYLING
+   ========================================================== */
+
+/* 1. CONTAINER & ANIMATION */
 .sidebar {
   width: 280px;
   height: 100vh;
   position: fixed;
   top: 0;
-  left: -280px; /* በዲፎልት ተደብቋል */
-  background: #002855;
-  color: white;
-  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  left: -280px;
+  background: linear-gradient(180deg, #002855 0%, #001f3f 100%);
+  color: #ffffff;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   z-index: 2000;
   display: flex;
   flex-direction: column;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
 }
 
 .sidebar.open {
-  left: 0; /* ሜኑ ሲከፈት ይታያል */
+  left: 0;
 }
 
-/* ሄደር - ስም እና Close አዝራር */
+/* 2. HEADER - Logo & Title */
 .sidebar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: 24px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .logo-circle {
-  width: 40px;
-  height: 40px;
-  background: white;
+  width: 45px;
+  height: 45px;
+  background: #ffffff;
   color: #002855;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 800;
 }
 
+.header-info h2 {
+  font-size: 18px;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.header-info p {
+  font-size: 11px;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+/* 3. CLOSE BUTTON - The X */
 .close-menu-btn {
-  background: transparent;
-  color: white;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-  display: flex;
-  align-items: center;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: none !important;
+  color: #ffffff !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
 }
 
-/* ሜኑ ዝርዝር */
+.close-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  transform: rotate(90deg);
+}
+
+/* 4. NAVIGATION MENU */
 .menu-list {
   flex: 1;
   padding: 20px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
   gap: 15px;
-  padding: 12px 15px;
+  padding: 14px 18px;
+  border-radius: 12px;
   cursor: pointer;
-  border-radius: 8px;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .menu-item:hover {
   background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding-left: 22px;
 }
 
+.menu-item span {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* 5. FOOTER & SCROLLBAR */
 .sidebar-footer {
   padding: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Custom Scrollbar for Sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
 }
