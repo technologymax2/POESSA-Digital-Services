@@ -114,31 +114,27 @@
   gap: 20px;
 }
 
-.input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* ለኤዲቲንግ ፎርም ውስጥ ያሉ ግብዓቶች (Inputs) ግልጽነት */
+.edit-form-section .input-group input {
+  color: #1a202c !important;        /* የጽሁፍ ቀለም ጥቁር */
+  background-color: #ffffff !important; /* የጀርባ ቀለም ነጭ */
+  border: 1px solid #4a5568 !important; /* የድንበር ቀለም ጠቆር ያለ */
+  font-weight: 500;
 }
 
-.input-group label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #4a5568;
+/* ለኤዲቲንግ ፎርም ውስጥ ያሉ ጽሁፎች (Labels) */
+.edit-form-section .input-group label {
+  color: #2d3748 !important; /* የሌብል ቀለም ጥቁር */
+  font-weight: 700 !important;
 }
 
-.input-group input {
-  padding: 12px;
-  border: 1px solid #cbd5e0;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: border-color 0.2s;
+/* ፎርሙ ላይ ጠቅ ሲደረግ የሚታይ ቀለም */
+.edit-form-section .input-group input:focus {
+  border-color: #2b6cb0 !important;
+  box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.2) !important;
 }
 
-.input-group input:focus {
-  border-color: #2b6cb0;
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1);
-}
+
 
 /* የቁልፎች (Buttons) ስታይል */
 .save-btn {
