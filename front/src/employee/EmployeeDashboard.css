@@ -16,10 +16,10 @@ body {
 /* Master Grid Wrapper Container */
 .employee-dashboard-page {
   display: flex;
-  min-height: 100vh;
+  height: 100vh; /* ለ Browser ሙሉ ቁመት ይስጠው */
   width: 100vw;
+  overflow: hidden; /* የውጭ Scroll እንዳይኖር ይቆልፋል */
   background: #f4f6f9;
-  gap: 0; /* Forces absolute zero spacing between sidebar and content */
 }
 
 /* ===================================================
