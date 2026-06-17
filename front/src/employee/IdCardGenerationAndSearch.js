@@ -54,9 +54,13 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-  const handleUpdate = async (e) => {
+const handleUpdate = async (e) => {
     e.preventDefault();
-    setSearchStatus('መረጃው እየታረመ ነው...');
+    setSearchStatus('⏳ መረጃው እየታረመ ነው...');
+    
+    // የሰራተኛውን ስም ከLocalStorage ማምጣት
+    const employeeName = localStorage.getItem('fullName') || localStorage.getItem('username') || 'ያልታወቀ ሰራተኛ';
+
     try {
       const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/update/${registeredData._id}`, {
         method: 'PUT',
@@ -65,14 +69,27 @@ function IdCardGenerationAndSearch() {
           ...editData, 
           age: editData.age ? Number(editData.age) : 0,
           pensionAmount: editData.pensionAmount ? Number(editData.pensionAmount) : 0,
-          employeeName: currentEmployee 
+          // አዲሱ የAudit Log መረጃዎች
+          lastEditedBy: employeeName,
+          lastAction: 'Updated',
+          lastActionTime: new Date().toISOString()
         }),
       });
+
       const result = await response.json();
+      
       if (result.success) {
-        setRegisteredData({ ...registeredData, ...result.data, imageSrc: result.data.photoUrl });
+        // የFrontend መረጃን ማዘመን
+        setRegisteredData({ 
+          ...registeredData, 
+          ...result.data, 
+          imageSrc: result.data.photoUrl,
+          lastEditedBy: employeeName,
+          lastAction: 'Updated',
+          lastActionTime: new Date().toISOString()
+        });
         setIsEditing(false);
-        setSearchStatus(`🎉 ${result.message}`);
+        setSearchStatus(`🎉 መረጃው በ "${employeeName}" በተሳካ ሁኔታ ታርሟል!`);
       } else {
         setSearchStatus(`❌ ስህተት፡ ${result.message}`);
       }
