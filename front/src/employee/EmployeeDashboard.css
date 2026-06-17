@@ -203,21 +203,20 @@ body {
 }
 
 .dashboard-header {
-  background: #ffffff;
-  border-radius: 18px;
-  padding: 20px 25px;
-  margin-bottom: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-}
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+    padding: 15px;
+    /* ፕሮፋይሉ እንዳይደበቅ ወይም እንዳይቆረጥ */
+    display: flex !important;
+    align-items: center; 
+    justify-content: center;
+  }
 
-.dashboard-header h2 {
-  color: #0d3866;
-  font-size: 26px;
-  margin-bottom: 5px;
-}
+  .dashboard-header h2 {
+    font-size: 20px;
+    margin-bottom: 0;
+  }
 
 .dashboard-header p {
   color: #64748b;
@@ -225,26 +224,12 @@ body {
   font-weight: 600;
 }
 
-.dashboard-profile-image {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #3182ce;
-}
-
-.dashboard-profile-placeholder {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #0d3866, #3182ce);
-  color: #ffffff;
-  font-size: 22px;
-  font-weight: bold;
-}
+.dashboard-profile-image, 
+  .dashboard-profile-placeholder {
+    width: 50px !important; /* መጠኑን ትንሽ እናስተካክለው */
+    height: 50px !important;
+    display: flex !important;
+    order: -1; /* ምስሉ ከጽሁፉ በላይ እንዲወጣ ያደርገዋል */
 
 .dashboard-body {
   flex: 1;
