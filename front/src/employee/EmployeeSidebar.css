@@ -1,9 +1,12 @@
+/* 1. የዳሽቦርድ አጠቃላይ አቀማመጥ */
 .dashboard-layout {
   display: flex;
-  min-height: 100vh;
-  background-color: #f7fafc;
+  height: 100vh; /* የስክሪኑን ሙሉ ቁመት ይይዛል */
+  overflow: hidden; /* የውጭ Scroll እንዳይኖር ያደርጋል */
+  width: 100%;
 }
 
+/* 2. Sidebar - ፒሲ ላይ ቋሚ ሆኖ እንዲቆይ */
 .employee-sidebar {
   width: 260px;
   background-color: #1a202c;
@@ -12,11 +15,35 @@
   flex-direction: column;
   padding: 20px;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  height: 100vh; /* መሳሪያው ላይ ሙሉ ቁመት */
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  overflow-y: auto; /* መረጃው ሲበዛ Sidebar-ህ በራሱ Scroll እንዲያደርግ */
 }
 
+/* 3. ዋናው ይዘት (Dashboard Main Content) */
+.dashboard-main-content {
+  flex: 1;
+  overflow-y: auto; /* ዋናው ይዘት ብቻ እንዲንቀሳቀስ */
+  padding: 20px;
+  height: 100vh;
+  background-color: #f7fafc;
+}
+
+/* 4. የፕሮፋይል ክፍል */
 .sidebar-profile {
   text-align: center;
   padding: 15px 0;
+}
+
+.sidebar-profile-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 10px;
+  border: 2px solid #2b6cb0;
 }
 
 .profile-icon {
@@ -38,6 +65,7 @@
   color: #fff;
 }
 
+/* 5. ሜኑ እና መለያዎች */
 .sidebar-divider {
   border: 0;
   border-top: 1px solid #2d3748;
@@ -74,11 +102,6 @@
   font-weight: bold;
 }
 
-.menu-item.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 .sidebar-logout-btn {
   background-color: #e53e3e;
   color: white;
@@ -90,13 +113,21 @@
   margin-top: auto;
 }
 
-.sidebar-logout-btn:hover {
-  background-color: #c53030;
-}
+/* 6. ለሞባይል መሳሪያዎች (Responsive Design) */
+@media (max-width: 768px) {
+  .dashboard-layout {
+    flex-direction: column; /* ስልክ ላይ Sidebar ከላይ እንዲሆን */
+  }
+  
+  .employee-sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    padding: 10px;
+  }
 
-.dashboard-main-content{
-    flex:1;
-    overflow-y:auto;
-    padding:20px 20px 20px 0;
-    margin:0;
+  .dashboard-main-content {
+    height: auto;
+    overflow-y: visible;
+  }
 }
