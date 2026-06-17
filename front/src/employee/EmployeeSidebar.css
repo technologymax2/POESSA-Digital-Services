@@ -8,18 +8,18 @@
 
 /* 2. Sidebar - ፒሲ ላይ ቋሚ ሆኖ እንዲቆይ */
 .employee-sidebar {
-  width: 260px;
-  background-color: #1a202c;
-  color: #fff;
+  width: 280px;
+  min-width: 280px;
+  background: #002b55;
+  color: #ffffff;
   display: flex;
   flex-direction: column;
   padding: 20px;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-  height: 100vh; /* መሳሪያው ላይ ሙሉ ቁመት */
-  flex-shrink: 0;
-  position: sticky;
+  height: 100vh; /* የስክሪኑን ቁመት እንዲይዝ */
+  position: sticky; /* አቀማመጡን ቋሚ ያደርገዋል */
   top: 0;
-  overflow-y: auto; /* መረጃው ሲበዛ Sidebar-ህ በራሱ Scroll እንዲያደርግ */
+  overflow-y: auto; /* ሜኑ ረጅም ከሆነ በውስጥ በኩል ብቻ እንዲንቀሳቀስ */
+  z-index: 1000;
 }
 
 /* 3. ዋናው ይዘት (Dashboard Main Content) */
