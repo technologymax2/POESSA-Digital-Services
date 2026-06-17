@@ -7,8 +7,7 @@ import "./Dashboard.css";
 
 const Dashboard = () => {
   const [lang, setLang] = useState("am");
-  // ሜኑ በዲፎልት ተዘግቶ ይነሳል (true = ተዘግቷል / false = ተከፍቷል)
-  const [collapsed, setCollapsed] = useState(true); 
+  const [collapsed, setCollapsed] = useState(true);
 
   const toggleLanguage = () => {
     setLang((prev) => (prev === "am" ? "en" : "am"));
@@ -16,6 +15,13 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-page">
+      {/* ሜኑ መክፈቻ (ስክሪኑ ላይ የሚታየው) */}
+      {collapsed && (
+        <button className="open-menu-btn" onClick={() => setCollapsed(false)}>
+          ☰
+        </button>
+      )}
+
       <Sidebar
         currentLang={lang}
         toggleLanguage={toggleLanguage}
@@ -23,8 +29,7 @@ const Dashboard = () => {
         setCollapsed={setCollapsed}
       />
 
-      {/* ሳይድባሩ ሲከፈት 'sidebar-open' የሚለው class ይጨመራል */}
-      <div className={`main-content ${!collapsed ? "sidebar-open" : ""}`}>
+      <div className="main-content">
         <Header
           title={lang === "am" ? "POESSA | ዲጂታል አገልግሎቶች" : "POESSA | Digital Services"}
         />
@@ -32,12 +37,9 @@ const Dashboard = () => {
         <Footer />
       </div>
 
-      {/* OVERLAY: ሳይድባሩ ክፍት ከሆነ ብቻ ይምጣ */}
+      {/* ሳይድባሩ ክፍት ከሆነ የሚመጣው ማደብዘዣ */}
       {!collapsed && (
-        <div 
-          className="sidebar-mobile-overlay" 
-          onClick={() => setCollapsed(true)} 
-        />
+        <div className="sidebar-mobile-overlay" onClick={() => setCollapsed(true)} />
       )}
     </div>
   );
