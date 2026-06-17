@@ -13,21 +13,20 @@ body {
   overflow-x: hidden;
 }
 
-/* Master Grid Wrapper Container */
 .employee-dashboard-page {
   display: flex;
-  height: 100vh; /* ለ Browser ሙሉ ቁመት ይስጠው */
+  height: 100vh;
   width: 100vw;
-  overflow: hidden; /* የውጭ Scroll እንዳይኖር ይቆልፋል */
+  overflow: hidden;
   background: #f4f6f9;
 }
 
 /* ===================================================
-   PRIMARY APPLICATION SIDE NAVIGATION BAR
+   SIDE NAVIGATION BAR
 =================================================== */
 .employee-sidebar {
   width: 280px;
-  min-width: 280px;   /* Locks sidebar desktop layout proportions */
+  min-width: 280px;
   background: #002b55;
   color: #ffffff;
   display: flex;
@@ -35,37 +34,6 @@ body {
   padding: 20px;
   z-index: 1000;
   position: relative;
-  margin: 0;          /* Guarantees no extra external margins are created */
-}
-
-.sidebar-brand-area {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.avatar-circle {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: #ffffff;
-  color: #002b55;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.brand-text-wrapper h3 {
-  margin: 0;
-  font-size: 18px;
-  letter-spacing: 0.5px;
-}
-
-.brand-subtext {
-  font-size: 12px;
-  color: #90cdf4;
 }
 
 .sidebar-hr {
@@ -74,7 +42,6 @@ body {
   margin: 18px 0;
 }
 
-/* PROFILE BLOCK INSIDE SIDEBAR */
 .sidebar-profile-box {
   display: flex;
   align-items: center;
@@ -119,7 +86,6 @@ body {
   border-radius: 4px;
 }
 
-/* MENU BUTTON PROPERTIES */
 .sidebar-menu-items {
   flex: 1;
   display: flex;
@@ -155,220 +121,126 @@ body {
   font-weight: 700;
 }
 
-.lang-switcher-btn {
+.lang-switcher-btn, .sidebar-logout-button {
   border: none;
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
   padding: 12px;
   border-radius: 10px;
   cursor: pointer;
-  margin-bottom: 15px;
-  text-align: center;
   font-weight: 600;
   transition: background 0.2s;
 }
 
-.lang-switcher-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.sidebar-logout-button {
-  border: none;
-  background: #e53e3e;
-  color: #ffffff;
-  padding: 13px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.2s;
-}
-
-.sidebar-logout-button:hover {
-  background: #c53030;
-}
+.lang-switcher-btn { background: rgba(255, 255, 255, 0.08); color: #ffffff; margin-bottom: 15px; }
+.sidebar-logout-button { background: #e53e3e; color: #ffffff; width: 100%; }
 
 .close-menu-btn {
- display: none !important;
+  display: none !important;
 }
 
 /* ===================================================
-   MAIN WORKSPACE PANEL (FLUSH TO SIDEBAR EDGE)
+   MAIN CONTENT AREA
 =================================================== */
-.main-content, 
-.dashboard-main-content {
+.main-content {
   flex: 1;
-  height: 100vh; /* ሙሉ ቁመት ይኑረው */
-  overflow-y: auto; /* መረጃው ሲበዛ እዚህ ብቻ እንዲንቀሳቀስ */
+  height: 100vh;
+  overflow-y: auto;
   padding: 24px;
 }
 
 .dashboard-header {
-    flex-direction: column;
-    text-align: center;
-    gap: 10px;
-    padding: 15px;
-    /* ፕሮፋይሉ እንዳይደበቅ ወይም እንዳይቆረጥ */
-    display: flex !important;
-    align-items: center; 
-    justify-content: center;
-  }
-
-  .dashboard-header h2 {
-    font-size: 20px;
-    margin-bottom: 0;
-  }
-
-.dashboard-header p {
-  color: #64748b;
-  font-size: 15px;
-  font-weight: 600;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 20px 25px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-.dashboard-profile-image, 
-  .dashboard-profile-placeholder {
-    width: 50px !important; /* መጠኑን ትንሽ እናስተካክለው */
-    height: 50px !important;
-    display: flex !important;
-    order: -1; /* ምስሉ ከጽሁፉ በላይ እንዲወጣ ያደርገዋል */
-
-.dashboard-body {
-  flex: 1;
+.dashboard-profile-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #3182ce;
 }
 
-.dynamic-content-area {
-  width: 100%;
+.dashboard-profile-placeholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0d3866, #3182ce);
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: bold;
 }
 
-.mobile-top-bar {
-  display: none;
-}
+.mobile-top-bar { display: none; }
 
 /* ===================================================
-   MEDIA INTERFACE BREAKPOINTS (MOBILE & TABLET VIEWS)
+   MEDIA QUERIES (RESPONSIVE)
 =================================================== */
 @media (max-width: 768px) {
-  .employee-dashboard-page {
-    flex-direction: column;
-  }
-
+  .employee-dashboard-page { flex-direction: column; }
+  
   .mobile-top-bar {
     display: flex;
     background: #002b55;
     color: #ffffff;
     padding: 14px 20px;
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     z-index: 999;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
   }
 
-  .menu-toggle-btn {
-    background: none;
-    border: none;
-    color: #ffffff;
-    font-size: 24px;
-    cursor: pointer;
-  }
-
-  .mobile-portal-title {
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-  }
-
-.employee-sidebar {
+  .employee-sidebar {
     position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
+    top: 0; left: 0; bottom: 0;
     width: 280px;
-    height: 100vh; /* ሙሉ ቁመት እንዲኖረው */
     transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background: #002b55;
-    z-index: 2000; /* Sidebar-ህ ከሁሉም በላይ እንዲሆን */
-    overflow-y: auto; /* መረጃ ሲበዛ Sidebar ውስጥ ስክሮል እንዲኖር */
+    transition: transform 0.3s ease;
+    z-index: 2000;
   }
 
-  .employee-sidebar.open {
-    transform: translateX(0);
-    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
-  }
-.sidebar-profile-box {
-    display: flex !important; /* በሞባይል ላይ በግልጽ እንዲታይ */
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
+  .employee-sidebar.open { transform: translateX(0); }
 
-  /* Overlay ከ Sidebar በታች እንዲሆን */
-  .sidebar-overlay {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.55);
-    z-index: 1999; /* ከ Sidebar በታች መሆን አለበት */
-  }
   .close-menu-btn {
-    display: flex;
+    display: flex !important;
     position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 32px;
-    height: 32px;
+    top: 15px; right: 15px;
+    width: 32px; height: 32px;
+    background: #ffffff;
     border: none;
     border-radius: 50%;
-    background: #ffffff;
-    color: #333333;
-    font-weight: bold;
-    cursor: pointer;
     align-items: center;
     justify-content: center;
-    z-index: 1001;
+    cursor: pointer;
   }
 
-  .main-content,
-  .dashboard-main-content {
-    margin-top: 55px; /* Keeps onboarding panels safely under the mobile nav banner */
-    padding: 16px;
-  }
+  .main-content { margin-top: 60px; padding: 16px; }
 
   .dashboard-header {
     flex-direction: column;
     text-align: center;
     gap: 15px;
-    padding: 15px;
   }
 
-  .dashboard-header h2 {
-    font-size: 22px;
+  .dashboard-profile-image, .dashboard-profile-placeholder {
+    order: -1;
+    width: 50px !important;
+    height: 50px !important;
   }
 
   .sidebar-overlay {
     position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.55);
-    z-index: 998;
-    backdrop-filter: blur(2px);
-  }
-}
-
-/* Printer settings optimizations */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  .main-content,
-  .dashboard-main-content {
-    margin: 0 !important;
-    padding: 0 !important;
+    top: 0; bottom: 0; left: 0; right: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1999;
   }
 }
