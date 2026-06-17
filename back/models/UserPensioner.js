@@ -19,6 +19,10 @@ const UserPensionerSchema = new mongoose.Schema({
   registeredBy: String,
   updatedBy: String,
   lastUpdatedAt: Date,
+  registeredBy: String,
+  lastEditedBy: String,
+  lastAction: String, // 'Created', 'Updated', 'Deleted'
+  lastActionTime: { type: Date, default: Date.now }
   createdAt: { type: Date, default: Date.now }
 });
 
