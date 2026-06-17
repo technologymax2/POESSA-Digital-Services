@@ -129,7 +129,7 @@ function IdCardGenerationAndSearch() {
           <label>የጡረታ አበል</label>
           <input type="number" name="pensionAmount" value={editData.pensionAmount || ''} onChange={handleEditChange} required />
         </div>
-          // በ edit-form-section ውስጥ በ form-grid ውስጥ የሚቀመጡ ተጨማሪዎች
+         
 <div className="input-group">
   <label>ጾታ</label>
   <select name="gender" value={editData.gender || ''} onChange={handleEditChange}>
