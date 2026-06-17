@@ -1,14 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
-
-const UserPensioner = require("./models/UserPensioner"); 
-
-const storage = multer.memoryStorage();
-const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 2 * 1024 * 1024 } 
-});
+const UserPensioner = require("./models/UserPensioner");
 
 // 1. 🔍 መረጃ መፈለጊያ (GET) -> /api/pensioners/search
 router.get("/search", async (req, res) => {
@@ -17,11 +9,9 @@ router.get("/search", async (req, res) => {
     if (!query) {
       return res.status(400).json({ success: false, message: "እባክዎ መፈለጊያ ቁጥር ያስገቡ!" });
     }
-
     const pensioner = await UserPensioner.findOne({
       $or: [{ faydaNumber: query }, { phone: query }, { pensionerId: query }]
     });
-
     if (!pensioner) {
       return res.status(404).json({ success: false, message: "⚠️ በዚህ ቁጥር የተመዘገበ ጡረተኛ አልተገኘም!" });
     }
@@ -71,8 +61,6 @@ router.delete("/delete/:id", async (req, res) => {
       return res.status(404).json({ success: false, message: "ጡረተኛው አልተገኘም!" });
     }
 
-    console.log(`⚠️ የጡረተኛው መረጃ [ID: ${id}] በባለሙያ [${employeeName || "Unknown"}] ጠፍቷል።`);
-
     res.status(200).json({
       success: true,
       message: `🗑️ የጡረተኛው መረጃ በባለሙያ ${employeeName || ""} ሙሉ በሙሉ ጠፍቷል!`
@@ -83,36 +71,26 @@ router.delete("/delete/:id", async (req, res) => {
 });
 
 // 4. 📥 አዲስ መመዝገቢያ (POST) -> /api/pensioners/register
-router.post("/register", upload.single("photo"), async (req, res) => {
+router.post("/register", async (req, res) => {
   try {
-    const {
-      pensionerId, name, tin, phone, age, gender,
-      faydaNumber, poessaBranch, bankName, bankBranch, pensionAmount,
-      address, issueDate, expiryDate, employeeName 
-    } = req.body;
+    // ፎቶው ከFrontend በ ImgBB ሊንክ (photoUrl) ስለሚመጣ multer አያስፈልግም
+    const { photoUrl, ...pensionerData } = req.body;
 
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: "እባክዎ የጡረተኛውን ፎቶ ይጫኑ!" });
+    if (!photoUrl) {
+      return res.status(400).json({ success: false, message: "⚠️ የፎቶ ሊንክ አልተገኘም!" });
     }
 
-    const existingFayda = await UserPensioner.findOne({ faydaNumber });
+    const existingFayda = await UserPensioner.findOne({ faydaNumber: pensionerData.faydaNumber });
     if (existingFayda) {
       return res.status(400).json({ success: false, message: "⚠️ ይህ የፋይዳ ቁጥር ቀድሞ ተመዝግቧል!" });
     }
 
-    const existingId = await UserPensioner.findOne({ pensionerId });
-    if (existingId) {
-      return res.status(400).json({ success: false, message: "⚠️ ይህ የጡረታ መለያ ቁጥር ቀድሞ ተመዝግቧል!" });
-    }
-
-    const base64Image = req.file.buffer.toString("base64");
-    const photoUrl = `data:${req.file.mimetype};base64,${base64Image}`;
-
     const newPensioner = new UserPensioner({
-      pensionerId, name, tin, phone, age: Number(age) || 0, gender,
-      faydaNumber, poessaBranch, bankName, bankBranch, pensionAmount: Number(pensionAmount) || 0,
-      address: address || "", issueDate: issueDate || "", expiryDate: expiryDate || "", photoUrl,
-      registeredBy: employeeName || "ያልታወቀ ባለሙያ"
+      ...pensionerData,
+      photoUrl,
+      age: Number(pensionerData.age) || 0,
+      pensionAmount: Number(pensionerData.pensionAmount) || 0,
+      registeredBy: pensionerData.employeeName || "ያልታወቀ ባለሙያ"
     });
 
     await newPensioner.save();
@@ -123,7 +101,6 @@ router.post("/register", upload.single("photo"), async (req, res) => {
       data: newPensioner
     });
   } catch (error) {
-    console.error("🔥 Error Detail:", error);
     res.status(500).json({ success: false, message: `በሰርቨር ላይ ስህተት አጋጥሟል! ዝርዝር፡ ${error.message}` });
   }
 });
