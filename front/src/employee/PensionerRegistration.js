@@ -63,7 +63,9 @@ function PensionerRegistration() {
       const finalData = { 
         ...formData, 
         photoUrl: imgResult.data.url, 
-        employeeName: currentEmployee 
+        employeeName: currentEmployee ,
+  lastAction: 'Created',
+  lastActionTime: new Date().toISOString()
       };
 
       // 3. ወደ ሰርቨር መላክ
