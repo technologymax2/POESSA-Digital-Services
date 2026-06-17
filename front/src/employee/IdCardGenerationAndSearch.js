@@ -100,21 +100,56 @@ function IdCardGenerationAndSearch() {
         {searchStatus && <p className="status-indicator">{searchStatus}</p>}
       </div>
 
-      {isEditing && (
-        <div className="edit-form-section no-print">
-          <h3>📝 የተሳሳተ መረጃ ማስተካከያ</h3>
-          <form onSubmit={handleUpdate} className="pensioner-form">
-            <div className="form-grid">
-              <input type="text" name="name" value={editData.name || ''} onChange={handleEditChange} placeholder="ሙሉ ስም" required />
-              <input type="text" name="tin" value={editData.tin || ''} onChange={handleEditChange} placeholder="ቲን ቁጥር" required />
-              <input type="text" name="address" value={editData.address || ''} onChange={handleEditChange} placeholder="አድራሻ" required />
-              <input type="tel" name="phone" value={editData.phone || ''} onChange={handleEditChange} placeholder="ስልክ" required />
-            </div>
-            <button type="submit" className="save-btn" style={{marginTop: '10px'}}>ለውጦችን አስቀምጥ</button>
-          </form>
+     {isEditing && (
+  <div className="edit-form-section no-print">
+    <h3>📝 የጡረተኛ መረጃ ማስተካከያ ፎርም</h3>
+    <form onSubmit={handleUpdate} className="pensioner-form">
+      <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+        
+        <div className="input-group">
+          <label>ሙሉ ስም (Full Name)</label>
+          <input type="text" name="name" value={editData.name || ''} onChange={handleEditChange} required style={{width: '100%', padding: '8px'}} />
         </div>
-      )}
+        
+        <div className="input-group">
+          <label>የፋይዳ ቁጥር (FAYDA No)</label>
+          <input type="text" name="faydaNumber" value={editData.faydaNumber || ''} onChange={handleEditChange} required style={{width: '100%', padding: '8px'}} />
+        </div>
+        
+        <div className="input-group">
+          <label>ቲን ቁጥር (TIN Number)</label>
+          <input type="text" name="tin" value={editData.tin || ''} onChange={handleEditChange} required style={{width: '100%', padding: '8px'}} />
+        </div>
+        
+        <div className="input-group">
+          <label>ስልክ ቁጥር (Phone Number)</label>
+          <input type="tel" name="phone" value={editData.phone || ''} onChange={handleEditChange} required style={{width: '100%', padding: '8px'}} />
+        </div>
+        
+        <div className="input-group">
+          <label>አድራሻ (Address)</label>
+          <input type="text" name="address" value={editData.address || ''} onChange={handleEditChange} required style={{width: '100%', padding: '8px'}} />
+        </div>
+        
+        <div className="input-group">
+          <label>የቅርንጫፍ ስም (POESSA Branch)</label>
+          <input type="text" name="poessaBranch" value={editData.poessaBranch || ''} onChange={handleEditChange} required style={{width: '100%', padding: '8px'}} />
+        </div>
+        
+        <div className="input-group">
+          <label>የጡረታ አበል መጠን (Pension Amount)</label>
+          <input type="number" name="pensionAmount" value={editData.pensionAmount || ''} onChange={handleEditChange} required style={{width: '100%', padding: '8px'}} />
+        </div>
 
+      </div>
+      
+      <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+        <button type="submit" className="save-btn">ለውጦችን አስቀምጥ (Save Changes)</button>
+        <button type="button" onClick={() => setIsEditing(false)} className="cancel-btn">አንሳ (Cancel)</button>
+      </div>
+    </form>
+  </div>
+)}
       {registeredData && !isEditing && (
         <div className="id-card-wrapper-section">
           <div className="admin-actions no-print">
