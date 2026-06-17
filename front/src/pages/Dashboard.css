@@ -17,9 +17,10 @@ body {
   display: flex;
   min-height: 100vh;
   width: 100%;
+  position: relative;
 }
 
-/* ሳይድባሩ ከስክሪኑ ጋር እንዲዋሃድ */
+/* የዋናው ይዘት ማቀናበሪያ */
 .main-content {
   flex: 1;
   min-width: 0;
@@ -27,51 +28,48 @@ body {
   flex-direction: column;
   padding: 25px;
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  z-index: 10;
 }
 
-/* ሳይድባሩ ሲከፈት ይዘቱ ወደ ቀኝ ይገፋል */
-.main-content.sidebar-open {
-  margin-left: 280px;
+/* ================= 3. MOBILE MENU TOGGLE ================= */
+.open-menu-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  padding: 10px 15px;
+  background: #002855;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
-/* ================= 3. MOBILE OVERLAY ================= */
+/* ================= 4. MOBILE OVERLAY ================= */
 .sidebar-mobile-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
   z-index: 1900;
 }
 
-/* ================= 4. UI COMPONENTS (Glassmorphism) ================= */
+/* ================= 5. UI COMPONENTS (Glassmorphism) ================= */
 .stat-card,
-.employee-card,
-.action-card {
+.employee-card {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 20px;
   padding: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease;
 }
 
-.stat-card:hover {
-  transform: translateY(-5px);
-}
-
-.stat-number {
-  font-size: 28px;
-  font-weight: 700;
-  color: #002855;
-}
-
-/* ================= 5. GRIDS ================= */
+/* ================= 6. GRIDS ================= */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -85,42 +83,10 @@ body {
   gap: 20px;
 }
 
-/* ================= 6. TYPOGRAPHY & BUTTONS ================= */
-.section-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: #003366;
-  margin-bottom: 15px;
-}
-
-.details-btn {
-  background: #002855;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.details-btn:hover {
-  background: #004f99;
-}
-
 /* ================= 7. RESPONSIVE DESIGN ================= */
-@media (max-width: 1024px) {
-  .main-content.sidebar-open {
-    margin-left: 0; /* በሞባይል ሳይድባሩ ከላይ ይደረባረቃል እንጂ ይዘቱን አይገፋም */
-  }
-}
-
 @media (max-width: 480px) {
   .main-content {
     padding: 15px;
-    padding-top: 70px; /* Toggle button ቦታ እንዲኖረው */
-  }
-  
-  .stat-number {
-    font-size: 24px;
+    padding-top: 80px; /* ለሜኑ መክፈቻ አዝራር ቦታ እንዲኖር */
   }
 }
