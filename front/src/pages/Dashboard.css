@@ -3,7 +3,7 @@
    ========================================================== */
 
 /* 1. CONTAINER & ANIMATION */
-.sidebar {
+.dashboard-sidebar {
   width: 280px;
   height: 100vh;
   position: fixed;
