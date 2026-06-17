@@ -195,7 +195,7 @@ const handleUpdate = async (e) => {
           </div>
 
           <div className="id-card" id="pensioner-id-card">
-            <div className="id-card-header"><h3>POESSA DIGITAL ID</h3><p>የጡረተኞች የህይወት ማረጋገጫ ሲስተም</p></div>
+            <div className="id-card-header"><h3>POESSA DIGITAL ID</h3><p>የግል ድርግት ሰራተኞች ማህበራዊ ዋስትና አስተዳደር</p></div>
             <div className="id-card-body">
               <div className="id-photo-zone">
                 <img src={registeredData.imageSrc} alt="Pensioner" className="id-pensioner-img" />
@@ -214,7 +214,7 @@ const handleUpdate = async (e) => {
                 <span className="qr-label">SCAN TO VERIFY</span>
               </div>
             </div>
-            <div className="id-card-footer"><p>ይህ ካርድ በህይወት መኖርን በዲጂታል መንገድ ለማረጋገጫነት ያገለግላል።</p></div>
+            <div className="id-card-footer"><p>ያገለገሉ ዜጎችን በማገልገላችን ኩራት ይሰማናል</p></div>
           </div>
           <button onClick={() => window.print()} className="print-btn no-print">🖨️ መታወቂያውን አትም (Print ID)</button>
         </div>
