@@ -14,10 +14,10 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="dashboard-page">
-      {/* ሜኑ መክፈቻ (ስክሪኑ ላይ የሚታየው) */}
+    <div className="poessa-dashboard">
+      {/* ሜኑ መክፈቻ */}
       {collapsed && (
-        <button className="open-menu-btn" onClick={() => setCollapsed(false)}>
+        <button className="poessa-dashboard__menu-open-btn" onClick={() => setCollapsed(false)}>
           ☰
         </button>
       )}
@@ -29,7 +29,7 @@ const Dashboard = () => {
         setCollapsed={setCollapsed}
       />
 
-      <div className="main-content">
+      <div className="poessa-dashboard__main-content">
         <Header
           title={lang === "am" ? "POESSA | ዲጂታል አገልግሎቶች" : "POESSA | Digital Services"}
         />
@@ -37,9 +37,9 @@ const Dashboard = () => {
         <Footer />
       </div>
 
-      {/* ሳይድባሩ ክፍት ከሆነ የሚመጣው ማደብዘዣ */}
+      {/* ማደብዘዣ (Overlay) */}
       {!collapsed && (
-        <div className="sidebar-mobile-overlay" onClick={() => setCollapsed(true)} />
+        <div className="poessa-dashboard__overlay" onClick={() => setCollapsed(true)} />
       )}
     </div>
   );
