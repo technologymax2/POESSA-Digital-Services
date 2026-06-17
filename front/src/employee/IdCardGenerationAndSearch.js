@@ -135,14 +135,6 @@ const handleUpdate = async (e) => {
   return (
     <div className="id-generation-page-container">
       
-      <div className="heading-route-tabs no-print">
-        <button className="route-btn" onClick={() => navigate('/pensioner-registration')}>
-          📝 አዲስ ጡረተኛ መመዝገቢያ ቅጽ
-        </button>
-        <button className="route-btn active" onClick={() => navigate('/idcard-generation-search')}>
-          🔍 መረጃ መፈለጊያ እና መታወቂያ ማውጫ
-        </button>
-      </div>
 
       <div className="search-section no-print">
         <h3>🔍 የጡረተኛ መረጃ ማኔጅመንት እና መታወቂያ ማውጫ</h3>
