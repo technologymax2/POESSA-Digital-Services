@@ -22,37 +22,54 @@ function IdCardGenerationAndSearch() {
     setEditData({ ...editData, [name]: value });
   };
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery) {
-      setSearchStatus('⚠️ እባክዎ መፈለጊያ ቁጥር ያስገቡ!');
-      return;
-    }
-    setSearchStatus('በመፈለግ ላይ...');
-    setRegisteredData(null);
-    setIsEditing(false);
+const handleSearch = async (e) => {
+  e.preventDefault();
+  if (!searchQuery) {
+    setSearchStatus('⚠️ እባክዎ መፈለጊያ ቁጥር ያስገቡ!');
+    return;
+  }
+  setSearchStatus('በመፈለግ ላይ...');
+  setRegisteredData(null);
+  setIsEditing(false);
 
-    try {
-      const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${searchQuery}`);
-      const result = await response.json();
+  try {
+    const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${searchQuery}`);
+    const result = await response.json();
 
-      if (result.success) {
-        setRegisteredData({
-          _id: result.data._id, pensionerId: result.data.pensionerId, name: result.data.name,
-          faydaNumber: result.data.faydaNumber, poessaBranch: result.data.poessaBranch, bankName: result.data.bankName,
-          bankBranch: result.data.bankBranch, tin: result.data.tin, age: result.data.age, gender: result.data.gender,
-          pensionAmount: result.data.pensionAmount, phone: result.data.phone, address: result.data.address,
-          issueDate: result.data.issueDate, expiryDate: result.data.expiryDate, imageSrc: result.data.photoUrl
-        });
-        setEditData(result.data);
-        setSearchStatus('🎉 የጡረተኛው ሙሉ መረጃ ተገኝቷል!');
-      } else {
-        setSearchStatus(`❌ ${result.message}`);
-      }
-    } catch (err) {
-      setSearchStatus(`❌ የፍለጋ ስህተት፡ ${err.message}`);
+    if (result.success) {
+      // ከሰርቨር የመጣውን መረጃ ሙሉ በሙሉ መቅረጽ
+      setRegisteredData({
+        _id: result.data._id,
+        pensionerId: result.data.pensionerId,
+        name: result.data.name,
+        faydaNumber: result.data.faydaNumber,
+        poessaBranch: result.data.poessaBranch,
+        bankName: result.data.bankName,
+        bankBranch: result.data.bankBranch,
+        tin: result.data.tin,
+        age: result.data.age,
+        gender: result.data.gender,
+        pensionAmount: result.data.pensionAmount,
+        phone: result.data.phone,
+        address: result.data.address,
+        issueDate: result.data.issueDate,
+        expiryDate: result.data.expiryDate,
+        imageSrc: result.data.photoUrl,
+        // ኦዲት መረጃዎች (ከሰርቨር ካልመጡ ነባሪ ዋጋ ይኖራቸዋል)
+        registeredBy: result.data.registeredBy || 'Unknown',
+        lastEditedBy: result.data.lastEditedBy || 'None',
+        lastAction: result.data.lastAction || 'Created',
+        lastActionTime: result.data.lastActionTime || new Date().toISOString()
+      });
+      setEditData(result.data);
+      setSearchStatus('🎉 የጡረተኛው ሙሉ መረጃ ተገኝቷል!');
+    } else {
+      setSearchStatus(`❌ ${result.message}`);
     }
-  };
+  } catch (err) {
+    setSearchStatus(`❌ የፍለጋ ስህተት፡ ${err.message}`);
+  }
+};
 
 const handleUpdate = async (e) => {
     e.preventDefault();
@@ -161,6 +178,20 @@ const handleUpdate = async (e) => {
           <div className="admin-actions no-print">
             <button onClick={() => setIsEditing(true)} className="edit-action-btn">📝 መረጃውን አርም</button>
             <button onClick={handleDelete} className="delete-action-btn">🗑️ ሙሉ በሙሉ አጥፋ</button>
+        <div className="audit-log-box" style={{ 
+      marginTop: '20px', 
+      padding: '15px', 
+      backgroundColor: '#f8fafc', 
+      borderRadius: '8px',
+      borderLeft: '4px solid #3182ce',
+      textAlign: 'left'
+    }}>
+      <h4 style={{ marginBottom: '10px' }}>የመረጃ ታሪክ (Audit Log)</h4>
+      <p><strong>የመጀመሪያ ምዝገባ በ:</strong> {registeredData.registeredBy}</p>
+      <p><strong>መጨረሻ የተቀየረው በ:</strong> {registeredData.lastEditedBy}</p>
+      <p><strong>የመጨረሻ ድርጊት:</strong> {registeredData.lastAction}</p>
+      <p><strong>ሰዓት:</strong> {new Date(registeredData.lastActionTime).toLocaleString('am-ET')}</p>
+    </div>
           </div>
 
           <div className="id-card" id="pensioner-id-card">
