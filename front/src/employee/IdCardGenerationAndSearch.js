@@ -127,16 +127,16 @@ function IdCardGenerationAndSearch() {
             <div className="id-card-body">
               <div className="id-photo-zone">
                 <img src={registeredData.imageSrc} alt="Pensioner" className="id-pensioner-img" />
-                <p className="id-num">{registeredData.tin}</p>
+                <p className="id-num">{registeredData.issueDate}</p>
               </div>
               <div className="id-details-zone">
-                <p><strong>ስም:</strong> {registeredData.name}</p>
-                <p><strong>FAYDA No:</strong> {registeredData.faydaNumber}</p>
-                <p><strong>ቲን (TIN):</strong> {registeredData.tin}</p>
-                <p><strong>ስልክ:</strong> {registeredData.phone}</p>
-                <p><strong>አድራሻ:</strong> {registeredData.address}</p>
-                <p><strong>ቅርንጫፍ:</strong> {registeredData.poessaBranch}</p>
-              </div>
+  <p><strong>ስም:</strong> {registeredData.name}</p>
+  <p><strong>FAYDA No:</strong> {registeredData.faydaNumber}</p>
+  <p><strong>ቲን (TIN):</strong> {registeredData.tin}</p> 
+  <p><strong>ስልክ:</strong> {registeredData.phone}</p>
+  <p><strong>አድራሻ:</strong> {registeredData.address}</p>
+  <p><strong>ቅርንጫፍ:</strong> {registeredData.poessaBranch}</p>
+</div>
               <div className="id-qr-zone">
                 <QRCodeSVG 
                   value={JSON.stringify({ 
