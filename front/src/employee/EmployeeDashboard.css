@@ -197,11 +197,9 @@ body {
 .main-content, 
 .dashboard-main-content {
   flex: 1;
-  padding: 24px 24px 24px 24px; /* Balanced layout margins; no awkward gaps */
-  margin: 0;                     /* Ensures it sits completely flush to the sidebar */
-  display: flex;
-  flex-direction: column;
-  min-width: 0;                  /* Prevents content layout breakouts */
+  height: 100vh; /* ሙሉ ቁመት ይኑረው */
+  overflow-y: auto; /* መረጃው ሲበዛ እዚህ ብቻ እንዲንቀሳቀስ */
+  padding: 24px;
 }
 
 .dashboard-header {
