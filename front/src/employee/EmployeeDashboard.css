@@ -188,15 +188,18 @@ body {
   .employee-dashboard-page { flex-direction: column; }
   
   .mobile-top-bar {
-    display: flex;
-    background: #002b55;
-    color: #ffffff;
-    padding: 14px 20px;
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 999;
-    align-items: center;
-    justify-content: space-between;
+position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  background: #002855;
+  color: #ffffff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
 
   .employee-sidebar {
