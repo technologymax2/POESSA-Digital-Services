@@ -184,22 +184,38 @@ body {
 /* ===================================================
    MEDIA QUERIES (RESPONSIVE)
 =================================================== */
+/* ===================================================
+   MEDIA QUERIES (RESPONSIVE)
+=================================================== */
 @media (max-width: 768px) {
   .employee-dashboard-page { flex-direction: column; }
   
+  /* 1. Make the bar span the full width of the screen */
   .mobile-top-bar {
-position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 1000;
-  background: #002855;
-  color: #ffffff;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #002855;
+    color: #ffffff;
+    padding: 0 20px;
+    z-index: 999;
+    align-items: center;
+    justify-content: flex-start; /* Aligns button to the left */
+    gap: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  /* 2. Style the button inside the bar */
+  .menu-toggle-btn {
+    background: transparent;
+    color: #ffffff;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px;
   }
 
   .employee-sidebar {
