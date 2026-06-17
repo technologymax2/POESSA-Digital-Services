@@ -188,7 +188,7 @@ body {
 }
 
 .close-menu-btn {
-  display: none; /* Hidden on Desktop view */
+ display: none !important;
 }
 
 /* ===================================================
