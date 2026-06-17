@@ -347,43 +347,25 @@
    🖨️ 6. የህትመት ማስተካከያ (Pure Print Optimization)
    ========================================================================== */
 @media print {
-  /* መታወቂያው ሲታተም ከእሱ ውጭ ያሉትን ነገሮች (ናቭባር፣ ፎርም፣ ቁልፎች) በሙሉ ደብቅ */
-  .no-print, 
-  .heading-route-tabs, 
-  .search-section, 
-  .admin-actions, 
-  .edit-form-section,
-  .print-btn,
-  header,
-  footer,
-  .employee-sidebar {
-    display: none !important;
+  @page {
+    size: auto;
+    margin: 5mm;
   }
   
-  html, body {
-    background-color: #ffffff !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* መታወቂያውን በህትመት ወረቀቱ መሃል ላይ በትክክል ማስቀመጥ */
-  .id-generation-page-container, 
-  .id-card-wrapper-section {
-    background: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    box-shadow: none !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    height: 100vh;
+  .no-print, .admin-actions, .print-btn, .search-section, .edit-form-section {
+    display: none !important;
   }
 
   .id-card {
+    border: 3px solid #1a365d !important;
     box-shadow: none !important;
-    border: 2.5px solid #1a365d !important;
-    transform: scale(1) !important; /* ሲታተም በትክክለኛው መጠን እንዲሆን */
-    margin: 0 !important;
-    page-break-inside: avoid;
+    /* ቀለሙ በፕሪንተር እንዲወጣ የግድ አስፈላጊ ነው */
+    -webkit-print-color-adjust: exact !important; 
+    print-color-adjust: exact !important;
+  }
+
+  .id-card-header {
+    background-color: #1a365d !important;
+    -webkit-print-color-adjust: exact !important;
   }
 }
