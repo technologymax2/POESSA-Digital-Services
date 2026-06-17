@@ -86,9 +86,6 @@
 /* ==========================================================================
    📝 3. የማስተካከያ ፎርም ስታይል (Edit Section & Form Grid)
    ========================================================================== */
-/* ==========================================================================
-   📝 የማስተካከያ ፎርም ስታይል (Edit Form - ግልጽ እና የተደራጀ)
-   ========================================================================== */
 .edit-form-section {
   padding: 30px;
   background-color: #ffffff;
@@ -110,33 +107,38 @@
 /* ፎርሙን በሁለት ረድፍ የሚከፍል Grid */
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* በሁለት አምድ ይከፍላል */
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
 
 /* ለኤዲቲንግ ፎርም ውስጥ ያሉ ግብዓቶች (Inputs) ግልጽነት */
-.edit-form-section .input-group input {
-  color: #1a202c !important;        /* የጽሁፍ ቀለም ጥቁር */
-  background-color: #ffffff !important; /* የጀርባ ቀለም ነጭ */
-  border: 1px solid #4a5568 !important; /* የድንበር ቀለም ጠቆር ያለ */
+.edit-form-section .input-group input,
+.edit-form-section .input-group select {
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  color: #1a202c !important;
+  background-color: #ffffff !important;
+  border: 1px solid #4a5568 !important;
+  border-radius: 6px;
   font-weight: 500;
+  margin-top: 5px;
 }
 
 /* ለኤዲቲንግ ፎርም ውስጥ ያሉ ጽሁፎች (Labels) */
 .edit-form-section .input-group label {
-  color: #2d3748 !important; /* የሌብል ቀለም ጥቁር */
+  color: #2d3748 !important;
   font-weight: 700 !important;
+  font-size: 13px;
 }
 
-/* ፎርሙ ላይ ጠቅ ሲደረግ የሚታይ ቀለም */
-.edit-form-section .input-group input:focus {
+.edit-form-section .input-group input:focus,
+.edit-form-section .input-group select:focus {
   border-color: #2b6cb0 !important;
   box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.2) !important;
+  outline: none;
 }
 
-
-
-/* የቁልፎች (Buttons) ስታይል */
 .save-btn {
   padding: 12px 30px;
   background-color: #38a169;
@@ -145,7 +147,9 @@
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
+.save-btn:hover { background-color: #2f855a; }
 
 .cancel-btn {
   padding: 12px 30px;
@@ -155,15 +159,8 @@
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
-
-/* ለሞባይል ስክሪን ስታይል */
-@media (max-width: 600px) {
-  .form-grid {
-    grid-template-columns: 1fr; /* ስልክ ላይ አንድ ረድፍ ብቻ እንዲሆን */
-  }
-}
-
 .cancel-btn:hover { background-color: #cbd5e0; }
 
 /* ==========================================================================
@@ -193,7 +190,6 @@
   cursor: pointer;
   font-weight: bold;
 }
-
 .edit-action-btn:hover { background-color: #c05621; }
 
 .delete-action-btn {
@@ -205,13 +201,12 @@
   cursor: pointer;
   font-weight: bold;
 }
-
 .delete-action-btn:hover { background-color: #c53030; }
 
 /* 💳 እውነተኛው የመታወቂያ ሳጥን (ID Card Fixed Size) */
 .id-card {
-  width: 480px;
-  height: 290px;
+  width: 520px;
+  height: 330px;
   background: #ffffff;
   border: 3px solid #1a365d;
   border-radius: 14px;
@@ -220,35 +215,75 @@
   flex-direction: column;
   overflow: hidden;
   box-sizing: border-box;
+  position: relative;
+}
+
+/* 🇪🇹 የኢትዮጵያ ሰንደቅ ዓላማ መስመር */
+.id-card-top-flag-line {
+  height: 6px;
+  width: 100%;
+  background: linear-gradient(to right, #2ecc71 33.3%, #f1c40f 33.3%, #f1c40f 66.6%, #e74c3c 66.6%);
+}
+
+/* 💀 ሰውየው ከሞተ (Passive ከሆነ) ሙሉ ካርዱን ጥቁርና ነጭ ማድረጊያ */
+.id-card.pensioner-dead {
+  filter: grayscale(1) contrast(1.1);
+  border-color: #4a5568;
+}
+.id-card.pensioner-dead .id-card-header {
+  background-color: #4a5568 !important;
 }
 
 .id-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   background-color: #1a365d;
   color: white;
-  padding: 12px;
-  text-align: center;
+  padding: 8px 12px;
 }
 
-.id-card-header h3 {
+.header-titles {
+  text-align: center;
+  flex: 1;
+}
+
+.header-titles h3 {
   margin: 0;
   font-size: 16px;
   font-weight: bold;
   letter-spacing: 1.5px;
 }
 
-.id-card-header p {
+.header-titles p {
   margin: 3px 0 0 0;
   font-size: 10px;
   color: #90cdf4;
   font-weight: 600;
 }
 
+.logo-placeholder {
+  font-size: 20px;
+  margin-right: 5px;
+}
+
+/* 🟢 / 🔴 የሁኔታ ማሳያ ባጅ (Active / Passive) */
+.status-badge-view {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+.badge-active { background-color: #48bb78 !important; color: white !important; }
+.badge-passive { background-color: #e53e3e !important; color: white !important; }
+
 .id-card-body {
   display: flex;
-  padding: 15px;
+  padding: 12px;
   flex: 1;
   gap: 15px;
-  align-items: center;
+  align-items: flex-start;
   background-color: #fff;
 }
 
@@ -257,29 +292,31 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
 }
 
 .id-pensioner-img {
   width: 105px;
-  height: 125px;
+  height: 120px;
   object-fit: cover;
   border: 2px solid #cbd5e0;
   border-radius: 6px;
   background-color: #edf2f7;
 }
 
-.id-num {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 13px;
-  font-weight: bold;
-  color: #e53e3e;
-  margin: 0;
-  background-color: #fff5f5;
-  padding: 2px 6px;
+/* የተሰጠበት እና የሚያበቃበት ቀን ሳጥን */
+.id-dates-box {
+  margin-top: 6px;
+  font-size: 9px;
+  color: #4a5568;
+  line-height: 1.4;
+  background-color: #f7fafc;
+  padding: 4px;
   border-radius: 4px;
-  border: 1px solid #fed7d7;
+  border: 1px solid #e2e8f0;
+  width: 105px;
+  box-sizing: border-box;
 }
+.id-dates-box p { margin: 0; font-weight: 500; }
 
 /* 📝 ዝርዝር መረጃ ማሳያ ዞን */
 .id-details-zone {
@@ -287,20 +324,35 @@
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .id-details-zone p {
   margin: 0;
-  font-size: 12px;
+  font-size: 11px;
   color: #2d3748;
-  line-height: 1.4;
+  line-height: 1.5;
+  border-bottom: 1px dashed #f0f4f8;
+  padding-bottom: 2px;
+  display: flex;
 }
 
-.id-details-zone strong {
-  color: #4a5568;
-  display: inline-block;
-  width: 90px;
+.id-details-zone .lbl {
+  color: #718096;
+  font-weight: 600;
+  width: 95px;
+  flex-shrink: 0;
+}
+
+.id-details-zone .val {
+  color: #2d3748;
+  font-weight: 700;
+}
+
+.id-details-zone .val-name {
+  color: #1a365d;
+  font-weight: 800;
+  font-size: 13px;
 }
 
 /* 📱 የ QR ኮድ ዞን */
@@ -308,7 +360,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   justify-content: center;
 }
 
@@ -319,9 +371,54 @@
   letter-spacing: 0.5px;
 }
 
+/* ✒️ የፊርማ እና ማህተም ቦታ */
+.id-card-signature-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 15px 5px 15px;
+  margin-top: auto;
+}
+
+.sig-block {
+  text-align: center;
+  width: 45%;
+}
+
+.sig-line {
+  margin: 0 0 2px 0;
+  font-size: 10px;
+  color: #a0aec0;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.sig-block p:last-child {
+  margin: 0;
+  font-size: 9px;
+  color: #718096;
+  font-weight: 600;
+}
+
+/* 🏵️ የዲጂታል ማህተም ክብ ሳጥን */
+.digital-stamp-box {
+  border: 2px dashed rgba(26, 54, 93, 0.4);
+  color: #1a365d;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: bold;
+  transform: rotate(-15deg);
+  margin: 0 auto;
+  opacity: 0.7;
+}
+
 .id-card-footer {
   background-color: #edf2f7;
-  padding: 8px;
+  padding: 6px;
   text-align: center;
   border-top: 1px solid #e2e8f0;
 }
@@ -347,32 +444,20 @@
   box-shadow: 0 4px 10px rgba(26, 54, 93, 0.2);
   transition: all 0.2s;
 }
-
-.print-btn:hover {
-  background-color: #2a4365;
-}
+.print-btn:hover { background-color: #2a4365; }
 
 /* ==========================================================================
    📱 5. ለሞባይል ስክሪን የተደረገ ልዩ ማስተካከያ (Mobile Responsiveness)
    ========================================================================== */
 @media (max-width: 768px) {
-  .id-generation-page-container {
-    padding: 15px;
-  }
+  .id-generation-page-container { padding: 15px; }
+  .heading-route-tabs { flex-direction: column; gap: 8px; }
+  .search-section form { flex-direction: column; }
+  .form-grid { grid-template-columns: 1fr; }
 
-  .heading-route-tabs {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .search-section form {
-    flex-direction: column;
-  }
-
-  /* 📱 በሞባይል ስክሪን መታወቂያው እንዳይቆራረጥ በትንሹ እንዲቀንስ (Scale) ማድረጊያ */
   .id-card {
     transform: scale(0.85);
-    margin: -20px 0; /* የscale ቅነሳውን ክፍተት ለማስተካከል */
+    margin: -20px 0;
     max-width: 100%;
   }
 }
@@ -398,15 +483,20 @@
   }
 
   .id-card {
-    border: 3px solid #1a365d !important;
+    border: 2px solid #1a365d !important;
     box-shadow: none !important;
-    /* ቀለሙ በፕሪንተር እንዲወጣ የግድ አስፈላጊ ነው */
     -webkit-print-color-adjust: exact !important; 
     print-color-adjust: exact !important;
   }
 
-  .id-card-header {
-    background-color: #1a365d !important;
+  /* 🚨 በህትመት ወቅት ቀለማት በግድ እንዲወጡ ማስገደጃ */
+  .id-card-header, 
+  .id-card-top-flag-line, 
+  .status-badge-view, 
+  .badge-active, 
+  .badge-passive,
+  .id-dates-box {
     -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
