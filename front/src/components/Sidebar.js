@@ -16,48 +16,44 @@ const Sidebar = ({ currentLang, toggleLanguage, collapsed, setCollapsed }) => {
   };
 
   return (
-    <aside className={`dashboard-sidebar ${!collapsed ? "open" : ""}`}>
-      {/* ሄደር - ስም እና Close አዝራር */}
-      <div className="sidebar-header">
-        <div className="header-info">
-          <div className="logo-circle">P</div>
-          <div>
+    <aside className={`poessa-sidebar ${!collapsed ? "poessa-sidebar--open" : ""}`}>
+      <div className="poessa-sidebar__header">
+        <div className="poessa-sidebar__header-info">
+          <div className="poessa-sidebar__logo-circle">P</div>
+          <div className="poessa-sidebar__title-wrapper">
             <h2>POESSA</h2>
             <p>Digital Services</p>
           </div>
         </div>
         
-        {/* የ Close አዝራር (X) */}
-        <button className="close-menu-btn" onClick={() => setCollapsed(true)}>
+        <button className="poessa-sidebar__close-btn" onClick={() => setCollapsed(true)}>
           <Close style={{ color: "white", fontSize: "28px" }} />
         </button>
       </div>
 
-      {/* ሜኑ ዝርዝር */}
-      <nav className="menu-list">
-        <div className="menu-item" onClick={() => handleNavigation("/dashboard")}>
+      <nav className="poessa-sidebar__menu">
+        <div className="poessa-sidebar__menu-item" onClick={() => handleNavigation("/dashboard")}>
           <Dashboard /> <span>{currentLang === "am" ? "ዳሽቦርድ" : "Dashboard"}</span>
         </div>
-        <div className="menu-item" onClick={() => handleNavigation("/delegations")}>
+        <div className="poessa-sidebar__menu-item" onClick={() => handleNavigation("/delegations")}>
           <Description /> <span>{currentLang === "am" ? "ውክልናዎች" : "Delegations"}</span>
         </div>
-        <div className="menu-item" onClick={() => handleNavigation("/liveness")}>
+        <div className="poessa-sidebar__menu-item" onClick={() => handleNavigation("/liveness")}>
           <VerifiedUser /> <span>{currentLang === "am" ? "የህይወት ማረጋገጫ" : "Life Verification"}</span>
         </div>
-        <div className="menu-item" onClick={() => handleNavigation("/admin-dashboard")}>
+        <div className="poessa-sidebar__menu-item" onClick={() => handleNavigation("/admin-dashboard")}>
           <Assessment /> <span>{currentLang === "am" ? "ሪፖርቶች" : "Reports"}</span>
         </div>
-        <div className="menu-item" onClick={() => handleNavigation("/agent-call-center")}>
+        <div className="poessa-sidebar__menu-item" onClick={() => handleNavigation("/agent-call-center")}>
           <Videocam /> <span>{currentLang === "am" ? "የጥሪ ማስተናገጃ" : "Call Management"}</span>
         </div>
       </nav>
 
-      {/* ፉተር - ቋንቋ እና መቼቶች */}
-      <div className="sidebar-footer">
-        <div className="menu-item">
+      <div className="poessa-sidebar__footer">
+        <div className="poessa-sidebar__menu-item">
            <LanguageSwitcher currentLang={currentLang} toggleLanguage={toggleLanguage} />
         </div>
-        <div className="menu-item" onClick={() => handleNavigation("/settings")}>
+        <div className="poessa-sidebar__menu-item" onClick={() => handleNavigation("/settings")}>
           <Settings /> <span>{currentLang === "am" ? "መቼቶች" : "Settings"}</span>
         </div>
       </div>
