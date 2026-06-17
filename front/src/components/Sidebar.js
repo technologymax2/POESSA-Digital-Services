@@ -16,7 +16,7 @@ const Sidebar = ({ currentLang, toggleLanguage, collapsed, setCollapsed }) => {
   };
 
   return (
-    <aside className={`sidebar ${!collapsed ? "open" : ""}`}>
+    <aside className={`dashboard-sidebar ${!collapsed ? "open" : ""}`}>
       {/* ሄደር - ስም እና Close አዝራር */}
       <div className="sidebar-header">
         <div className="header-info">
