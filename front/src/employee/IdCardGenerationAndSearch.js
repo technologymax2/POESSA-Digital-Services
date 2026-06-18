@@ -12,8 +12,6 @@ function IdCardGenerationAndSearch() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [deletedLogs, setDeletedLogs] = useState([]);
-  
-  // 🔥 ለቫሊዴሽን ስህተቶች መልዕክት ማስቀመጫ ስቴት
   const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
@@ -32,47 +30,42 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-  // 🔥 ሪል-ታይም ቫሊዴሽን የሚሰራው የ input መቀየሪያ
+  // 🔥 ሪል-ታይም ቫሊዴሽን (ስልክ፣ ፔንሲዮን፣ ቲን ልክ 10 ዲጂት | ፋይዳ ልክ 16 ዲጂት)
   const handleEditChange = (e) => {
-  const { name, value } = e.target;
-  let errors = { ...validationErrors };
-  
-  // ቁጥር ብቻ መሆን ያለባቸው ፊልዶች
-  if (['pensionerId', 'phone', 'tin'].includes(name)) {
-    // ከቁጥር ውጪ ያሉትን ፊደላት በሙሉ ያጠፋል
-    let cleanValue = value.replace(/\D/g, ''); 
+    const { name, value } = e.target;
+    let errors = { ...validationErrors };
 
-    // 📱 ለስልክ ቁጥር ልዩ ህግ፡ መጀመሪያ የሚገባው ቁጥር 0 መሆን አለበት
-    if (name === 'phone' && cleanValue.length > 0 && cleanValue[0] !== '0') {
-      errors[name] = "⚠️ ስልክ ቁጥር በ '0' መጀመር አለበት!";
-      // በ '0' ካልጀመረ መረጃውን ወደ ስቴት አያስገባውም (ተጠቃሚው እንዳይሳሳት ይከለክለዋል)
-      setValidationErrors(errors);
-      return; 
-    }
+    if (['pensionerId', 'phone', 'tin', 'faydaNumber'].includes(name)) {
+      let cleanValue = value.replace(/\D/g, ''); // ቁጥር ብቻ
 
-    // 🛑 ቁልፍ ህግ፡ ከ10 ዲጂት በላይ እንዳይሄድ መገደብ (Max Length = 10)
-    if (cleanValue.length > 10) {
-      cleanValue = cleanValue.substring(0, 10);
-    }
+      // ስልክ ቁጥር በ0 መጀመሩን ማረጋገጥ
+      if (name === 'phone' && cleanValue.length > 0 && cleanValue[0] !== '0') {
+        errors[name] = "⚠️ ስልክ ቁጥር በ '0' መጀመር አለበት!";
+        setValidationErrors(errors);
+        return;
+      }
 
-    // የዲጂት ብዛት ማረጋገጫ (ልክ 10 መሆኑን ቼክ ያደርጋል)
-    if (cleanValue.length > 0 && cleanValue.length < 10) {
-      errors[name] = `⚠️ ልክ 10 ዲጂት መሆን አለበት! (አሁን፡ ${cleanValue.length})`;
+      // የዲጂት ርዝመት ገደብ (ፋይዳ 16፣ ሌሎቹ 10)
+      const maxLength = name === 'faydaNumber' ? 16 : 10;
+      if (cleanValue.length > maxLength) {
+        cleanValue = cleanValue.substring(0, maxLength);
+      }
+
+      // የማስጠንቀቂያ መልዕክት ማሳያ
+      if (cleanValue.length > 0 && cleanValue.length < maxLength) {
+        errors[name] = `⚠️ ልክ ${maxLength} ዲጂት መሆን አለበት! (አሁን፡ ${cleanValue.length})`;
+      } else {
+        delete errors[name];
+      }
+
+      setEditData({ ...editData, [name]: cleanValue });
     } else {
-      delete errors[name]; // ልክ 10 ሲሞላ ስህተቱን ያጠፋል
+      setEditData({ ...editData, [name]: value });
     }
 
-    setEditData({ ...editData, [name]: cleanValue });
-  } else {
-    // ለሌሎች መደበኛ የጽሑፍ ፊልዶች
-    setEditData({ ...editData, [name]: value });
-  }
+    setValidationErrors(errors);
+  };
 
-  setValidationErrors(errors);
-};
-
-
-  // 🔍 1. መረጃ መፈለጊያ
   const handleSearch = async (e) => {
     if (e) e.preventDefault();
     if (!searchQuery) {
@@ -99,35 +92,30 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-
-   // 📝 2. መረጃ ማሻሻያ (የተስተካከለ - ከ10 ዲጂት ጥብቅ ቫሊዴሽን ጋር)
   const handleUpdate = async (e) => {
     e.preventDefault();
 
-    // 🛑 ከመላኩ በፊት እያንዳንዱ ቁጥር ልክ 10 ዲጂት መሆኑን በድጋሚ ቼክ ማድረግ
-    const requiredNumbers = ['pensionerId', 'phone', 'tin'];
+    // የመጨረሻ ቫሊዴሽን ቼክ
     let finalErrors = {};
+    const required10Digits = ['pensionerId', 'phone', 'tin'];
     
-    requiredNumbers.forEach(field => {
-      // ቲን (TIN) ቁጥር ግዴታ ካልሆነና ተጠቃሚው ምንም ካልጻፈበት እንዲያልፍ ይደረጋል
-      if (field === 'tin' && !editData[field]) return; 
-
-      // መረጃው ከሌለ ወይም ርዝመቱ ልክ 10 ካልሆነ ስህተት ይይዛል
+    required10Digits.forEach(field => {
       if (!editData[field] || editData[field].length !== 10) {
         finalErrors[field] = "⚠️ ይህ መረጃ ልክ 10 ዲጂት መሆን አለበት!";
       }
     });
 
-    // ስህተት ከተገኘ ፎርሙ ወደ ባክኤንድ እንዳይላክ እዚህ ላይ ይቆማል
+    if (!editData.faydaNumber || editData.faydaNumber.length !== 16) {
+      finalErrors.faydaNumber = "⚠️ የፋይዳ ቁጥር ልክ 16 ዲጂት መሆን አለበት!";
+    }
+
     if (Object.keys(finalErrors).length > 0) {
       setValidationErrors(finalErrors);
-      setSearchStatus('❌ እባክዎ የፎርሙን ስህተቶች ሳያስተካክሉ መረጃ መላክ አይችሉም!');
+      setSearchStatus('❌ እባክዎ የፎርሙን ስህተቶች ያስተካክሉ!');
       return;
     }
 
     setSearchStatus('⏳ መረጃው እየታረመ ነው...');
-    
-    // ከባክኤንድ የመጡና አብረው መላክ የሌለባቸውን ፊልዶች እንነጥላለን
     const { editHistory, createdAt, updatedAt, ...cleanEditData } = editData;
 
     try {
@@ -139,12 +127,8 @@ function IdCardGenerationAndSearch() {
 
       const result = await response.json();
       if (result.success) {
-        setRegisteredData({ 
-          ...result.data, 
-          imageSrc: result.data.photoUrl 
-        });
+        setRegisteredData({ ...result.data, imageSrc: result.data.photoUrl });
         setIsEditing(false);
-        setValidationErrors({}); // የነበሩ የቫሊዴሽን ስህተቶችን ያጸዳል
         setSearchStatus('🎉 መረጃው በተሳካ ሁኔታ ታርሟል!');
       } else {
         setSearchStatus(`❌ ስህተት፡ ${result.message}`);
@@ -154,8 +138,6 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-
-  // 💀 3. የህይወት ሁኔታ መቀየሪያ
   const toggleLifeStatus = async (newStatus) => {
     const confirmation = window.confirm(`ይህንን የጡረተኛ ሁኔታ ለመቀየር እርግጠኛ ነዎት?`);
     if (!confirmation) return;
@@ -179,7 +161,6 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-  // 🗑️ 4. መረጃ ማጥፊያ
   const handleDelete = async () => {
     if (!window.confirm("🚨 ይህንን መረጃ ማጥፋት ይፈልጋሉ?")) return;
     try {
@@ -207,41 +188,41 @@ function IdCardGenerationAndSearch() {
         {searchStatus && <p className="status-indicator">{searchStatus}</p>}
       </div>
 
-      {/* 📝 ባለሁለት ቋንቋ መረጃ ማስተካከያ ፎርም */}
+      {/* 📝 መረጃ ማስተካከያ ፎርም */}
       {isEditing && (
         <div className="edit-form-section no-print">
           <h3>📝 የጡረተኛ መረጃ ማስተካከያ (ፈጻሚ ባለሙያ፡ {currentEmployee})</h3>
           <form onSubmit={handleUpdate} className="pensioner-form">
             <div className="form-grid">
-              {/* ቁጥርና 10 ዲጂት ቫሊዴሽን ያላቸው ፊልዶች */}
               <div className="input-group">
-                <label>Pension ID (10+ Digits Only)</label>
+                <label>Pension ID (10 Digits)</label>
                 <input type="text" name="pensionerId" value={editData.pensionerId || ''} onChange={handleEditChange} required />
                 {validationErrors.pensionerId && <span className="error-text" style={{color: 'red', fontSize: '11px'}}>{validationErrors.pensionerId}</span>}
               </div>
               <div className="input-group">
-                <label>ስልክ ቁጥር / Phone (10+ Digits)</label>
+                <label>የፋይዳ ቁጥር / FAYDA (16 Digits)</label>
+                <input type="text" name="faydaNumber" value={editData.faydaNumber || ''} onChange={handleEditChange} required />
+                {validationErrors.faydaNumber && <span className="error-text" style={{color: 'red', fontSize: '11px'}}>{validationErrors.faydaNumber}</span>}
+              </div>
+              <div className="input-group">
+                <label>ስልክ ቁጥር / Phone (10 Digits)</label>
                 <input type="tel" name="phone" value={editData.phone || ''} onChange={handleEditChange} required />
                 {validationErrors.phone && <span className="error-text" style={{color: 'red', fontSize: '11px'}}>{validationErrors.phone}</span>}
               </div>
               <div className="input-group">
-                <label>ቲን ቁጥር / TIN (10+ Digits)</label>
-                <input type="text" name="tin" value={editData.tin || ''} onChange={handleEditChange} />
+                <label>ቲን ቁጥር / TIN (10 Digits)</label>
+                <input type="text" name="tin" value={editData.tin || ''} onChange={handleEditChange} required />
                 {validationErrors.tin && <span className="error-text" style={{color: 'red', fontSize: '11px'}}>{validationErrors.tin}</span>}
               </div>
-              <div className="input-group"><label>የፋይዳ ቁጥር</label><input type="text" name="faydaNumber" value={editData.faydaNumber || ''} onChange={handleEditChange} required /></div>
               
-              {/* 🌐 የቋንቋ ከፋይ ፊልዶች */}
-              <div className="input-group"><label>ሙሉ ስም (በአማርኛ)</label><input type="text" name="nameAmh" value={editData.nameAmh || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>ሙሉ ስም (አማርኛ)</label><input type="text" name="nameAmh" value={editData.nameAmh || ''} onChange={handleEditChange} required /></div>
               <div className="input-group"><label>Full Name (In English)</label><input type="text" name="nameEng" value={editData.nameEng || ''} onChange={handleEditChange} required /></div>
-              
-              <div className="input-group"><label>አድራሻ (ክልል/ዞን/ወረዳ)</label><input type="text" name="addressAmh" value={editData.addressAmh || ''} onChange={handleEditChange} required /></div>
-              <div className="input-group"><label>Address (Region/Zone/Woreda)</label><input type="text" name="addressEng" value={editData.addressEng || ''} onChange={handleEditChange} required /></div>
-              
-              <div className="input-group"><label>የባንክ ስም (አማርኛ)</label><input type="text" name="bankNameAmh" value={editData.bankNameAmh || ''} onChange={handleEditChange} /></div>
-              <div className="input-group"><label>Bank Name (English)</label><input type="text" name="bankNameEng" value={editData.bankNameEng || ''} onChange={handleEditChange} /></div>
-
-              {/* መደበኛ ፊልዶች */}
+              <div className="input-group"><label>አድራሻ (አማርኛ)</label><input type="text" name="addressAmh" value={editData.addressAmh || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>Address (In English)</label><input type="text" name="addressEng" value={editData.addressEng || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>የባንክ ስም (አማርኛ)</label><input type="text" name="bankNameAmh" value={editData.bankNameAmh || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>Bank Name (In English)</label><input type="text" name="bankNameEng" value={editData.bankNameEng || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>የባንክ ቅርንጫፍ</label><input type="text" name="bankBranch" value={editData.bankBranch || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>የፖኤሳ ቅርንጫፍ (POESSA)</label><input type="text" name="poessaBranch" value={editData.poessaBranch || ''} onChange={handleEditChange} required /></div>
               <div className="input-group"><label>ዕድሜ</label><input type="number" name="age" value={editData.age || ''} onChange={handleEditChange} required /></div>
               <div className="input-group">
                 <label>ጾታ</label>
@@ -251,9 +232,7 @@ function IdCardGenerationAndSearch() {
                 </select>
               </div>
               <div className="input-group"><label>የጡረታ አበል (ETB)</label><input type="number" name="pensionAmount" value={editData.pensionAmount || ''} onChange={handleEditChange} required /></div>
-              <div className="input-group"><label>የባንክ ቅርንጫፍ</label><input type="text" name="bankBranch" value={editData.bankBranch || ''} onChange={handleEditChange} /></div>
-              <div className="input-group"><label>የፖኤሳ ቅርንጫፍ (POESSA)</label><input type="text" name="poessaBranch" value={editData.poessaBranch || ''} onChange={handleEditChange} /></div>
-              <div className="input-group"><label>የተሰጠበት ቀን</label><input type="date" name="issueDate" value={editData.issueDate ? editData.issueDate.substring(0,10) : ''} onChange={handleEditChange} /></div>
+              <div className="input-group"><label>የተሰጠበት ቀን</label><input type="date" name="issueDate" value={editData.issueDate ? editData.issueDate.substring(0,10) : ''} onChange={handleEditChange} required /></div>
             </div>
             
             <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
@@ -264,7 +243,7 @@ function IdCardGenerationAndSearch() {
         </div>
       )}
 
-      {/* 🪪 የሁለት ቋንቋ ዲጂታል መታወቂያ ካርድ */}
+      {/* 🪪 የቀድሞው ውብ ዲጂታል መታወቂያ ካርድ (ከኢትዮጵያ ባንዲራ ጋር) */}
       {registeredData && (
         <div className="id-card-wrapper-section">
           <div className="admin-actions no-print">
@@ -272,56 +251,63 @@ function IdCardGenerationAndSearch() {
             {registeredData.status === 'Passive' ? (
               <button onClick={() => toggleLifeStatus('Active')} className="status-active-btn">💚 ወደ Active ቀይር</button>
             ) : (
-              <button onClick={() => toggleLifeStatus('Passive')} className="status-passive-btn">💀 ወደ Passive ቀይር (አርፈዋል)</button>
+              <button onClick={() => toggleLifeStatus('Passive')} className="status-passive-btn">💀 ወደ Passive ቀይር</button>
             )}
             <button onClick={handleDelete} className="delete-action-btn">🗑️ አጥፋ</button>
           </div>
 
-          {/* ዲጂታል መታወቂያ ካርድ */}
+          {/* ክላሲክ ዲጂታል መታወቂያ ካርድ */}
           <div className={`id-card ${registeredData.status === 'Passive' ? 'pensioner-dead' : ''}`} id="pensioner-id-card">
-            <div className="id-card-header">
-              <div className="logo-placeholder">🇪🇹</div>
-              <div className="header-titles">
-                <h3>POESSA DIGITAL ID CARD</h3>
-                <p style={{fontSize: '11px', margin: 0}}>የፌዴራል የጡረታና ማህበራዊ ዋስትና ኤጀንሲ</p>
-                <p style={{fontSize: '9px', margin: 0, color: '#ddd'}}>Federal Pension & Social Security Agency</p>
+            
+            {/* 🇪🇹 የኢትዮጵያ ባንዲራ እና የፖኤሳ ሄደር ዲዛይን */}
+            <div className="id-card-header" style={{ position: 'relative', background: 'linear-gradient(to right, #1f4068, #162447)', padding: '12px 15px', color: '#fff' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', display: 'flex' }}>
+                <div style={{ flex: 1, backgroundColor: '#28a745' }}></div>
+                <div style={{ flex: 1, backgroundColor: '#ffc107' }}></div>
+                <div style={{ flex: 1, backgroundColor: '#dc3545' }}></div>
               </div>
-              <div className={`status-badge-view ${registeredData.status === 'Passive' ? 'badge-passive' : 'badge-active'}`}>
-                {registeredData.status === 'Passive' ? "PASSIVE" : "ACTIVE"}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
+                <div style={{ fontSize: '20px' }}>🇪🇹</div>
+                <div className="header-titles" style={{ textAlign: 'center', flex: 1 }}>
+                  <h3 style={{ margin: 0, fontSize: '14px', letterSpacing: '1px', fontWeight: 'bold' }}>POESSA DIGITAL ID CARD</h3>
+                  <p style={{ fontSize: '11px', margin: '2px 0 0 0', fontWeight: '500' }}>የፌዴራል የጡረታና ማህበራዊ ዋስትና ኤጀንሲ</p>
+                  <p style={{ fontSize: '9px', margin: 0, color: '#ccc', fontStyle: 'italic' }}>Federal Pension & Social Security Agency</p>
+                </div>
+                <div className={`status-badge-view ${registeredData.status === 'Passive' ? 'badge-passive' : 'badge-active'}`} style={{ backgroundColor: registeredData.status === 'Passive' ? '#dc3545' : '#28a745', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>
+                  {registeredData.status === 'Passive' ? "PASSIVE" : "ACTIVE"}
+                </div>
               </div>
             </div>
 
-            <div className="id-card-body">
-              <div className="id-photo-zone">
-                <img src={registeredData.imageSrc || "https://via.placeholder.com/150"} alt="Pensioner" className="id-pensioner-img" onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
-                <div className="id-dates-box">
-                  <p><strong>የተሰጠበት ቀን / Issue:</strong></p>
-                  <p>{registeredData.issueDate ? registeredData.issueDate.substring(0,10) : 'N/A'}</p>
+            <div className="id-card-body" style={{ padding: '15px', display: 'flex', gap: '15px', alignItems: 'center' }}>
+              <div className="id-photo-zone" style={{ textAlign: 'center' }}>
+                <img src={registeredData.imageSrc || "https://via.placeholder.com/150"} alt="Pensioner" className="id-pensioner-img" style={{ width: '105px', height: '115px', borderRadius: '6px', objectFit: 'cover', border: '2px solid #162447' }} onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
+                <div className="id-dates-box" style={{ marginTop: '8px', fontSize: '10px' }}>
+                  <p style={{ margin: 0, color: '#555' }}><strong>የተሰጠበት ቀን / Issue:</strong></p>
+                  <p style={{ margin: 0, fontWeight: 'bold' }}>{registeredData.issueDate ? registeredData.issueDate.substring(0,10) : 'N/A'}</p>
                 </div>
               </div>
 
-              {/* 🌐 በሁለት ቋንቋ ጎን ለጎን የተደረደረ የዝርዝር መረጃ ክፍል */}
-              <div className="id-details-zone">
-                <p><span className="lbl">ስም / Name:</span> <span className="val-name">{registeredData.nameAmh} / {registeredData.nameEng}</span></p>
-                <p><span className="lbl">አይዲ / Pension ID:</span> <span className="val">{registeredData.pensionerId}</span></p>
-                <p><span className="lbl">ፋይዳ / FAYDA:</span> <span className="val">{registeredData.faydaNumber}</span></p>
-                <p><span className="lbl">ቲን / TIN:</span> <span className="val">{registeredData.tin || 'N/A'}</span></p> 
-                <p><span className="lbl">ስልክ / Phone:</span> <span className="val">{registeredData.phone}</span></p>
-                <p><span className="lbl">አድራሻ / Address:</span> <span className="val">{registeredData.addressAmh} | {registeredData.addressEng}</span></p>
-                <p><span className="lbl">ባንክ / Bank:</span> <span className="val">{registeredData.bankNameAmh || 'N/A'} ({registeredData.bankNameEng || 'N/A'})</span></p>
-                <p><span className="lbl">ቅርንጫፍ / Branch:</span> <span className="val">{registeredData.poessaBranch || 'ዋናው ቅርንጫፍ'}</span></p>
+              {/* 🔄 የክላሲክ መታወቂያው ዝርዝር መረጃ (ያለ Pension ID እና Bank) */}
+              <div className="id-details-zone" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '12px' }}>
+                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>ስም / Name:</span> <span style={{ fontWeight: 'bold', color: '#162447', fontSize: '13px' }}>{registeredData.nameAmh} / {registeredData.nameEng}</span></p>
+                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>ፋይዳ / FAYDA:</span> <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{registeredData.faydaNumber}</span></p>
+                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>ቲን / TIN:</span> <span>{registeredData.tin || 'N/A'}</span></p> 
+                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>ስልክ / Phone:</span> <span>{registeredData.phone}</span></p>
+                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>አድራሻ / Address:</span> <span>{registeredData.addressAmh} | {registeredData.addressEng}</span></p>
+                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>ቅርንጫፍ / Branch:</span> <span style={{ fontWeight: '500' }}>{registeredData.poessaBranch || 'ዋናው ቅርንጫፍ'}</span></p>
                 {registeredData.status === 'Passive' && registeredData.statusChangedDate && (
-                  <p style={{ color: '#dc3545', fontSize: '10px', fontWeight: 'bold', marginTop: '5px' }}>🚨 ህልፈት የተመዘገበበት፡ {new Date(registeredData.statusChangedDate).toLocaleDateString('et-ET')}</p>
+                  <p style={{ color: '#dc3545', fontSize: '10px', fontWeight: 'bold', margin: '5px 0 0 0' }}>🚨 ህልፈት የተመዘገበበት፡ {new Date(registeredData.statusChangedDate).toLocaleDateString('et-ET')}</p>
                 )}
               </div>
 
-              <div className="id-qr-zone">
-                <QRCodeSVG value={`${window.location.origin}/verify/${registeredData.faydaNumber}`} size={105} level={"H"} includeMargin={true} />
-                <span className="qr-label">DIGITAL SIGNATURE</span>
+              <div className="id-qr-zone" style={{ textAlign: 'center' }}>
+                <QRCodeSVG value={`${window.location.origin}/verify/${registeredData.faydaNumber}`} size={95} level={"H"} includeMargin={true} />
+                <span className="qr-label" style={{ display: 'block', fontSize: '8px', fontWeight: 'bold', color: '#555', marginTop: '4px' }}>DIGITAL SIGNATURE</span>
               </div>
             </div>
 
-            <div className="id-card-footer">
+            <div className="id-card-footer" style={{ background: '#162447', color: '#fff', textTransform: 'uppercase', fontSize: '10px' }}>
               <p>የሀገር ባለውለታዎችን በክብር እናገለግላለን! | POESSA 2026</p>
             </div>
           </div>
@@ -355,7 +341,7 @@ function IdCardGenerationAndSearch() {
         </div>
       )}
 
-      {/* 🚨 የጠፉ መረጃዎች ታሪክ (DELETED LOGS) ፓነል */}
+      {/* 🚨 የጠፉ መረጃዎች ታሪክ ፓነል */}
       <div className="crud-audit-panel no-print" style={{ marginTop: '30px', borderTop: '3px solid #dc3545', background: '#fff5f5' }}>
         <h4 style={{ color: '#c53030' }}>🚨 የጠፉ/የተደለዙ መረጃዎች የታሪክ መዝገብ (DELETED LOGS)</h4>
         {deletedLogs.length === 0 ? (
