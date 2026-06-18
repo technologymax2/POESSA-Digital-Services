@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-
 import './ScanVerify.css';
 
 function ScanVerify() {
@@ -14,14 +13,16 @@ function ScanVerify() {
     const fetchVerifiedData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`https://poessa-digital-services.vercel.app/api/pensioners/verify/${faydaNum}`);
+        // 🚨 100% የሚሰራውን የ /search?query= መፈለጊያ API በመጠቀም በቀጥታ ማረጋገጥ
+        const response = await axios.get(`https://poessa-digital-services.vercel.app/api/pensioners/search?query=${faydaNum}`);
         
-        // 🚨 ባክኤንድህ የሚመልሰው success: true እና data: pensioner ስለሆነ response.data.data እንላለን
+        console.log("Verification Search Response:", response.data);
+        
         if (response.data && response.data.success && response.data.data) {
           setPensioner(response.data.data);
           setError(null);
         } else {
-          setError("የጡረተኛው መረጃ አልተገኘም።");
+          setError("የጡረተኛው መረጃ በሲስተሙ ላይ አልተገኘም።");
         }
       } catch (err) {
         console.error("Verification Error:", err);
@@ -79,7 +80,6 @@ function ScanVerify() {
 
           <div className="verified-card-body">
             <div className="verified-photo-zone">
-              {/* 🚨 ከባክኤንድህ የሚመጣው 'photoUrl' የተባለው ቁልፍ ነው */}
               <img 
                 src={pensioner.photoUrl || "https://via.placeholder.com/150"} 
                 alt="Pensioner" 
@@ -94,11 +94,10 @@ function ScanVerify() {
               </div>
             </div>
 
-            {/* 🚨 የፊልድ ስሞች ከእርስዎUserPensioner ሞዴል ጋር ተገጣጥመዋል */}
             <div className="verified-details-zone">
               <p>
                 <span className="lbl">ስም / Name:</span>
-                <span className="val val-name">{pensioner.name || pensioner.fullName || 'N/A'}</span>
+                <span className="val val-name">{pensioner.name || 'N/A'}</span>
               </p>
               <p>
                 <span className="lbl">ፋይዳ / FAYDA:</span>
@@ -106,11 +105,11 @@ function ScanVerify() {
               </p>
               <p>
                 <span className="lbl">ቲን / TIN:</span>
-                <span className="val">{pensioner.tinNumber || pensioner.tin || 'N/A'}</span>
+                <span className="val">{pensioner.tinNumber || 'N/A'}</span>
               </p>
               <p>
                 <span className="lbl">ስልክ / Phone:</span>
-                <span className="val">{pensioner.phone || pensioner.phoneNumber || 'N/A'}</span>
+                <span className="val">{pensioner.phone || 'N/A'}</span>
               </p>
               <p>
                 <span className="lbl">አድራሻ / Addr:</span>
