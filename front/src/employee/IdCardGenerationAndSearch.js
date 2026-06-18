@@ -241,20 +241,27 @@ function IdCardGenerationAndSearch() {
             </div>
           </div>
 
-          {/* 🔍 ማነው የሰራው? (CRUD Logs View Panel) */}
-          <div className="crud-audit-panel no-print">
-            <h4>📋 የስርዓት ክትትል መረጃ (CRUD Log)</h4>
-            <div className="audit-row">
-              <span><strong>የመዘገበው ባለሙያ (Registered By):</strong> {registeredData.registeredBy || 'ያልታወቀ'}</span>
-              <span><strong>የተመዘገበበት ቀን፡</strong> {registeredData.createdAt ? new Date(registeredData.createdAt).toLocaleString('et-ET') : 'N/A'}</span>
-            </div>
-            {registeredData.lastEditedBy && (
-              <div className="audit-row border-top">
-                <span><strong>የመጨረሻ ማሻሻያ (Last Edited By):</strong> {registeredData.lastEditedBy}</span>
-                <span><strong>የተሻሻለበት ቀን፡</strong> {registeredData.lastEditedAt ? new Date(registeredData.lastEditedAt).toLocaleString('et-ET') : 'N/A'}</span>
-              </div>
-            )}
-          </div>
+{/* 🔍 ማነው የሰራው? (CRUD Logs View Panel) */}
+<div className="crud-audit-panel no-print">
+  <h4>📋 የስርዓት ክትትል መረጃ (CRUD Log)</h4>
+  <div className="audit-row">
+    <span><strong>የመዘገበው ባለሙያ (Registered By):</strong> {registeredData.registeredBy || 'ያልታወቀ'}</span>
+    <span><strong>የተመዘገበበት ቀን፡</strong> {registeredData.createdAt ? new Date(registeredData.createdAt).toLocaleString('et-ET') : 'N/A'}</span>
+  </div>
+  {registeredData.lastEditedBy && (
+    <div className="audit-row border-top">
+      <span><strong>የመጨረሻ ማሻሻያ (Last Edited By):</strong> {registeredData.lastEditedBy}</span>
+      <span><strong>የተሻሻለበት ቀን፡</strong> {registeredData.lastEditedAt ? new Date(registeredData.lastEditedAt).toLocaleString('et-ET') : 'N/A'}</span>
+    </div>
+  )}
+  {/* 🟢 አዲስ የተጨመረ፦ ምን አይነት ማሻሻያ እንደተደረገ የሚገልጽ መስመር */}
+  {registeredData.editHistory && (
+    <div className="audit-row border-top" style={{ color: '#0056b3', fontWeight: '500' }}>
+      <span>ℹ️ {registeredData.editHistory}</span>
+    </div>
+  )}
+</div>
+
 
           <button onClick={() => window.print()} className="print-btn no-print">🖨️ መታወቂያውን አትም (Print ID)</button>
         </div>
