@@ -52,21 +52,23 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-  // 📝 2. መረጃ ማሻሻያ
+  // 📝 2. መረጃ ማሻሻያ (የተስተካከለ - በምስል 1000004925.jpg ላይ ያለውን ኮንፍሊክት የሚፈታ)
   const handleUpdate = async (e) => {
     e.preventDefault();
     setSearchStatus('⏳ መረጃው እየታረመ ነው...');
     
+    // 🔥 ቁልፍ ፊክስ፡ editHistory የተባለውን ዳታ ከባክኤንድ የመጣውን ወደ ባክኤንድ መልሰን እንዳንልከው እንነጥለዋለን (Conflict እንዳይፈጥር)
+    const { editHistory, createdAt, updatedAt, ...cleanEditData } = editData;
+
     try {
       const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/update/${registeredData._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...editData, lastEditedBy: currentEmployee }),
+        body: JSON.stringify({ ...cleanEditData, lastEditedBy: currentEmployee }),
       });
 
       const result = await response.json();
       if (result.success) {
-        // 🔥 ባክኤንድ ያደሰውን ሙሉ መረጃ (editHistory ን ጨምሮ) በፍሮንትኤንድ ስቴት ላይ እንተካለን
         setRegisteredData({ 
           ...result.data, 
           imageSrc: result.data.photoUrl 
@@ -103,7 +105,7 @@ function IdCardGenerationAndSearch() {
           ...result.data, 
           imageSrc: result.data.photoUrl 
         });
-        setEditData(result.data); // የፎርሙ ዳታም አብሮ እንዲታደስ
+        setEditData(result.data);
         setSearchStatus(`🎉 የዜጋው ሁኔታ ወደ ${newStatus === 'Passive' ? 'Passive' : 'Active'} ተቀይሯል!`);
       } else {
         setSearchStatus(`❌ ስህተት፡ ${result.message}`);
@@ -181,16 +183,13 @@ function IdCardGenerationAndSearch() {
       {registeredData && (
         <div className="id-card-wrapper-section">
           
-          {/* 🔘 የአስተዳዳሪ ድርጊት ማዘዣ ቁልፎች (አሁን መታወቂያው ሲመጣ ሁሌም በግልጽ ይታያሉ) */}
           <div className="admin-actions no-print">
             <button onClick={() => setIsEditing(true)} className="edit-action-btn">📝 አርም</button>
-            
             {registeredData.status === 'Passive' ? (
               <button onClick={() => toggleLifeStatus('Active')} className="status-active-btn">💚 ወደ Active ቀይር</button>
             ) : (
               <button onClick={() => toggleLifeStatus('Passive')} className="status-passive-btn">💀 ወደ Passive ቀይር (አርፈዋል)</button>
             )}
-            
             <button onClick={handleDelete} className="delete-action-btn">🗑️ አጥፋ</button>
           </div>
 
@@ -233,7 +232,6 @@ function IdCardGenerationAndSearch() {
                 )}
               </div>
 
-              {/* የ QR ኮድ ማሻሻያ */}
               <div className="id-qr-zone">
                 <QRCodeSVG 
                   value={`${window.location.origin}/verify/${registeredData.faydaNumber}`} 
@@ -268,7 +266,7 @@ function IdCardGenerationAndSearch() {
               </div>
             )}
             
-            {/* 🔥 ማሻሻያ፦ የሁሉንም የለውጥ ታሪኮች ዝርዝር በቅደም ተከተል የሚያሳየው ክፍል */}
+            {/* የሁሉንም የለውጥ ታሪኮች ዝርዝር በቅደም ተከተል የሚያሳየው ክፍል */}
             {registeredData.editHistory && (
               <div className="audit-row border-top" style={{ color: '#0056b3', fontWeight: '500', padding: '8px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {Array.isArray(registeredData.editHistory) ? (
@@ -281,7 +279,6 @@ function IdCardGenerationAndSearch() {
                     </span>
                   ))
                 ) : (
-                  // ድሮ በ String የተመዘገቡ የቆዩ መረጃዎች ካሉ እንዳይበላሽ ለማዳን
                   <span>ℹ️ <strong>የእርማት አይነት፦</strong> {registeredData.editHistory}</span>
                 )}
               </div>
