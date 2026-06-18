@@ -311,7 +311,7 @@ function IdCardGenerationAndSearch() {
             </div>
 
             {/* 🪙 ጥቅሱ የገባበት ፉተር */}
-            <div className="id-card-footer" style={{ background: '#162447', color: '#fff', fontSize: '11.5px', textAlign: 'center', padding: '10px 0', letterSpacing: '0.5px', fontWeight: 'bold', borderTop: '1px solid #1f4068' }}>
+            <div className="id-card-footer" style={{ background: '#fff', color:'#162447   ', fontSize: '11.5px', textAlign: 'center', padding: '10px 0', letterSpacing: '0.5px', fontWeight: 'bold', borderTop: '1px solid #1f4068' }}>
               ዓላማችን የረካ ማህበራዊ ዋስትና ተጠቃሚ መፍጠር ነው!!
             </div>
           </div>
