@@ -264,16 +264,14 @@ function IdCardGenerationAndSearch() {
               
               {/* በግራ ጫፍ ላይ ያለ ውብ ክብ የኢትዮጵያ ባንዲራ */}
               <div className="ethiopian-flag-badge" style={{ width: '42px', height: '42px', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.2)', flexShrink: 0 }}>
-                <div style={{ flex: 1, backgroundColor: '#28a745' }}></div>
-                <div style={{ flex: 1, backgroundColor: '#ffc107' }}></div>
-                <div style={{ flex: 1, backgroundColor: '#dc3545' }}></div>
+                🇪🇹
               </div>
 
               {/* ሙሉ በሙሉ መሃል ላይ የተሰለፉ ጽሑፎች */}
               <div className="header-titles" style={{ textAlign: 'center', flex: 1, paddingRight: '42px' }}>
-                <h3 style={{ margin: 0, fontSize: '16px', letterSpacing: '1.5px', fontWeight: 'bold', color: '#ffffff' }}>POESSA DIGITAL ID CARD</h3>
-                <p style={{ fontSize: '12px', margin: '3px 0 1px 0', fontWeight: '600', color: '#f8f9fa' }}>የፌዴራል የጡረታና ማህበራዊ ዋስትና ኤጀንሲ</p>
-                <p style={{ fontSize: '10px', margin: 0, color: '#deb841', fontStyle: 'italic', fontWeight: '500' }}>Federal Pension & Social Security Agency</p>
+                <h3 style={{ margin: 0, fontSize: '16px', letterSpacing: '1.5px', fontWeight: 'bold', color: '#ffffff' }}>POESSA DIGITAL ID </h3>
+                <p style={{ fontSize: '12px', margin: '3px 0 1px 0', fontWeight: '600', color: '#f8f9fa' }}>በኢፌዴሪ የግል ድርጅት ሰራተኞች ማህበራዊ ዋስትና አስተዳደር</p>
+                
               </div>
 
               {/* የሁኔታ ማሳያ ባጅ (በቀኝ በኩል) */}
