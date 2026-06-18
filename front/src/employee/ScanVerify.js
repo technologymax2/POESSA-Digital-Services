@@ -13,10 +13,11 @@ function ScanVerify() {
     const fetchVerifiedData = async () => {
       try {
         setLoading(true);
-        // 🚨 100% የሚሰራውን የ /search?query= መፈለጊያ API በመጠቀም በቀጥታ ማረጋገጥ
-        const response = await axios.get(`https://poessa-digital-services.vercel.app/api/pensioners/search?query=${faydaNum}`);
         
-        console.log("Verification Search Response:", response.data);
+        // 🚨 100% ማስተካከያ፦ መረጃውን በቀጥታ ከእውነተኛው የባክኤንድ ሰርቨር (Render) ላይ ይፈልጋል!
+        const response = await axios.get(`https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${faydaNum}`);
+        
+        console.log("Verification Response from Render:", response.data);
         
         if (response.data && response.data.success && response.data.data) {
           setPensioner(response.data.data);
@@ -25,8 +26,8 @@ function ScanVerify() {
           setError("የጡረተኛው መረጃ በሲስተሙ ላይ አልተገኘም።");
         }
       } catch (err) {
-        console.error("Verification Error:", err);
-        setError("የጡረተኛው መረጃ አልተገኘም ወይም ትክክለኛ መታወቂያ አይደለም።");
+        console.error("Verification Network Error:", err);
+        setError("የጡረተኛው መረጃ አልተገኘም ወይም የሰርቨር ግንኙነት ተቋርጧል።");
       } finally {
         setLoading(false);
       }
@@ -89,7 +90,7 @@ function ScanVerify() {
                 }}
               />
               <div className="verified-dates-box">
-                <p>የተሰጠበት፦ {pensioner.createdAt ? pensioner.createdAt.split('T')[0] : 'N/A'}</p>
+                <p>የተሰጠበት፦ {pensioner.issueDate ? pensioner.issueDate.substring(0,10) : 'N/A'}</p>
                 <p>የሚያበቃው፦ {pensioner.expiryDate || 'N/A'}</p>
               </div>
             </div>
@@ -105,7 +106,7 @@ function ScanVerify() {
               </p>
               <p>
                 <span className="lbl">ቲን / TIN:</span>
-                <span className="val">{pensioner.tinNumber || 'N/A'}</span>
+                <span className="val">{pensioner.tin || 'N/A'}</span>
               </p>
               <p>
                 <span className="lbl">ስልክ / Phone:</span>
@@ -117,7 +118,7 @@ function ScanVerify() {
               </p>
               <p>
                 <span className="lbl">ቅርንጫፍ / Br:</span>
-                <span className="val">{pensioner.branch || 'N/A'}</span>
+                <span className="val">{pensioner.poessaBranch || 'N/A'}</span>
               </p>
             </div>
           </div>
