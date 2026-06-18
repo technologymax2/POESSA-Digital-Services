@@ -405,22 +405,27 @@
     grid-template-columns: 1fr;
   }
 
-  .id-card, .crud-audit-panel {
-    transform: scale(0.85);
-    margin: -10px 0;
-    max-width: 100%;
+  /* 🚨 በኖርማል ስክሪን ላይ ብቻ scale እንዲያደርግ screen በሚል ተለይቷል */
+  @media screen {
+    .id-card, .crud-audit-panel {
+      transform: scale(0.85);
+      margin: -10px 0;
+      max-width: 100%;
+    }
   }
 }
 
 @media (max-width: 480px) {
-  .id-card, .crud-audit-panel {
-    transform: scale(0.70);
-    margin: -35px 0;
+  @media screen {
+    .id-card, .crud-audit-panel {
+      transform: scale(0.70);
+      margin: -35px 0;
+    }
   }
 }
 
 /* ==========================================================================
-   🖨️ 6. የህትመት ማስተካከያ (Pure Print Optimization)
+   🖨️ 6. የህትመት ማስተካከያ (Pure Print Optimization - Fixed Margin & Scale)
    ========================================================================== */
 @media print {
   /* 1. ከእውነተኛው መታወቂያ ካርድ ውጭ ያሉ ማናቸውንም የገጽ ክፍሎች በሙሉ ማጥፊያ */
@@ -433,12 +438,13 @@
     visibility: visible;
   }
 
-  /* 3. መታወቂያው በወረቀቱ ላይ በትክክል ከላይ እና መሃል ላይ እንዲቀመጥ ማድረጊያ */
+  /* 3. መታවቂያው በወረቀቱ ላይ ተለጥጦ ሳይሆን በትክክለኛ መጠኑ መሃልና ከተወሰነ ጫፍ ወረድ ብሎ እንዲቀመጥ */
   #pensioner-id-card {
-    position: absolute;
-    left: 50%;
-    top: 0;
-    transform: translateX(-50%);
+    position: absolute !important;
+    left: 50% !important;
+    top: 40px !important; /* 🚨 በጣም ከጫፍ እንዳይሄድ ከላይ 40px ዝቅ ተደርጓል */
+    transform: translateX(-50%) scale(1.2) !important; /* 🚨 በሞባይልም ቢሆን መጠኑ ትንሽ ጎላ ብሎ እውነተኛ ካርድ እንዲያክል scale(1.2) ተጨምሯል */
+    transform-origin: top center !important;
     border: 2px solid #1a365d !important;
     box-shadow: none !important;
     -webkit-print-color-adjust: exact !important; 
@@ -468,5 +474,3 @@
     print-color-adjust: exact !important;
   }
 }
-
-
