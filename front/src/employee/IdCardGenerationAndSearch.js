@@ -11,11 +11,30 @@ function IdCardGenerationAndSearch() {
   const [registeredData, setRegisteredData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
+  
+  // 🔥 አዲስ ስቴት፦ የጠፉ መረጃዎችን ታሪክ (Deleted Logs) ለመያዝ
+  const [deletedLogs, setDeletedLogs] = useState([]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('fullName') || localStorage.getItem('username') || 'የፖኤሳ ሰራተኛ';
     setCurrentEmployee(storedUser);
+    
+    // ገጹ መጀመሪያ ሲከፈት የጠፉ መረጃዎችን ታሪክ ከባክኤንድ ያመጣል
+    fetchDeletedLogs();
   }, []);
+
+  // 🔥 አዲስ ፈንክሽን፦ የጠፉ መረጃዎችን ታሪክ ከባክኤንድ ማምጫ
+  const fetchDeletedLogs = async () => {
+    try {
+      const response = await fetch('https://poessa-digital-services-1.onrender.com/api/pensioners/deleted-logs');
+      const result = await response.json();
+      if (result.success) {
+        setDeletedLogs(result.data);
+      }
+    } catch (err) {
+      console.error("የጠፉ መረጃዎችን ታሪክ ማምጣት አልተቻለም፦", err.message);
+    }
+  };
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
@@ -52,12 +71,11 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-  // 📝 2. መረጃ ማሻሻያ (የተስተካከለ - በምስል 1000004925.jpg ላይ ያለውን ኮንፍሊክት የሚፈታ)
+  // 📝 2. መረጃ ማሻሻያ
   const handleUpdate = async (e) => {
     e.preventDefault();
     setSearchStatus('⏳ መረጃው እየታረመ ነው...');
     
-    // 🔥 ቁልፍ ፊክስ፡ editHistory የተባለውን ዳታ ከባክኤንድ የመጣውን ወደ ባክኤንድ መልሰን እንዳንልከው እንነጥለዋለን (Conflict እንዳይፈጥር)
     const { editHistory, createdAt, updatedAt, ...cleanEditData } = editData;
 
     try {
@@ -124,6 +142,9 @@ function IdCardGenerationAndSearch() {
       if (result.success) {
         setRegisteredData(null);
         setSearchStatus(`🗑️ ${result.message}`);
+        
+        // 🔥 አንድ መረጃ ሲጠፋ ወዲያውኑ የታችኛውን ዝርዝር እንዲያድስ እናደርጋለን
+        fetchDeletedLogs();
       } else {
         setSearchStatus(`❌ sktet: ${result.message}`);
       }
@@ -170,7 +191,6 @@ function IdCardGenerationAndSearch() {
               <div className="input-group"><label>የፖኤሳ ቅርንጫፍ (POESSA)</label><input type="text" name="poessaBranch" value={editData.poessaBranch || ''} onChange={handleEditChange} /></div>
               <div className="input-group"><label>የተሰጠበት ቀን</label><input type="date" name="issueDate" value={editData.issueDate ? editData.issueDate.substring(0,10) : ''} onChange={handleEditChange} /></div>
             </div>
-            
             <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
               <button type="submit" className="save-btn">ለውጦችን አስቀምጥ</button>
               <button type="button" onClick={() => setIsEditing(false)} className="cancel-btn">አንሳ</button>
@@ -182,7 +202,6 @@ function IdCardGenerationAndSearch() {
       {/* 🪪 የመታወቂያ ማሳያ ሳጥን */}
       {registeredData && (
         <div className="id-card-wrapper-section">
-          
           <div className="admin-actions no-print">
             <button onClick={() => setIsEditing(true)} className="edit-action-btn">📝 አርም</button>
             {registeredData.status === 'Passive' ? (
@@ -193,7 +212,6 @@ function IdCardGenerationAndSearch() {
             <button onClick={handleDelete} className="delete-action-btn">🗑️ አጥፋ</button>
           </div>
 
-          {/* ዲጂታል መታወቂያ ካርድ */}
           <div className={`id-card ${registeredData.status === 'Passive' ? 'pensioner-dead' : ''}`} id="pensioner-id-card">
             <div className="id-card-header">
               <div className="logo-placeholder">🇪🇹</div>
@@ -233,24 +251,17 @@ function IdCardGenerationAndSearch() {
               </div>
 
               <div className="id-qr-zone">
-                <QRCodeSVG 
-                  value={`${window.location.origin}/verify/${registeredData.faydaNumber}`} 
-                  size={105} 
-                  level={"H"}
-                  includeMargin={true}
-                />
+                <QRCodeSVG value={`${window.location.origin}/verify/${registeredData.faydaNumber}`} size={105} level={"H"} includeMargin={true} />
                 <span className="qr-label">DIGITAL SIGNATURE</span>
               </div>
             </div>
 
-            <div className="id-card-footer">
-              <p>የሀገር ባለውለታዎችን በክብር እናገለግላለን! | POESSA 2026</p>
-            </div>
+            <div className="id-card-footer"><p>የሀገር ባለውለታዎችን በክብር እናገለግላለን! | POESSA 2026</p></div>
           </div>
 
-          {/* 📋 የስርዓት ክትትል መረጃ (CRUD Log) ፓነል */}
+          {/* 📋 የአንድ ጡረተኛ የለውጥ መከታተያ (CRUD Log) ፓነል */}
           <div className="crud-audit-panel no-print">
-            <h4>📋 የስርዓት ክትትል መረጃ (CRUD Log)</h4>
+            <h4>📋 የዚህ ጡረተኛ የክትትል መረጃ (PENSIONER CRUD LOG)</h4>
             <div className="audit-row">
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span><strong>የመዘገበው ባለሙያ (Registered By):</strong> {registeredData.registeredBy || 'ያልታወቀ'}</span>
@@ -265,17 +276,13 @@ function IdCardGenerationAndSearch() {
                 </div>
               </div>
             )}
-            
-            {/* የሁሉንም የለውጥ ታሪኮች ዝርዝር በቅደም ተከተል የሚያሳየው ክፍል */}
             {registeredData.editHistory && (
               <div className="audit-row border-top" style={{ color: '#0056b3', fontWeight: '500', padding: '8px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {Array.isArray(registeredData.editHistory) ? (
                   registeredData.editHistory.map((history, index) => (
                     <span key={index}>
                       ℹ️ <strong>የእርማት አይነት፦</strong> {history.details} 
-                      <small style={{ color: '#666', fontWeight: 'normal', marginLeft: '5px' }}>
-                        ({history.editedBy} - {new Date(history.editedAt).toLocaleString('et-ET')})
-                      </small>
+                      <small style={{ color: '#666', fontWeight: 'normal', marginLeft: '5px' }}>({history.editedBy} - {new Date(history.editedAt).toLocaleString('et-ET')})</small>
                     </span>
                   ))
                 ) : (
@@ -288,6 +295,29 @@ function IdCardGenerationAndSearch() {
           <button onClick={() => window.print()} className="print-btn no-print">🖨️ መታወቂያውን አትም (Print ID)</button>
         </div>
       )}
+
+      {/* 🔥 ፊክስ፦ የጠፉ መረጃዎች ታሪክ (DELETED LOGS) ፓነል */}
+      {/* ይህ ፓነል ከ 'registeredData' ውጭ ስለሆነ ምንም ፍለጋ ሳይደረግ ገጹ ሲከፈት ሁሌም ከታች ይታያል! */}
+      <div className="crud-audit-panel no-print" style={{ marginTop: '30px', borderTop: '3px solid #dc3545', background: '#fff5f5' }}>
+        <h4 style={{ color: '#c53030' }}>🚨 የጠፉ/የተደለዙ መረጃዎች የታሪክ መዝገብ (DELETED LOGS)</h4>
+        {deletedLogs.length === 0 ? (
+          <p style={{ color: '#666', fontSize: '13px', padding: '10px 0' }}>עדነ አሁን የጠፋ የጡረተኛ መረጃ የለም።</p>
+        ) : (
+          <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+            {deletedLogs.map((log, index) => (
+              <div key={log._id || index} style={{ fontSize: '13px', padding: '10px', background: '#fff', borderRadius: '4px', borderLeft: '4px solid #dc3545', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'between', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  🗑️ <strong>የጡረተኛው ስም:</strong> {log.pensionerName} | 🆔 <strong>ፋይዳ ቁጥር:</strong> {log.faydaNumber}
+                </div>
+                <div style={{ color: '#555', textAlign: 'right', fontSize: '12px' }}>
+                  👤 <strong>ያጠፋው ባለሙያ:</strong> {log.deletedBy} <br/>
+                  📅 <strong>የጠፋበት ቀን:</strong> {new Date(log.deletedAt).toLocaleString('et-ET')}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
