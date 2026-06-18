@@ -238,7 +238,7 @@ function IdCardGenerationAndSearch() {
         </div>
       )}
 
-      {/* 🪪 ዲጂታል መታወቂያ ካርድ (ይዘቱ ሳይቀየር የተስተካከለ) */}
+      {/* 🪪 ዲጂታል መታወቂያ ካርድ (የአገሪቱ ሰንደቅ ዓላማ ቀለማት በፕሮፌሽናል የተስተካከሉበት) */}
       {registeredData && (
         <div className="id-card-wrapper-section">
           <div className="admin-actions no-print">
@@ -251,33 +251,46 @@ function IdCardGenerationAndSearch() {
             <button onClick={handleDelete} className="delete-action-btn">🗑️ አጥፋ</button>
           </div>
 
-          {/* ክላሲክ ዲጂታል መታወቂያ ካርድ */}
+          {/* ዲጂታል መታወቂያ ካርድ */}
           <div className={`id-card ${registeredData.status === 'Passive' ? 'pensioner-dead' : ''}`} id="pensioner-id-card" style={{ border: '2px solid #162447', borderRadius: '12px', overflow: 'hidden', width: '650px', background: '#fff', fontFamily: 'sans-serif', margin: '0 auto' }}>
             
-            {/* 🟦 የሄደር ክፍል - ልክ እንደ 1000004929.jpg ሙሉ በሙሉ ንፁህ ሰማያዊ ከመሃል የተሰለፈ ጽሑፍ */}
-            <div className="id-card-header" style={{ background: '#162447', padding: '16px 20px', color: '#fff', textAlign: 'center', position: 'relative' }}>
-              <h3 style={{ margin: 0, fontSize: '19px', letterSpacing: '1.5px', fontWeight: 'bold', color: '#ffffff' }}>POESSA DIGITAL ID</h3>
-              <p style={{ fontSize: '11px', margin: '5px 0 0 0', fontWeight: '500', color: '#94b0c2', letterSpacing: '0.5px' }}>የግል ድርጅት ሰራተኞች ማህበራዊ ዋስትና አስተዳደር</p>
+            {/* 🇪🇹 የሄደር ክፍል */}
+            <div className="id-card-header" style={{ background: '#162447', padding: '15px 20px', color: '#fff', display: 'flex', alignItems: 'center', position: 'relative' }}>
               
-              {/* የሁኔታ ማሳያ ባጅ (ይዘቱ እንዳይጠፋ በቀኝ በኩል ተጠብቋል) */}
-              <div className={`status-badge-view ${registeredData.status === 'Passive' ? 'badge-passive' : 'badge-active'}`} style={{ backgroundColor: registeredData.status === 'Passive' ? '#dc3545' : '#28a745', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', position: 'absolute', right: '20px', top: '18px' }}>
+              {/* 🇪🇹 የኢትዮጵያ ሰንደቅ ዓላማ ቀለማት ባጅ (አረንጓዴ፣ ቢጫ፣ ቀይ) በንፁህ CSS የተሰራ */}
+              <div className="ethiopian-flag-colors" style={{ width: '36px', height: '22px', borderRadius: '3px', overflow: 'hidden', display: 'flex', flexDirection: 'column', marginRight: '15px', flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
+                <div style={{ flex: 1, background: '#009c3a' }}></div>
+                <div style={{ flex: 1, background: '#fed100' }}></div>
+                <div style={{ flex: 1, background: '#ef3340' }}></div>
+              </div>
+
+              {/* ጽሑፎች */}
+              <div className="header-titles" style={{ textAlign: 'center', flex: 1, paddingRight: '24px' }}>
+                <h3 style={{ margin: 0, fontSize: '18px', letterSpacing: '1.5px', fontWeight: 'bold', color: '#ffffff' }}>POESSA DIGITAL ID</h3>
+                <p style={{ fontSize: '11px', margin: '4px 0 0 0', fontWeight: '500', color: '#94b0c2', letterSpacing: '0.3px' }}>የግል ድርጅት ሰራተኞች ማህበራዊ ዋስትና አስተዳደር</p>
+              </div>
+
+              {/* የሁኔታ ማሳያ ባጅ */}
+              <div className={`status-badge-view ${registeredData.status === 'Passive' ? 'badge-passive' : 'badge-active'}`} style={{ backgroundColor: registeredData.status === 'Passive' ? '#dc3545' : '#28a745', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', position: 'absolute', right: '20px' }}>
                 {registeredData.status === 'Passive' ? "PASSIVE" : "ACTIVE"}
               </div>
             </div>
 
-            {/* 👤 የካርዱ አካል (ይዘቱ ሳይነካ ሙሉ በሙሉ እንዳለ ነው የተገነባው) */}
+            {/* 👤 የካርዱ አካል */}
             <div className="id-card-body" style={{ padding: '20px', display: 'flex', gap: '20px', alignItems: 'center', background: '#fafafa' }}>
               
               {/* የፎቶ ዞን */}
               <div className="id-photo-zone" style={{ textAlign: 'center' }}>
                 <img src={registeredData.imageSrc || "https://via.placeholder.com/150"} alt="Pensioner" className="id-pensioner-img" style={{ width: '110px', height: '125px', borderRadius: '6px', objectFit: 'cover', border: '2px solid #162447', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }} onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
-                <div className="id-dates-box" style={{ marginTop: '10px', fontSize: '11px', color: '#333' }}>
-                  <p style={{ margin: 0, color: '#555' }}>የተሰጠበት ቀን / Issue</p>
-                  <p style={{ margin: '2px 0 0 0', fontWeight: 'bold', color: '#162447' }}>{registeredData.issueDate ? registeredData.issueDate.substring(0,10) : 'N/A'}</p>
+                
+                {/* 🔴 ከፎቶው በታች ያለው ጽሑፍ ቀይ */}
+                <div className="id-dates-box" style={{ marginTop: '10px', fontSize: '11px', color: '#dc2626' }}>
+                  <p style={{ margin: 0, fontWeight: '500' }}>የተሰጠበት ቀን / Issue</p>
+                  <p style={{ margin: '2px 0 0 0', fontWeight: 'bold', fontSize: '12px' }}>{registeredData.issueDate ? registeredData.issueDate.substring(0,10) : 'N/A'}</p>
                 </div>
               </div>
 
-              {/* የጡረተኛው ዝርዝር መረጃ (አማርኛ እና እንግሊዘኛ ድብልቅ ይዘቶች ሙሉ በሙሉ ተጠብቀዋል) */}
+              {/* የጡረተኛው ዝርዝር መረጃ */}
               <div className="id-details-zone" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '7px', fontSize: '13px', color: '#222' }}>
                 <p style={{ margin: 0, borderBottom: '1px solid #f0f0f0', paddingBottom: '3px' }}><span style={{ fontWeight: 'bold', color: '#555' }}>ስም / Name:</span> <span style={{ fontWeight: 'bold', color: '#162447', fontSize: '14px', marginLeft: '5px' }}>{registeredData.nameAmh} / {registeredData.nameEng}</span></p>
                 <p style={{ margin: 0, borderBottom: '1px solid #f0f0f0', paddingBottom: '3px' }}><span style={{ fontWeight: 'bold', color: '#555' }}>ፋይዳ / FAYDA:</span> <span style={{ fontFamily: 'monospace', fontWeight: 'bold', color: '#000', fontSize: '14px', marginLeft: '5px', letterSpacing: '0.5px' }}>{registeredData.faydaNumber}</span></p>
@@ -298,8 +311,8 @@ function IdCardGenerationAndSearch() {
               </div>
             </div>
 
-            {/* 🪙 አዲሱ የግርጌ ጥቅስ ፉተር (Footer) */}
-            <div className="id-card-footer" style={{ background: '#162447', color: '#fff', fontSize: '11px', textAlign: 'center', padding: '9px 0', letterSpacing: '0.5px', fontWeight: 'bold', borderTop: '1px solid #1f4068' }}>
+            {/* 🪙 ጥቅሱ የገባበት ፉተር */}
+            <div className="id-card-footer" style={{ background: '#162447', color: '#fff', fontSize: '11.5px', textAlign: 'center', padding: '10px 0', letterSpacing: '0.5px', fontWeight: 'bold', borderTop: '1px solid #1f4068' }}>
               ዓላማችን የረካ ማህበራዊ ዋስትና ተጠቃሚ መፍጠር ነው!!
             </div>
           </div>
