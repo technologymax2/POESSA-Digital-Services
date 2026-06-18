@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './PensionerRegistration.css';
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
@@ -19,41 +19,50 @@ function PensionerRegistration() {
   const fileInputRef = useRef(null);
 
   const [validationErrors, setValidationErrors] = useState({});
-  // 🔥 ልዩ የሆኑ ፊልዶች በዳታቤዝ ውስጥ መኖራቸውን መቆጣጠሪያ ስቴት
   const [duplicateErrors, setDuplicateErrors] = useState({ pensionerId: false, tin: false, faydaNumber: false });
+  
+  // 🔥 አዲስ፡ በሪል-ታይም ሰርቨር ላይ ሲፈልግ የሚታይ የLoading ስቴት
+  const [checkingStatus, setCheckingStatus] = useState({ pensionerId: false, tin: false, faydaNumber: false });
 
   useEffect(() => {
     const storedName = localStorage.getItem('fullName') || localStorage.getItem('username');
     if (storedName) setCurrentEmployee(storedName);
   }, []);
 
-  // 🔥 ቁጥሩ ቀድሞ መመዝገቡን ከሰርቨር ላይ ቼክ የሚያደርግ ፈንክሽን
-  const checkDuplication = async (fieldName, value) => {
-    if (!value || value.length < 5) return; // ቁጥሩ በጣም አጭር ከሆነ አይፈልግም
+  // 🔄 1. Debounce የተደረገ የደገሜታ ማረጋገጫ ፈንክሽን (ሰርቨር እንዳይጨናነቅ)
+  const debounceCheck = useCallback((fieldName, value) => {
+    if (!value || value.length < 5) return;
 
-    try {
-      // ማስታወሻ፡ የኤፒአይ ሊንኩን እንደ ሰርቨርህ route ማስተካከል ትችላለህ (ለምሳሌ፡ /api/pensioners/check-duplicate)
-      const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/check-duplicate?field=${fieldName}&value=${value}`);
-      const data = await response.json();
-      
-      if (data.exists) {
-        setDuplicateErrors(prev => ({ ...prev, [fieldName]: true }));
-        setValidationErrors(prev => ({ ...prev, [fieldName]: `⚠️ ይህ ${fieldName === 'pensionerId' ? 'Pension ID' : fieldName === 'tin' ? 'TIN ቁጥር' : 'የፋይዳ ቁጥር'} ቀድሞ ተመዝግቧል!` }));
-      } else {
-        setDuplicateErrors(prev => ({ ...prev, [fieldName]: false }));
-        // ሌላ የዲጂት ብዛት ስህተት ከሌለ ብቻ ያጠፋዋል
-        if (value.length === 10 || fieldName === 'faydaNumber') {
-          setValidationErrors(prev => {
-            const newErrors = { ...prev };
-            delete newErrors[fieldName];
-            return newErrors;
-          });
+    setCheckingStatus(prev => ({ ...prev, [fieldName]: true }));
+
+    // የቀደመውን የቲቪ ቆጣሪ ያጠፋል
+    const handler = setTimeout(async () => {
+      try {
+        const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/check-duplicate?field=${fieldName}&value=${value}`);
+        const data = await response.json();
+        
+        if (data.exists) {
+          setDuplicateErrors(prev => ({ ...prev, [fieldName]: true }));
+          setValidationErrors(prev => ({ ...prev, [fieldName]: `⚠️ ይህ ${fieldName === 'pensionerId' ? 'Pension ID' : fieldName === 'tin' ? 'TIN ቁጥር' : 'የፋይዳ ቁጥር'} ቀድሞ ተመዝግቧል!` }));
+        } else {
+          setDuplicateErrors(prev => ({ ...prev, [fieldName]: false }));
+          if (value.length === 10 || fieldName === 'faydaNumber') {
+            setValidationErrors(prev => {
+              const newErrors = { ...prev };
+              delete newErrors[fieldName];
+              return newErrors;
+            });
+          }
         }
+      } catch (err) {
+        console.error("የመደጋገም ማረጋገጫ ስህተት:", err);
+      } finally {
+        setCheckingStatus(prev => ({ ...prev, [fieldName]: false }));
       }
-    } catch (err) {
-      console.error("የመደጋገም ማረጋገጫ ስህተት:", err);
-    }
-  };
+    }, 500); // ተጠቃሚው መጻፍ ካቆመ ከ 500 ሚሊሰከንድ በኋላ ነው API የሚጠራው
+
+    return () => clearTimeout(handler);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -80,9 +89,8 @@ function PensionerRegistration() {
         errors[name] = `⚠️ ልክ 10 ዲጂት መሆን አለበት! (አሁን፡ ${cleanValue.length})`;
       } else {
         delete errors[name];
-        // ቁጥሩ ልክ 10 ሲሞላ ብቻ በባክኤንድ እንዳይደገም ቼክ ያደርጋል
-        if (name === 'pensionerId' || name === 'tin') {
-          checkDuplication(name, cleanValue);
+        if ((name === 'pensionerId' || name === 'tin') && cleanValue.length === 10) {
+          debounceCheck(name, cleanValue); // 🔥 እዚህ ጋር ነው ደንበኛው መጻፍ ሲያቆም ቼክ የሚደረገው
         }
       }
 
@@ -92,11 +100,17 @@ function PensionerRegistration() {
       if (value < 0) return;
       setFormData(prev => ({ ...prev, [name]: value }));
     } 
-    else {
+    // 📅 2. የተሰጠበት እና የማብቂያ ቀን ቫሊዴሽን ህግ
+    else if (name === 'expiryDate' && formData.issueDate && value < formData.issueDate) {
+      errors.expiryDate = "⚠️ የማብቂያ ቀን ከተሰጠበት ቀን ቀድሞ ሊሆን አይችልም!";
+      setValidationErrors(errors);
       setFormData(prev => ({ ...prev, [name]: value }));
-      // ለፋይዳ ቁጥር (ፊደልና ቁጥር ሊኖረው ስለሚችል በተለየ ሁኔታ ቼክ ይደረጋል)
+    }
+    else {
+      if (name === 'expiryDate') delete errors.expiryDate;
+      setFormData(prev => ({ ...prev, [name]: value }));
       if (name === 'faydaNumber') {
-        checkDuplication(name, value);
+        debounceCheck(name, value);
       }
     }
 
@@ -120,9 +134,8 @@ function PensionerRegistration() {
       return;
     }
 
-    // 🛑 የተደገመ መረጃ ካለ ፎርሙ እንዳይላክ በጽኑ መከልከል
-    if (duplicateErrors.pensionerId || duplicateErrors.tin || duplicateErrors.faydaNumber) {
-      setStatus('❌ እባክዎ የተደገሙ መረጃዎችን ያስተካክሉ!');
+    if (duplicateErrors.pensionerId || duplicateErrors.tin || duplicateErrors.faydaNumber || validationErrors.expiryDate) {
+      setStatus('❌ እባክዎ የፎርሙን ስህተቶች ያስተካክሉ!');
       return;
     }
 
@@ -206,28 +219,39 @@ function PensionerRegistration() {
         </div>
 
         <div className="pr-grid">
+          {/* Pension ID */}
           <div className="pr-input-group">
             <label>Pension ID (10 Digits)</label>
             <input type="text" name="pensionerId" value={formData.pensionerId} onChange={handleChange} required style={{ borderColor: duplicateErrors.pensionerId ? 'red' : '' }} />
+            {checkingStatus.pensionerId && <span style={{color: 'orange', fontSize: '11px'}}>⏳ በመፈለግ ላይ...</span>}
             {validationErrors.pensionerId && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.pensionerId}</span>}
           </div>
+
+          {/* TIN ቁጥር */}
           <div className="pr-input-group">
             <label>TIN ቁጥር / TIN (10 Digits)</label>
             <input type="text" name="tin" value={formData.tin} onChange={handleChange} required style={{ borderColor: duplicateErrors.tin ? 'red' : '' }} />
+            {checkingStatus.tin && <span style={{color: 'orange', fontSize: '11px'}}>⏳ በመፈለግ ላይ...</span>}
             {validationErrors.tin && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.tin}</span>}
           </div>
+
+          {/* ስልክ ቁጥር */}
           <div className="pr-input-group">
             <label>ስልክ ቁጥር / Phone (0... 10 Digits)</label>
             <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required />
             {validationErrors.phone && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.phone}</span>}
           </div>
+
+          {/* የፋይዳ ቁጥር */}
           <div className="pr-input-group">
             <label>የፋይዳ ቁጥር</label>
             <input type="text" name="faydaNumber" value={formData.faydaNumber} onChange={handleChange} required style={{ borderColor: duplicateErrors.faydaNumber ? 'red' : '' }} />
+            {checkingStatus.faydaNumber && <span style={{color: 'orange', fontSize: '11px'}}>⏳ በመፈለግ ላይ...</span>}
             {validationErrors.faydaNumber && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.faydaNumber}</span>}
           </div>
 
-          <div className="pr-input-group"><label>Profiles ሙሉ ስም (አማርኛ)</label><input type="text" name="nameAmh" value={formData.nameAmh} onChange={handleChange} required /></div>
+          {/* ሌሎች ፊልዶች */}
+          <div className="pr-input-group"><label>ሙሉ ስም (አማርኛ)</label><input type="text" name="nameAmh" value={formData.nameAmh} onChange={handleChange} required /></div>
           <div className="pr-input-group"><label>Full Name (English)</label><input type="text" name="nameEng" value={formData.nameEng} onChange={handleChange} required /></div>
 
           <div className="pr-input-group"><label>አድራሻ (አማርኛ)</label><input type="text" name="addressAmh" value={formData.addressAmh} onChange={handleChange} required /></div>
@@ -245,14 +269,23 @@ function PensionerRegistration() {
             </select>
           </div>
           <div className="pr-input-group"><label>የተሰጠበት ቀን</label><input type="date" name="issueDate" value={formData.issueDate} onChange={handleChange} required /></div>
-          <div className="pr-input-group"><label>የማብቂያ ቀን</label><input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} required /></div>
+          
+          {/* የማብቂያ ቀን */}
+          <div className="pr-input-group">
+            <label>የማብቂያ ቀን</label>
+            <input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} required style={{ borderColor: validationErrors.expiryDate ? 'red' : '' }} />
+            {validationErrors.expiryDate && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.expiryDate}</span>}
+          </div>
+
           <div className="pr-input-group"><label>ቅርንጫፍ</label><input type="text" name="poessaBranch" value={formData.poessaBranch} onChange={handleChange} required /></div>
           <div className="pr-input-group"><label>ባንክ ቅርንጫፍ</label><input type="text" name="bankBranch" value={formData.bankBranch} onChange={handleChange} required /></div>
           <div className="pr-input-group"><label>የጡረታ መጠን</label><input type="number" name="pensionAmount" min="0" value={formData.pensionAmount} onChange={handleChange} required /></div>
         </div>
 
         {status && <div className="pr-status-msg">{status}</div>}
-        <button type="submit" className="pr-submit-btn" disabled={loading || duplicateErrors.pensionerId || duplicateErrors.tin || duplicateErrors.faydaNumber}>
+        
+        {/* የ Submit በተን መቆጣጠሪያ */}
+        <button type="submit" className="pr-submit-btn" disabled={loading || duplicateErrors.pensionerId || duplicateErrors.tin || duplicateErrors.faydaNumber || validationErrors.expiryDate}>
           {loading ? 'እየተላከ ነው...' : 'መረጃውን መዝግብ'}
         </button>
       </form>
