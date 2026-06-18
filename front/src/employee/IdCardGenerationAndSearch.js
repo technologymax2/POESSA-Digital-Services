@@ -223,16 +223,17 @@ function IdCardGenerationAndSearch() {
                 )}
               </div>
 
-              {/* 🎯 የ QR ኮድ ማሻሻያ፡ ስካን ሲደረግ መታወቂያውን ብቻ ነጥሎ የሚያረጋግጥ ሊንክ ይይዛል */}
-              <div className="id-qr-zone">
-                <QRCodeSVG 
-                  value={`${window.location.origin}/api/pensioners/verify/${registeredData.faydaNumber}`} 
-                  size={105} 
-                  level={"H"}
-                  includeMargin={true}
-                />
-                <span className="qr-label">DIGITAL SIGNATURE</span>
-              </div>
+              {/* 🎯 የ QR ኮድ ማሻሻያ፡ አሁን በቀጥታ ወደ ሪአክቱ ScanVerify ገጽ ይመራል */}
+<div className="id-qr-zone">
+  <QRCodeSVG 
+    value={`${window.location.origin}/verify/${registeredData.faydaNumber}`} 
+    size={105} 
+    level={"H"}
+    includeMargin={true}
+  />
+  <span className="qr-label">DIGITAL SIGNATURE</span>
+</div>
+
             </div>
 
             <div className="id-card-footer">
