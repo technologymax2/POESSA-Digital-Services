@@ -420,31 +420,36 @@
 
 /* ==========================================================================
    🖨️ 6. የህትመት ማስተካከያ (Pure Print Optimization)
-   ========================================================================== */
 @media print {
-  @page {
-    size: auto;
-    margin: 5mm;
-  }
-  
-  /* መታወቂያው ብቻ እንዲታተም ሌላው በሙሉ ይደበቃል */
-  .no-print, 
-  .admin-actions, 
-  .print-btn, 
-  .search-section, 
-  .edit-form-section, 
-  .crud-audit-panel {
-    display: none !important;
+  /* 1. ከእውነተኛው መታወቂያ ካርድ ውጭ ያሉ ማናቸውንም የገጽ ክፍሎች በሙሉ ማጥፊያ */
+  body * {
+    visibility: hidden;
   }
 
-  .id-card {
+  /* 2. መታወቂያው ካርድ እና በውስጡ ያሉ ነገሮች ብቻ እንዲታዩ ማድረግ */
+  #pensioner-id-card, #pensioner-id-card * {
+    visibility: visible;
+  }
+
+  /* 3. መታወቂያው በወረቀቱ ላይ በትክክል ከላይ እንዲቀመጥ ማድረጊያ */
+  #pensioner-id-card {
+    position: absolute;
+    left: 50%;
+    top: 20px;
+    transform: translateX(-50%);
     border: 2px solid #1a365d !important;
     box-shadow: none !important;
     -webkit-print-color-adjust: exact !important; 
     print-color-adjust: exact !important;
   }
 
-  /* በህትመት ወቅት የጀርባ ቀለማት በግድ እንዲወጡ ማስገደጃ */
+  /* 4. የብሮውዘር ማርጂን ማስተካከያ */
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+
+  /* 5. የቀለም ማስተካከያዎች */
   .id-card-header, 
   .status-badge-view, 
   .badge-active, 
