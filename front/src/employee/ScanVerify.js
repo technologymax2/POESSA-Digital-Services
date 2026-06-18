@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import axios from 'ajax';
 import './ScanVerify.css';
 
 function ScanVerify() {
@@ -15,14 +15,12 @@ function ScanVerify() {
         setLoading(true);
         const response = await axios.get(`https://poessa-digital-services.vercel.app/api/pensioners/verify/${faydaNum}`);
         
-        // በስክሪኑ ላይ የመጣውን የ API ምላሽ ለቼኪንግ ለማየት
-        console.log("API Response Data:", response.data);
-        
-        if (response.data) {
-          setPensioner(response.data);
+        // 🚨 ባክኤንድህ የሚመልሰው success: true እና data: pensioner ስለሆነ response.data.data እንላለን
+        if (response.data && response.data.success && response.data.data) {
+          setPensioner(response.data.data);
           setError(null);
         } else {
-          setError("የጡረተኛው መረጃ ባዶ ነው።");
+          setError("የጡረተኛው መረጃ አልተገኘም።");
         }
       } catch (err) {
         console.error("Verification Error:", err);
@@ -73,7 +71,6 @@ function ScanVerify() {
               <h3>POESSA DIGITAL ID CARD</h3>
               <p>የፌደራል የጡረታ ማህበራዊ ዋስትና ኤጀንሲ</p>
             </div>
-            {/* የአክቲቭ/ፓሲቭ ሁኔታ ፍተሻ */}
             <span className={`status-badge-view ${pensioner.status?.toLowerCase() === 'active' ? 'badge-active' : 'badge-passive'}`}>
               {pensioner.status || 'Active'}
             </span>
@@ -81,9 +78,9 @@ function ScanVerify() {
 
           <div className="verified-card-body">
             <div className="verified-photo-zone">
-              {/* 🚨 ፎቶው ከሌለ ዲፎልት ፕሌስሆልደር እንዲጠቀም ተደርጓል */}
+              {/* 🚨 ከባክኤንድህ የሚመጣው 'photoUrl' የተባለው ቁልፍ ነው */}
               <img 
-                src={pensioner.photo || pensioner.photoUrl || "https://via.placeholder.com/150"} 
+                src={pensioner.photoUrl || "https://via.placeholder.com/150"} 
                 alt="Pensioner" 
                 className="verified-pensioner-img" 
                 onError={(e) => {
@@ -91,28 +88,28 @@ function ScanVerify() {
                 }}
               />
               <div className="verified-dates-box">
-                <p>የተሰጠበት፦ {pensioner.issueDate || pensioner.createdAt?.split('T')[0] || 'N/A'}</p>
+                <p>የተሰጠበት፦ {pensioner.createdAt ? pensioner.createdAt.split('T')[0] : 'N/A'}</p>
                 <p>የሚያበቃው፦ {pensioner.expiryDate || 'N/A'}</p>
               </div>
             </div>
 
-            {/* 🚨 ከሁለቱም የዳታቤዝ ስያሜዎች (የመጀመሪያ ፊደል ካፒታልም ይሁን ስሞል) ማስተናገድ እንዲችል ተደርጓል */}
+            {/* 🚨 የፊልድ ስሞች ከእርስዎUserPensioner ሞዴል ጋር ተገጣጥመዋል */}
             <div className="verified-details-zone">
               <p>
                 <span className="lbl">ስም / Name:</span>
-                <span className="val val-name">{pensioner.fullName || pensioner.fullNameAmharic || 'N/A'}</span>
+                <span className="val val-name">{pensioner.name || pensioner.fullName || 'N/A'}</span>
               </p>
               <p>
                 <span className="lbl">ፋይዳ / FAYDA:</span>
-                <span className="val">{pensioner.faydaNumber || pensioner.faydaNum || faydaNum}</span>
+                <span className="val">{pensioner.faydaNumber || faydaNum}</span>
               </p>
               <p>
                 <span className="lbl">ቲን / TIN:</span>
-                <span className="val">{pensioner.tinNumber || pensioner.tinNum || pensioner.tin || 'N/A'}</span>
+                <span className="val">{pensioner.tinNumber || pensioner.tin || 'N/A'}</span>
               </p>
               <p>
                 <span className="lbl">ስልክ / Phone:</span>
-                <span className="val">{pensioner.phoneNumber || pensioner.phone || 'N/A'}</span>
+                <span className="val">{pensioner.phone || pensioner.phoneNumber || 'N/A'}</span>
               </p>
               <p>
                 <span className="lbl">አድራሻ / Addr:</span>
