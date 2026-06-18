@@ -29,16 +29,32 @@ router.get("/search", async (req, res) => {
 
 // ==========================================================================
 // 2️⃣ 📝 መረጃ ማስተካከያ እና 4️⃣ 💀 የህይወት ሁኔታ መቆጣጠሪያ (PUT)
-//     🔥 ማሻሻያ፦ በምስል 1000004927.jpg ላይ የመጣውን የ Type String/Array ግጭት ሙሉ በሙሉ የፈታ!
 // ==========================================================================
 router.put("/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // 🔥 ፍሮንትኤንድ ላይ በስህተት editHistory ተያይዞ ቢመጣ እንኳ ከ updateFields ላይ ነጥለን እናስቀራለን
     const { lastEditedBy, status, editHistory, ...updateFields } = req.body;
 
-    // መጀመሪያ የቆየውን መረጃ ከዳታቤዝ እንፈልጋለን (ለማወዳደር እና Type ለማስተካከል)
+    // 🛑 [ማሻሻያ 1] - የሰርቨር ደረጃ ጥብቅ ባለ 10 ዲጂት የቁጥር ቫሊዴሽን
+    const numberFields = ['pensionerId', 'phone', 'tin'];
+    for (const field of numberFields) {
+      if (updateFields[field] !== undefined) {
+        // ቁጥር ብቻ መሆኑን ማረጋገጫ
+        if (/\D/.test(updateFields[field])) {
+          return res.status(400).json({ success: false, message: `❌ ${field} ቁጥር ብቻ መሆን አለበት!` });
+        }
+        // ልክ 10 ዲጂት መሆኑን ማረጋገጫ
+        if (updateFields[field].length !== 10) {
+          return res.status(400).json({ success: false, message: `❌ ${field} ልክ 10 ዲጂት መሆን አለበት!` });
+        }
+      }
+    }
+
+    // 📱 [ማሻሻያ 2] - ስልክ ቁጥር በ '0' መጀመሩን ማረጋገጥ
+    if (updateFields.phone && updateFields.phone[0] !== '0') {
+      return res.status(400).json({ success: false, message: "❌ ስልክ ቁጥር በ '0' መጀመር አለበት!" });
+    }
+
     const oldPensioner = await UserPensioner.findById(id);
     if (!oldPensioner) {
       return res.status(404).json({ success: false, message: "ጡረተኛው አልተገኘም!" });
@@ -47,38 +63,34 @@ router.put("/update/:id", async (req, res) => {
     if (updateFields.age) updateFields.age = Number(updateFields.age) || 0;
     if (updateFields.pensionAmount) updateFields.pensionAmount = Number(updateFields.pensionAmount) || 0;
 
-    // 🟢 የተቀየሩ ፊልዶችን መለያ ዘዴ (Audit Trail)
     let changedFields = [];
     
-    // በራውተርህ ውስጥ update ፎርሙ ላይ fieldMapping የሚለውን በዚህ ተካው፡
-const fieldMapping = {
-  pensionerId: "Pension ID",
-  nameAmh: "ሙሉ ስም (አማርኛ)",
-  nameEng: "Full Name (Eng)",
-  faydaNumber: "የፋይዳ ቁጥር",
-  tin: "ቲን ቁጥር",
-  phone: "ስልክ ቁጥር",
-  age: "ዕድሜ",
-  gender: "ጾታ",
-  addressAmh: "አድራሻ (አማርኛ)",
-  addressEng: "Address (Eng)",
-  pensionAmount: "የጡረታ አበል",
-  bankNameAmh: "የባንክ ስም (አማርኛ)",
-  bankNameEng: "Bank Name (Eng)",
-  bankBranch: "የባንክ ቅርንጫፍ",
-  poessaBranch: "የፖኤሳ ቅርንጫፍ",
-  issueDate: "የተሰጠበት ቀን"
-};
+    // 🌐 [ማሻሻያ 3] - ባለሁለት ቋንቋዎችን ያካተተ ፊልድ ማፒንግ
+    const fieldMapping = {
+      pensionerId: "Pension ID",
+      nameAmh: "ሙሉ ስም (አማርኛ)",
+      nameEng: "Full Name (Eng)",
+      faydaNumber: "የፋይዳ ቁጥር",
+      tin: "ቲን ቁጥር",
+      phone: "ስልክ ቁጥር",
+      age: "ዕድሜ",
+      gender: "ጾታ",
+      addressAmh: "አድራሻ (አማርኛ)",
+      addressEng: "Address (Eng)",
+      pensionAmount: "የጡረታ አበል",
+      bankNameAmh: "የባንክ ስም (አማርኛ)",
+      bankNameEng: "Bank Name (Eng)",
+      bankBranch: "የባንክ ቅርንጫፍ",
+      poessaBranch: "የፖኤሳ ቅርንጫፍ",
+      issueDate: "የተሰጠበት ቀን"
+    };
 
-
-    // ማነጻጸር ያለብን እውነተኛ የተጠቃሚ ፊልዶችን ብቻ ነው
     for (const key in fieldMapping) {
       if (updateFields[key] !== undefined && String(oldPensioner[key]) !== String(updateFields[key])) {
         changedFields.push(fieldMapping[key]);
       }
     }
 
-    // የህይወት ሁኔታ (Status) ተቀይሮ ከሆነ መመዝገብ እና ቀኑን ማደስ
     if (status && oldPensioner.status !== status) {
       changedFields.push(`የህይወት ሁኔታ (${status === 'Passive' ? 'Passive/የአረፉ' : 'Active/በህይወት ያሉ'})`);
       updateFields.status = status;
@@ -87,12 +99,8 @@ const fieldMapping = {
       updateFields.status = oldPensioner.status;
     }
 
-    // 🛠️ Payload ማዘጋጀት
-    const updatePayload = {
-      $set: updateFields
-    };
+    const updatePayload = { $set: updateFields };
 
-    // የተቀየሩ ነገሮች ካሉ አዲስ የታሪክ Object እናዘጋጃለን
     if (changedFields.length > 0) {
       updateFields.lastEditedBy = lastEditedBy || "ያልታወቀ ባለሙያ";
       updateFields.lastEditedAt = new Date();
@@ -103,35 +111,25 @@ const fieldMapping = {
         details: `የተሻሻሉ መረጃዎች፦ [${changedFields.join(", ")}]`
       };
 
-      // 🔥 ቁልፍ ፊክስ፦ በዳታቤዙ ውስጥ የቆየው editHistory 'string' ከሆነ ወይም ከሌለ መጀመሪያ ወደ Array እንቀይረዋለን!
       if (!oldPensioner.editHistory || typeof oldPensioner.editHistory === 'string') {
-        // ድሮ የነበረው string መረጃ ካለ መጥፋት ስለሌለበት እሱን የመጀመሪያ መዝገብ እናደርገዋለን
         const legacyDetails = typeof oldPensioner.editHistory === 'string' ? oldPensioner.editHistory : "የቆየ መረጃ ማሻሻያ";
-        
         updatePayload.$set.editHistory = [
           {
             editedBy: oldPensioner.lastEditedBy || "የቆየ ባለሙያ",
             editedAt: oldPensioner.lastEditedAt || new Date(),
             details: legacyDetails
           },
-          historyEntry // ይህ ደግሞ አዲሱ የታሪክ መዝገብ ነው
+          historyEntry
         ];
       } else {
-        // ቀድሞውኑ Array ከሆነ በተለመደው $push እንጨምራለን (ምንም ግጭት አይፈጥርም)
         updatePayload.$push = { editHistory: historyEntry };
       }
     } else {
-      // ምንም ካልተቀየረ የድሮው የታሪክ መረጃ እንዳለ ይቀጥላል
       updateFields.lastEditedBy = oldPensioner.lastEditedBy;
       updateFields.lastEditedAt = oldPensioner.lastEditedAt;
     }
 
-    // ዳታቤዝ ላይ ያረማል
-    const updatedPensioner = await UserPensioner.findByIdAndUpdate(
-      id, 
-      updatePayload, 
-      { new: true }
-    );
+    const updatedPensioner = await UserPensioner.findByIdAndUpdate(id, updatePayload, { new: true });
 
     res.status(200).json({
       success: true,
@@ -156,9 +154,10 @@ router.delete("/delete/:id", async (req, res) => {
       return res.status(404).json({ success: false, message: "ጡረተኛው አልተገኘም!" });
     }
 
+    // 🛑 [ማሻሻያ 4] - የድሮው pensioner.name አሁን nameAmh ስለሆነ እዚህ ጋር ተስተካክሏል
     const auditLog = new DeletedLog({
       faydaNumber: pensioner.faydaNumber,
-      pensionerName: pensioner.name,
+      pensionerName: pensioner.nameAmh || pensioner.nameEng,
       deletedBy: employeeName || "ያልታወቀ ባለሙያ",
       deletedAt: new Date()
     });
@@ -171,17 +170,15 @@ router.delete("/delete/:id", async (req, res) => {
       message: `🗑️ የጡረተኛው (ፋይዳ፡ ${pensioner.faydaNumber}) መረጃ በባለሙያ ${auditLog.deletedBy} ሙሉ በሙሉ ጠፍቷል፤ የታሪክ መዝገብ ላይ ሰፍሯል!`
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "መረጃውን ማጥፋት አልተቻለም。" });
+    res.status(500).json({ success: false, message: "መረጃውን ማጥፋት አልተቻለም።" });
   }
 });
 
 // ==========================================================================
 // 🗑️ 3.5️⃣ የጠፉ መረጃዎችን በሙሉ ማምጫ (GET ALL DELETED LOGS)
-//     🔥 አዲስ ማሻሻያ፦ ፍለጋ ሳይደረግ ሁሌም ከታች እንዲታይ ለማድረግ!
 // ==========================================================================
 router.get("/deleted-logs", async (req, res) => {
   try {
-    // የጠፉትን ታሪኮች በሙሉ የመጨረሻው መጀመሪያ እንዲሆን (descending) አድርጎ ያመጣል
     const logs = await DeletedLog.find().sort({ deletedAt: -1 });
     res.status(200).json({ success: true, data: logs });
   } catch (error) {
@@ -200,6 +197,19 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ success: false, message: "⚠️ የፎቶ ሊንክ አልተገኘም!" });
     }
 
+    // 🛑 [ማሻሻያ 5] - ለመመዝገቢያም የሰርቨር ደረጃ የ 10 ዲጂት እና የ '0' መነሻ ቫሊዴሽን ጥበቃ
+    const numberFields = ['pensionerId', 'phone', 'tin'];
+    for (const field of numberFields) {
+      if (pensionerData[field]) {
+        if (/\D/.test(pensionerData[field]) || pensionerData[field].length !== 10) {
+          return res.status(400).json({ success: false, message: `❌ ${field} ልክ 10 ዲጂት ቁጥር ብቻ መሆን አለበት!` });
+        }
+      }
+    }
+    if (pensionerData.phone && pensionerData.phone[0] !== '0') {
+      return res.status(400).json({ success: false, message: "❌ ስልክ ቁጥር በ '0' መጀመር አለበት!" });
+    }
+
     const existingFayda = await UserPensioner.findOne({ faydaNumber: pensionerData.faydaNumber });
     if (existingFayda) {
       return res.status(400).json({ success: false, message: "⚠️ ይህ የፋይዳ ቁጥር ቀድሞ ተመዝግቧል!" });
@@ -215,7 +225,6 @@ router.post("/register", async (req, res) => {
       age: Number(pensionerData.age) || 0,
       pensionAmount: Number(pensionerData.pensionAmount) || 0,
       registeredBy: creatorName,
-      // አዲስ ሲመዘገብ ሁልጊዜም በ Array አወቃቀር ይጀምራል
       editHistory: [{
         editedBy: creatorName,
         editedAt: new Date(),
