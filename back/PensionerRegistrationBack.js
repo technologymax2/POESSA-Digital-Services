@@ -28,15 +28,17 @@ router.get("/search", async (req, res) => {
 });
 
 // ==========================================================================
-// 2️⃣ 📝 መረጃ ማስተካከያ እና 4️⃣ 💀 የህይវត្ត ሁኔታ መቆጣጠሪያ (PUT)
-//     🔥 ማሻሻያ፦ ያለፉትን ታሪኮች በሙሉ በ Array መልክ ለመያዝ የተስተካከለ!
+// 2️⃣ 📝 መረጃ ማስተካከያ እና 4️⃣ 💀 የህይወት ሁኔታ መቆጣጠሪያ (PUT)
+//     🔥 ማሻሻያ፦ በምስል 1000004927.jpg ላይ የመጣውን የ Type String/Array ግጭት ሙሉ በሙሉ የፈታ!
 // ==========================================================================
 router.put("/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { lastEditedBy, status, ...updateFields } = req.body;
+    
+    // 🔥 ፍሮንትኤንድ ላይ በስህተት editHistory ተያይዞ ቢመጣ እንኳ ከ updateFields ላይ ነጥለን እናስቀራለን
+    const { lastEditedBy, status, editHistory, ...updateFields } = req.body;
 
-    // መጀመሪያ የቆየውን መረጃ ከዳታቤዝ እንፈልጋለን (ለማወዳደር)
+    // መጀመሪያ የቆየውን መረጃ ከዳታቤዝ እንፈልጋለን (ለማወዳደር እና Type ለማስተካከል)
     const oldPensioner = await UserPensioner.findById(id);
     if (!oldPensioner) {
       return res.status(404).json({ success: false, message: "ጡረተኛው አልተገኘም!" });
@@ -48,7 +50,6 @@ router.put("/update/:id", async (req, res) => {
     // 🟢 የተቀየሩ ፊልዶችን መለያ ዘዴ (Audit Trail)
     let changedFields = [];
     
-    // የእንግሊዝኛውን የፊልድ ስም ወደ አማርኛ ፍቺ ለመቀየር ማፒንግ
     const fieldMapping = {
       pensionerId: "Pension ID",
       name: "ሙሉ ስም",
@@ -86,7 +87,7 @@ router.put("/update/:id", async (req, res) => {
       $set: updateFields
     };
 
-    // የተቀየሩ ነገሮች ካሉ አዲስ የታሪክ Object አዘጋጅተን ወደ Array ($push) እናደርጋለን
+    // የተቀየሩ ነገሮች ካሉ አዲስ የታሪክ Object እናዘጋጃለን
     if (changedFields.length > 0) {
       updateFields.lastEditedBy = lastEditedBy || "ያልታወቀ ባለሙያ";
       updateFields.lastEditedAt = new Date();
@@ -97,9 +98,25 @@ router.put("/update/:id", async (req, res) => {
         details: `የተሻሻሉ መረጃዎች፦ [${changedFields.join(", ")}]`
       };
 
-      updatePayload.$push = { editHistory: historyEntry };
+      // 🔥 ቁልፍ ፊክስ፦ በዳታቤዙ ውስጥ የቆየው editHistory 'string' ከሆነ ወይም ከሌለ መጀመሪያ ወደ Array እንቀይረዋለን!
+      if (!oldPensioner.editHistory || typeof oldPensioner.editHistory === 'string') {
+        // ድሮ የነበረው string መረጃ ካለ መጥፋት ስለሌለበት እሱን የመጀመሪያ መዝገብ እናደርገዋለን
+        const legacyDetails = typeof oldPensioner.editHistory === 'string' ? oldPensioner.editHistory : "የቆየ መረጃ ማሻሻያ";
+        
+        updatePayload.$set.editHistory = [
+          {
+            editedBy: oldPensioner.lastEditedBy || "የቆየ ባለሙያ",
+            editedAt: oldPensioner.lastEditedAt || new Date(),
+            details: legacyDetails
+          },
+          historyEntry // ይህ ደግሞ አዲሱ የታሪክ መዝገብ ነው
+        ];
+      } else {
+        // ቀድሞውኑ Array ከሆነ በተለመደው $push እንጨምራለን (ምንም ግጭት አይፈጥርም)
+        updatePayload.$push = { editHistory: historyEntry };
+      }
     } else {
-      // ምንም ካልተቀየረ የድሮው የባለሙያ መረጃ እንዳይፋለስ
+      // ምንም ካልተቀየረ የድሮው የታሪክ መረጃ እንዳለ ይቀጥላል
       updateFields.lastEditedBy = oldPensioner.lastEditedBy;
       updateFields.lastEditedAt = oldPensioner.lastEditedAt;
     }
@@ -113,7 +130,7 @@ router.put("/update/:id", async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: `🎉 መረጃው በባለሙያ ${updateFields.lastEditedBy} በተሳካ ሁኔታ ተስተካክሏል!`,
+      message: `🎉 መረጃው በባለሙያ ${updatedPensioner.lastEditedBy} በተሳካ ሁኔታ ተስተካክሏል!`,
       data: updatedPensioner
     });
   } catch (error) {
@@ -179,7 +196,7 @@ router.post("/register", async (req, res) => {
       age: Number(pensionerData.age) || 0,
       pensionAmount: Number(pensionerData.pensionAmount) || 0,
       registeredBy: creatorName,
-      // 🟢 መጀመሪያ ሲመዘገብ የመጀመሪያውን የታሪክ መዝገብ በ Array መልክ ማስቀመጥ
+      // አዲስ ሲመዘገብ ሁልጊዜም በ Array አወቃቀር ይጀምራል
       editHistory: [{
         editedBy: creatorName,
         editedAt: new Date(),
