@@ -36,7 +36,7 @@ function IdCardGenerationAndSearch() {
     let errors = { ...validationErrors };
 
     if (['pensionerId', 'phone', 'tin', 'faydaNumber'].includes(name)) {
-      let cleanValue = value.replace(/\D/g, ''); // ቁጥር ብቻ
+      let cleanValue = value.replace(/\D/g, ''); // ቁጥር ብቻ መፍቀድ
 
       // ስልክ ቁጥር በ0 መጀመሩን ማረጋገጥ
       if (name === 'phone' && cleanValue.length > 0 && cleanValue[0] !== '0') {
@@ -51,7 +51,7 @@ function IdCardGenerationAndSearch() {
         cleanValue = cleanValue.substring(0, maxLength);
       }
 
-      // የማስጠንቀቂያ መልዕክት ማሳያ
+      // የማስন্ত্রণቀቂያ መልዕክት ማሳያ
       if (cleanValue.length > 0 && cleanValue.length < maxLength) {
         errors[name] = `⚠️ ልክ ${maxLength} ዲጂት መሆን አለበት! (አሁን፡ ${cleanValue.length})`;
       } else {
@@ -243,7 +243,7 @@ function IdCardGenerationAndSearch() {
         </div>
       )}
 
-      {/* 🪪 የቀድሞው ውብ ዲጂታል መታወቂያ ካርድ (ከኢትዮጵያ ባንዲራ ጋር) */}
+      {/* 🪪 የታረመው ውብ እና ክላሲክ ዲጂታል መታወቂያ ካርድ */}
       {registeredData && (
         <div className="id-card-wrapper-section">
           <div className="admin-actions no-print">
@@ -257,58 +257,67 @@ function IdCardGenerationAndSearch() {
           </div>
 
           {/* ክላሲክ ዲጂታል መታወቂያ ካርድ */}
-          <div className={`id-card ${registeredData.status === 'Passive' ? 'pensioner-dead' : ''}`} id="pensioner-id-card">
+          <div className={`id-card ${registeredData.status === 'Passive' ? 'pensioner-dead' : ''}`} id="pensioner-id-card" style={{ border: '2px solid #162447', borderRadius: '12px', overflow: 'hidden', width: '650px', background: '#fff', fontFamily: 'sans-serif', margin: '0 auto' }}>
             
-            {/* 🇪🇹 የኢትዮጵያ ባንዲራ እና የፖኤሳ ሄደር ዲዛይን */}
-            <div className="id-card-header" style={{ position: 'relative', background: 'linear-gradient(to right, #1f4068, #162447)', padding: '12px 15px', color: '#fff' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', display: 'flex' }}>
+            {/* 🇪🇹 የሄደር ክፍል - ባንዲራ በግራ፣ ጽሑፍ በመሃል */}
+            <div className="id-card-header" style={{ background: '#162447', padding: '15px 20px', color: '#fff', display: 'flex', alignItems: 'center', position: 'relative' }}>
+              
+              {/* በግራ ጫፍ ላይ ያለ ውብ ክብ የኢትዮጵያ ባንዲራ */}
+              <div className="ethiopian-flag-badge" style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.2)', flexShrink: 0 }}>
                 <div style={{ flex: 1, backgroundColor: '#28a745' }}></div>
                 <div style={{ flex: 1, backgroundColor: '#ffc107' }}></div>
                 <div style={{ flex: 1, backgroundColor: '#dc3545' }}></div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
-                <div style={{ fontSize: '20px' }}>🇪🇹</div>
-                <div className="header-titles" style={{ textAlign: 'center', flex: 1 }}>
-                  <h3 style={{ margin: 0, fontSize: '14px', letterSpacing: '1px', fontWeight: 'bold' }}>POESSA DIGITAL ID CARD</h3>
-                  <p style={{ fontSize: '11px', margin: '2px 0 0 0', fontWeight: '500' }}>የፌዴራል የጡረታና ማህበራዊ ዋስትና ኤጀንሲ</p>
-                  <p style={{ fontSize: '9px', margin: 0, color: '#ccc', fontStyle: 'italic' }}>Federal Pension & Social Security Agency</p>
-                </div>
-                <div className={`status-badge-view ${registeredData.status === 'Passive' ? 'badge-passive' : 'badge-active'}`} style={{ backgroundColor: registeredData.status === 'Passive' ? '#dc3545' : '#28a745', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>
-                  {registeredData.status === 'Passive' ? "PASSIVE" : "ACTIVE"}
-                </div>
+
+              {/* ሙሉ በሙሉ መሃል ላይ የተሰለፉ ጽሑፎች */}
+              <div className="header-titles" style={{ textAlign: 'center', flex: 1, paddingRight: '42px' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', letterSpacing: '1.5px', fontWeight: 'bold', color: '#ffffff' }}>POESSA DIGITAL ID CARD</h3>
+                <p style={{ fontSize: '12px', margin: '3px 0 1px 0', fontWeight: '600', color: '#f8f9fa' }}>የፌዴራል የጡረታና ማህበራዊ ዋስትና ኤጀንሲ</p>
+                <p style={{ fontSize: '10px', margin: 0, color: '#deb841', fontStyle: 'italic', fontWeight: '500' }}>Federal Pension & Social Security Agency</p>
+              </div>
+
+              {/* የሁኔታ ማሳያ ባጅ (በቀኝ በኩል) */}
+              <div className={`status-badge-view ${registeredData.status === 'Passive' ? 'badge-passive' : 'badge-active'}`} style={{ backgroundColor: registeredData.status === 'Passive' ? '#dc3545' : '#28a745', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', position: 'absolute', right: '20px' }}>
+                {registeredData.status === 'Passive' ? "PASSIVE" : "ACTIVE"}
               </div>
             </div>
 
-            <div className="id-card-body" style={{ padding: '15px', display: 'flex', gap: '15px', alignItems: 'center' }}>
+            {/* 👤 የካርዱ አካል (Body) */}
+            <div className="id-card-body" style={{ padding: '20px', display: 'flex', gap: '20px', alignItems: 'center', background: '#fafafa' }}>
+              
+              {/* የፎቶ ዞን */}
               <div className="id-photo-zone" style={{ textAlign: 'center' }}>
-                <img src={registeredData.imageSrc || "https://via.placeholder.com/150"} alt="Pensioner" className="id-pensioner-img" style={{ width: '105px', height: '115px', borderRadius: '6px', objectFit: 'cover', border: '2px solid #162447' }} onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
-                <div className="id-dates-box" style={{ marginTop: '8px', fontSize: '10px' }}>
-                  <p style={{ margin: 0, color: '#555' }}><strong>የተሰጠበት ቀን / Issue:</strong></p>
-                  <p style={{ margin: 0, fontWeight: 'bold' }}>{registeredData.issueDate ? registeredData.issueDate.substring(0,10) : 'N/A'}</p>
+                <img src={registeredData.imageSrc || "https://via.placeholder.com/150"} alt="Pensioner" className="id-pensioner-img" style={{ width: '110px', height: '125px', borderRadius: '6px', objectFit: 'cover', border: '2px solid #162447', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }} onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
+                <div className="id-dates-box" style={{ marginTop: '10px', fontSize: '11px', color: '#333' }}>
+                  <p style={{ margin: 0, color: '#555' }}>የተሰጠበት ቀን / Issue</p>
+                  <p style={{ margin: '2px 0 0 0', fontWeight: 'bold', color: '#162447' }}>{registeredData.issueDate ? registeredData.issueDate.substring(0,10) : 'N/A'}</p>
                 </div>
               </div>
 
-              {/* 🔄 የክላሲክ መታወቂያው ዝርዝር መረጃ (ያለ Pension ID እና Bank) */}
-              <div className="id-details-zone" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '12px' }}>
-                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>ስም / Name:</span> <span style={{ fontWeight: 'bold', color: '#162447', fontSize: '13px' }}>{registeredData.nameAmh} / {registeredData.nameEng}</span></p>
-                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>ፋይዳ / FAYDA:</span> <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{registeredData.faydaNumber}</span></p>
-                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>ቲን / TIN:</span> <span>{registeredData.tin || 'N/A'}</span></p> 
-                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>ስልክ / Phone:</span> <span>{registeredData.phone}</span></p>
-                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>አድራሻ / Address:</span> <span>{registeredData.addressAmh} | {registeredData.addressEng}</span></p>
-                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>ቅርንጫፍ / Branch:</span> <span style={{ fontWeight: '500' }}>{registeredData.poessaBranch || 'ዋናው ቅርንጫፍ'}</span></p>
+              {/* የጡረተኛው ዝርዝር መረጃ (ያለ Pension ID እና Bank) */}
+              <div className="id-details-zone" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '7px', fontSize: '13px', color: '#222' }}>
+                <p style={{ margin: 0, borderBottom: '1px solid #f0f0f0', paddingBottom: '3px' }}><span style={{ fontWeight: 'bold', color: '#555' }}>ስም / Name:</span> <span style={{ fontWeight: 'bold', color: '#162447', fontSize: '14px', marginLeft: '5px' }}>{registeredData.nameAmh} / {registeredData.nameEng}</span></p>
+                <p style={{ margin: 0, borderBottom: '1px solid #f0f0f0', paddingBottom: '3px' }}><span style={{ fontWeight: 'bold', color: '#555' }}>ፋይዳ / FAYDA:</span> <span style={{ fontFamily: 'monospace', fontWeight: 'bold', color: '#000', fontSize: '14px', marginLeft: '5px', letterSpacing: '0.5px' }}>{registeredData.faydaNumber}</span></p>
+                <p style={{ margin: 0, borderBottom: '1px solid #f0f0f0', paddingBottom: '3px' }}><span style={{ fontWeight: 'bold', color: '#555' }}>ቲን / TIN:</span> <span style={{ marginLeft: '5px', fontWeight: '500' }}>{registeredData.tin || 'N/A'}</span></p> 
+                <p style={{ margin: 0, borderBottom: '1px solid #f0f0f0', paddingBottom: '3px' }}><span style={{ fontWeight: 'bold', color: '#555' }}>ስልክ / Phone:</span> <span style={{ marginLeft: '5px', fontWeight: '500' }}>{registeredData.phone}</span></p>
+                <p style={{ margin: 0, borderBottom: '1px solid #f0f0f0', paddingBottom: '3px' }}><span style={{ fontWeight: 'bold', color: '#555' }}>አድራሻ / Address:</span> <span style={{ marginLeft: '5px' }}>{registeredData.addressAmh} | {registeredData.addressEng}</span></p>
+                <p style={{ margin: 0 }}><span style={{ fontWeight: 'bold', color: '#555' }}>ቅርንጫፍ / Branch:</span> <span style={{ fontWeight: '600', color: '#162447', marginLeft: '5px' }}>{registeredData.poessaBranch || 'ዋናው ቅርንጫፍ'}</span></p>
+                
                 {registeredData.status === 'Passive' && registeredData.statusChangedDate && (
-                  <p style={{ color: '#dc3545', fontSize: '10px', fontWeight: 'bold', margin: '5px 0 0 0' }}>🚨 ህልፈት የተመዘገበበት፡ {new Date(registeredData.statusChangedDate).toLocaleDateString('et-ET')}</p>
+                  <p style={{ color: '#dc3545', fontSize: '11px', fontWeight: 'bold', margin: '5px 0 0 0', background: '#fdf2f2', padding: '4px', borderRadius: '4px', width: 'fit-content' }}>🚨 ህልፈት የተመዘገበበት፡ {new Date(registeredData.statusChangedDate).toLocaleDateString('et-ET')}</p>
                 )}
               </div>
 
-              <div className="id-qr-zone" style={{ textAlign: 'center' }}>
-                <QRCodeSVG value={`${window.location.origin}/verify/${registeredData.faydaNumber}`} size={95} level={"H"} includeMargin={true} />
-                <span className="qr-label" style={{ display: 'block', fontSize: '8px', fontWeight: 'bold', color: '#555', marginTop: '4px' }}>DIGITAL SIGNATURE</span>
+              {/* QR ኮድ ማህተም */}
+              <div className="id-qr-zone" style={{ textAlign: 'center', paddingLeft: '10px' }}>
+                <QRCodeSVG value={`${window.location.origin}/verify/${registeredData.faydaNumber}`} size={100} level={"H"} includeMargin={true} />
+                <span className="qr-label" style={{ display: 'block', fontSize: '8.5px', fontWeight: 'bold', color: '#555', marginTop: '6px', letterSpacing: '0.5px' }}>DIGITAL SIGNATURE</span>
               </div>
             </div>
 
-            <div className="id-card-footer" style={{ background: '#162447', color: '#fff', textTransform: 'uppercase', fontSize: '10px' }}>
-              <p>የሀገር ባለውለታዎችን በክብር እናገለግላለን! | POESSA 2026</p>
+            {/* ጌጥ/ፉተር (Footer) */}
+            <div className="id-card-footer" style={{ background: '#162447', color: '#fff', textTransform: 'uppercase', fontSize: '10px', textAlign: 'center', padding: '8px 0', letterSpacing: '0.5px', fontWeight: '500', borderTop: '1px solid #1f4068' }}>
+              የሀገር ባለውለታዎችን በክብር እናገለግላለን! | POESSA 2026
             </div>
           </div>
 
@@ -349,7 +358,7 @@ function IdCardGenerationAndSearch() {
         ) : (
           <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
             {deletedLogs.map((log, index) => (
-              <div key={log._id || index} style={{ fontSize: '13px', padding: '10px', background: '#fff', borderRadius: '4px', borderLeft: '4px solid #dc3545', display: 'flex', justifyContent: 'between', flexWrap: 'wrap', gap: '10px' }}>
+              <div key={log._id || index} style={{ fontSize: '13px', padding: '10px', background: '#fff', borderRadius: '4px', borderLeft: '4px solid #dc3545', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ flex: 1 }}>
                   🗑️ <strong>የጡረተኛው ስም:</strong> {log.pensionerName} | 🆔 <strong>ፋይዳ ቁጥር:</strong> {log.faydaNumber}
                 </div>
