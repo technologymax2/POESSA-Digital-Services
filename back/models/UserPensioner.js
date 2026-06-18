@@ -17,7 +17,7 @@ const UserPensionerSchema = new mongoose.Schema({
   expiryDate: { type: String },
   photoUrl: { type: String, required: true }, 
   
-  // 🟢 4ኛ ጥያቄ፡ ሰውየው ከሞተ passive ካልሞተ active እና ቀኑን መመዝገቢያ
+  // 🟢 የህይወት ሁኔታ እና የተቀየረበት ቀን
   status: { 
     type: String, 
     enum: ["Active", "Passive"], 
@@ -25,11 +25,14 @@ const UserPensionerSchema = new mongoose.Schema({
   },
   statusChangedDate: { type: Date, default: Date.now },
 
-  // 🟢 2ኛ ጥያቄ፡ CRUD (የመጨረሻ ማሻሻያ) ያደረገውን ባለሙያ እና ሰዓት መመዝገቢያ
+  // 🟢 CRUD (የታሪክ መዝገብ)
   registeredBy: { type: String, required: true }, // መጀመሪያ የመዘገበው ባለሙያ
   lastEditedBy: { type: String, default: "" },    // ለመጨረሻ ጊዜ ያረመው ባለሙያ
   lastEditedAt: { type: Date, default: Date.now }, // ለመጨረሻ ጊዜ የታረመበት ሰዓት
   
+  // 🔥 ፊክስ፦ የእርማት ዝርዝር መግለጫ (CRUD Log ጽሑፍ) በፍሮንትኤንድ እንዲታይ ይህ መስመር የግድ ያስፈልጋል!
+  editHistory: { type: String, default: "" },
+
   createdAt: { type: Date, default: Date.now }
 });
 
