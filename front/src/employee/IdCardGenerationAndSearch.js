@@ -33,7 +33,7 @@ function IdCardGenerationAndSearch() {
   };
 
   // 🔥 ሪል-ታይም ቫሊዴሽን የሚሰራው የ input መቀየሪያ
-  cconst handleEditChange = (e) => {
+  const handleEditChange = (e) => {
   const { name, value } = e.target;
   let errors = { ...validationErrors };
   
