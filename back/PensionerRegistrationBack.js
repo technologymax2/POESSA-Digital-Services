@@ -50,21 +50,26 @@ router.put("/update/:id", async (req, res) => {
     // 🟢 የተቀየሩ ፊልዶችን መለያ ዘዴ (Audit Trail)
     let changedFields = [];
     
-    const fieldMapping = {
-      pensionerId: "Pension ID",
-      name: "ሙሉ ስም",
-      faydaNumber: "የፋይዳ ቁጥር",
-      tin: "ቲን ቁጥር",
-      phone: "ስልክ ቁጥር",
-      age: "ዕድሜ",
-      gender: "ጾታ",
-      address: "አድራሻ",
-      pensionAmount: "የጡረታ አበል",
-      bankName: "የባንክ ስም",
-      bankBranch: "የባንክ ቅርንጫፍ",
-      poessaBranch: "የፖኤሳ ቅርንጫፍ",
-      issueDate: "የተሰጠበት ቀን"
-    };
+    // በራውተርህ ውስጥ update ፎርሙ ላይ fieldMapping የሚለውን በዚህ ተካው፡
+const fieldMapping = {
+  pensionerId: "Pension ID",
+  nameAmh: "ሙሉ ስም (አማርኛ)",
+  nameEng: "Full Name (Eng)",
+  faydaNumber: "የፋይዳ ቁጥር",
+  tin: "ቲን ቁጥር",
+  phone: "ስልክ ቁጥር",
+  age: "ዕድሜ",
+  gender: "ጾታ",
+  addressAmh: "አድራሻ (አማርኛ)",
+  addressEng: "Address (Eng)",
+  pensionAmount: "የጡረታ አበል",
+  bankNameAmh: "የባንክ ስም (አማርኛ)",
+  bankNameEng: "Bank Name (Eng)",
+  bankBranch: "የባንክ ቅርንጫፍ",
+  poessaBranch: "የፖኤሳ ቅርንጫፍ",
+  issueDate: "የተሰጠበት ቀን"
+};
+
 
     // ማነጻጸር ያለብን እውነተኛ የተጠቃሚ ፊልዶችን ብቻ ነው
     for (const key in fieldMapping) {
