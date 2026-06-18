@@ -1,0 +1,260 @@
+/* ==========================================================================
+   📱 Scan Verification Page Main Layout (Mobile-First Design)
+   ========================================================================== */
+.scan-verify-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background-color: #f7fafc;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-sizing: border-box;
+}
+
+/* የላይኛው ስኬታማነት ማሳያ ባነር */
+.success-badge-header {
+  text-align: center;
+  margin-bottom: 25px;
+  margin-top: 10px;
+}
+
+.success-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background-color: #48bb78;
+  color: white;
+  font-size: 32px;
+  font-weight: bold;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(72, 187, 120, 0.3);
+  margin-bottom: 12px;
+}
+
+.success-badge-header h2 {
+  color: #1a365d;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.success-badge-header p {
+  color: #718096;
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   💳 እውነተኛው የሞባይል መታወቂያ ካርድ (Responsive Mobile ID Card)
+   ========================================================================== */
+.verified-id-card {
+  width: 100%;
+  max-width: 530px; /* በኮምፒውተርም ቢታይ ከዚህ መጠን አይበልጥም */
+  background: #ffffff;
+  border: 3px solid #1a365d;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* 💀 ተጠቃሚው Passive ከሆነ ጥቁርና ነጭ ማድረጊያ */
+.verified-id-card.pensioner-dead {
+  filter: grayscale(1) contrast(1.05);
+  border-color: #4a5568;
+}
+.verified-id-card.pensioner-dead .verified-card-header {
+  background-color: #4a5568 !important;
+}
+
+.verified-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #1a365d;
+  color: white;
+  padding: 12px 14px;
+}
+
+.header-titles {
+  text-align: left;
+  flex: 1;
+}
+
+.header-titles h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.header-titles p {
+  margin: 2px 0 0 0;
+  font-size: 10px;
+  color: #90cdf4;
+  font-weight: 600;
+}
+
+/* የሁኔታ ባጅ */
+.status-badge-view {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+}
+.badge-active { background-color: #48bb78; color: white; }
+.badge-passive { background-color: #e53e3e; color: white; }
+
+.verified-card-body {
+  display: flex;
+  padding: 14px;
+  gap: 15px;
+  align-items: center;
+  background-color: #fff;
+}
+
+/* 🖼️ ፎቶ ዞን */
+.verified-photo-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.verified-pensioner-img {
+  width: 100px;
+  height: 120px;
+  object-fit: cover;
+  border: 2px solid #cbd5e0;
+  border-radius: 6px;
+  background-color: #edf2f7;
+}
+
+.verified-dates-box {
+  font-size: 8px;
+  color: #4a5568;
+  text-align: center;
+  background-color: #f7fafc;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  width: 100px;
+  box-sizing: border-box;
+}
+.verified-dates-box p {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* 📝 መረጃ ማሳያ ዞን */
+.verified-details-zone {
+  flex: 1;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.verified-details-zone p {
+  margin: 0;
+  font-size: 11px;
+  color: #2d3748;
+  line-height: 1.4;
+  border-bottom: 1px dashed #f0f4f8;
+  padding-bottom: 2px;
+  display: flex;
+}
+
+.verified-details-zone .lbl {
+  color: #718096;
+  font-weight: 600;
+  width: 85px;
+  flex-shrink: 0;
+}
+
+.verified-details-zone .val {
+  color: #2d3748;
+  font-weight: 700;
+}
+
+.verified-details-zone .val-name {
+  color: #1a365d;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.verified-card-footer {
+  background-color: #edf2f7;
+  padding: 8px;
+  text-align: center;
+  border-top: 1px solid #e2e8f0;
+  margin-top: auto;
+}
+
+.verified-card-footer p {
+  margin: 0;
+  font-size: 9px;
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.verify-action-footer {
+  margin-top: 30px;
+  font-size: 12px;
+  color: #a0aec0;
+}
+
+/* ==========================================================================
+   🔄 Loading & Errors Styles
+   ========================================================================== */
+.verify-loading-container, .verify-error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  padding: 20px;
+  text-align: center;
+}
+
+.verify-spinner {
+  width: 45px;
+  height: 45px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #2b6cb0;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.verify-error-container h3 {
+  color: #e53e3e;
+  margin: 10px 0;
+}
+.error-icon { font-size: 40px; }
+
+/* 📱 ለጠባብ ስልኮች ብቻ ሚደረግ ስታይል ማስተካከያ */
+@media (max-width: 400px) {
+  .verified-card-body {
+    padding: 8px;
+    gap: 8px;
+  }
+  .verified-pensioner-img, .verified-dates-box {
+    width: 80px;
+  }
+  .verified-details-zone .lbl {
+    width: 70px;
+    font-size: 10px;
+  }
+}
