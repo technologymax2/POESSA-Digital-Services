@@ -143,4 +143,29 @@ router.post("/register", async (req, res) => {
   }
 });
 
+
+
+// ==========================================================================
+// 📱 6️⃣ የ QR ኮድ ማረጋገጫ (GET) -> ለ ScanVerify.js የተዘጋጀ
+// ==========================================================================
+router.get("/verify/:faydaNum", async (req, res) => {
+  try {
+    const { faydaNum } = req.params;
+    
+    // በፋይዳ ቁጥር ብቻ ይፈልጋል
+    const pensioner = await UserPensioner.findOne({ faydaNumber: faydaNum });
+    
+    if (!pensioner) {
+      return res.status(404).json({ success: false, message: "⚠️ ይህ መታወቂያ ትክክለኛ አይደለም ወይም አልተመዘገበም!" });
+    }
+    
+    // 🚨 ሪአክት በቀጥታ ማንበብ እንዲችል ዳታውን ነጥለን እንልካለን
+    res.status(200).json({ success: true, data: pensioner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "በማረጋገጥ ሂደት ላይ የሰርቨር ስህተት አጋጥሟል!" });
+  }
+});
+
+
+
 module.exports = router;
