@@ -285,7 +285,6 @@ function IdCardGenerationAndSearch() {
                 
                 {/* 🔴 ከፎቶው በታች ያለው ጽሑፍ ቀይ */}
                 <div className="id-dates-box" style={{ marginTop: '10px', fontSize: '11px', color: '#dc2626' }}>
-                  <p style={{ margin: 0, fontWeight: '500' }}>የተሰጠበት ቀን / Issue</p>
                   <p style={{ margin: '2px 0 0 0', fontWeight: 'bold', fontSize: '12px' }}>{registeredData.issueDate ? registeredData.issueDate.substring(0,10) : 'N/A'}</p>
                 </div>
               </div>
