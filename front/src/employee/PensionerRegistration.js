@@ -34,41 +34,51 @@ function PensionerRegistration() {
 
   // 🔥 ጥብቅ የቁጥር እና የርዝመት ቫሊዴሽን የሚሰራው የሪል-ታይም መቆጣጠሪያ
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    let errors = { ...validationErrors };
+  const { name, value } = e.target;
+  let errors = { ...validationErrors };
 
-    // 🔢 ቁጥር ብቻ እና ልክ 10 ዲጂት መሆን ያለባቸው ፊልዶች ህግ
-    if (['pensionerId', 'phone', 'tin'].includes(name)) {
-      // ከቁጥር ውጪ ያሉትን ፊደላት በሙሉ ያጠፋል
-      let cleanValue = value.replace(/\D/g, ''); 
+  // 🔢 ቁጥር ብቻ እና ልክ 10 ዲጂት መሆን ያለባቸው ፊልዶች ህግ (Pension ID, TIN, Phone)
+  if (['pensionerId', 'phone', 'tin'].includes(name)) {
+    let cleanValue = value.replace(/\D/g, ''); // ከቁጥር ውጪ ያሉትን ያጠፋል
 
-      // 📱 ለስልክ ቁጥር ልዩ ህግ፡ መጀመሪያ የሚገባው ቁጥር 0 መሆን አለበት
-      if (name === 'phone' && cleanValue.length > 0 && cleanValue[0] !== '0') {
+    // 📱 ለስልክ ቁጥር ልዩ ህግ
+    if (name === 'phone' && cleanValue.length > 0) {
+      if (cleanValue[0] !== '0') {
         errors[name] = "⚠️ ስልክ ቁጥር በ '0' መጀመር አለበት!";
         setValidationErrors(errors);
-        return; // በ '0' ካልጀመረ ወደ ስቴት እንዳይገባ እዚሁ ይቆማል
-      }
-
-      // 🛑 ቁልፍ ህግ፡ ከ10 ዲጂት በላይ እንዳይሄድ መገደብ (Max Length = 10)
-      if (cleanValue.length > 10) {
-        cleanValue = cleanValue.substring(0, 10);
-      }
-
-      // የዲጂት ብዛት ማረጋገጫ (ልክ 10 መሆኑን ቼክ ያደርጋል)
-      if (cleanValue.length > 0 && cleanValue.length < 10) {
-        errors[name] = `⚠️ ልክ 10 ዲጂት መሆን አለበት! (አሁን፡ ${cleanValue.length})`;
+        return; // ወደ ስቴት እንዳይገባ እዚሁ ይቆማል
       } else {
-        delete errors[name]; // ልክ 10 ሲሞላ ስህተቱን ያጸዳል
+        delete errors[name]; // በ '0' ከጀመረ የቀደመውን ስህተት ያጠፋል
       }
-
-      setFormData(prev => ({ ...prev, [name]: cleanValue }));
-    } else {
-      // ለሌሎች መደበኛ የጽሑፍ ፊልዶች
-      setFormData(prev => ({ ...prev, [name]: value }));
     }
 
-    setValidationErrors(errors);
-  };
+    // 🛑 ከ 10 ዲጂት በላይ እንዳይሄድ መገደብ
+    if (cleanValue.length > 10) {
+      cleanValue = cleanValue.substring(0, 10);
+    }
+
+    // የዲጂት ብዛት ማረጋገጫ
+    if (cleanValue.length > 0 && cleanValue.length < 10) {
+      errors[name] = `⚠️ ልክ 10 ዲጂት መሆን አለበት! (አሁን፡ ${cleanValue.length})`;
+    } else {
+      delete errors[name]; // ልክ 10 ሲሞላ ስህተቱን ያጸዳል
+    }
+
+    setFormData(prev => ({ ...prev, [name]: cleanValue }));
+  } 
+  // ⛔ ለዕድሜ እና ለጡረታ መጠን (አሉታዊ ቁጥር ለመከላከል)
+  else if (['age', 'pensionAmount'].includes(name)) {
+    if (value < 0) return; // ከዜሮ በታች መጻፍ አይቻልም
+    setFormData(prev => ({ ...prev, [name]: value }));
+  } 
+  // ✍️ ለሌሎች መደበኛ የጽሑፍ ፊልዶች
+  else {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  }
+
+  setValidationErrors(errors);
+};
+
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
