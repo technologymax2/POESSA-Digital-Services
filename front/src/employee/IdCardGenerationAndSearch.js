@@ -33,29 +33,44 @@ function IdCardGenerationAndSearch() {
   };
 
   // 🔥 ሪል-ታይም ቫሊዴሽን የሚሰራው የ input መቀየሪያ
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    let errors = { ...validationErrors };
+  cconst handleEditChange = (e) => {
+  const { name, value } = e.target;
+  let errors = { ...validationErrors };
+  
+  // ቁጥር ብቻ መሆን ያለባቸው ፊልዶች
+  if (['pensionerId', 'phone', 'tin'].includes(name)) {
+    // ከቁጥር ውጪ ያሉትን ፊደላት በሙሉ ያጠፋል
+    let cleanValue = value.replace(/\D/g, ''); 
 
-    // 🔢 10 ዲጂት ቁጥር ብቻ መሆን ያለባቸው ፊልዶች ህግ
-    if (['pensionerId', 'phone', 'tin'].includes(name)) {
-      // ቁጥር ካልሆኑ ነገሮች ነፃ ማድረግ
-      const cleanValue = value.replace(/\D/g, ''); 
-      setEditData({ ...editData, [name]: cleanValue });
-
-      if (value !== cleanValue) {
-        errors[name] = "⚠️ ቁጥር ብቻ ማስገባት ይቻላል!";
-      } else if (cleanValue.length < 10) {
-        errors[name] = `⚠️ ቢያንስ 10 ዲጂት መሆን አለበት! (አሁን፡ ${cleanValue.length})`;
-      } else {
-        delete errors[name];
-      }
-    } else {
-      setEditData({ ...editData, [name]: value });
+    // 📱 ለስልክ ቁጥር ልዩ ህግ፡ መጀመሪያ የሚገባው ቁጥር 0 መሆን አለበት
+    if (name === 'phone' && cleanValue.length > 0 && cleanValue[0] !== '0') {
+      errors[name] = "⚠️ ስልክ ቁጥር በ '0' መጀመር አለበት!";
+      // በ '0' ካልጀመረ መረጃውን ወደ ስቴት አያስገባውም (ተጠቃሚው እንዳይሳሳት ይከለክለዋል)
+      setValidationErrors(errors);
+      return; 
     }
 
-    setValidationErrors(errors);
-  };
+    // 🛑 ቁልፍ ህግ፡ ከ10 ዲጂት በላይ እንዳይሄድ መገደብ (Max Length = 10)
+    if (cleanValue.length > 10) {
+      cleanValue = cleanValue.substring(0, 10);
+    }
+
+    // የዲጂት ብዛት ማረጋገጫ (ልክ 10 መሆኑን ቼክ ያደርጋል)
+    if (cleanValue.length > 0 && cleanValue.length < 10) {
+      errors[name] = `⚠️ ልክ 10 ዲጂት መሆን አለበት! (አሁን፡ ${cleanValue.length})`;
+    } else {
+      delete errors[name]; // ልክ 10 ሲሞላ ስህተቱን ያጠፋል
+    }
+
+    setEditData({ ...editData, [name]: cleanValue });
+  } else {
+    // ለሌሎች መደበኛ የጽሑፍ ፊልዶች
+    setEditData({ ...editData, [name]: value });
+  }
+
+  setValidationErrors(errors);
+};
+
 
   // 🔍 1. መረጃ መፈለጊያ
   const handleSearch = async (e) => {
@@ -84,26 +99,35 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-  // 📝 2. መረጃ ማሻሻያ
+
+   // 📝 2. መረጃ ማሻሻያ (የተስተካከለ - ከ10 ዲጂት ጥብቅ ቫሊዴሽን ጋር)
   const handleUpdate = async (e) => {
     e.preventDefault();
 
-    // ፎርሙን ከመላካችን በፊት ስህተቶች መኖራቸውን በድጋሚ ማረጋገጫ
+    // 🛑 ከመላኩ በፊት እያንዳንዱ ቁጥር ልክ 10 ዲጂት መሆኑን በድጋሚ ቼክ ማድረግ
     const requiredNumbers = ['pensionerId', 'phone', 'tin'];
     let finalErrors = {};
+    
     requiredNumbers.forEach(field => {
-      if (editData[field] && editData[field].length < 10) {
-        finalErrors[field] = "⚠️ ይህ መረጃ ከ10 ዲጂት ማነስ የለበትም!";
+      // ቲን (TIN) ቁጥር ግዴታ ካልሆነና ተጠቃሚው ምንም ካልጻፈበት እንዲያልፍ ይደረጋል
+      if (field === 'tin' && !editData[field]) return; 
+
+      // መረጃው ከሌለ ወይም ርዝመቱ ልክ 10 ካልሆነ ስህተት ይይዛል
+      if (!editData[field] || editData[field].length !== 10) {
+        finalErrors[field] = "⚠️ ይህ መረጃ ልክ 10 ዲጂት መሆን አለበት!";
       }
     });
 
+    // ስህተት ከተገኘ ፎርሙ ወደ ባክኤንድ እንዳይላክ እዚህ ላይ ይቆማል
     if (Object.keys(finalErrors).length > 0) {
       setValidationErrors(finalErrors);
-      setSearchStatus('❌ እባክዎ የፎርሙን ስህተቶች ያስተካክሉ!');
+      setSearchStatus('❌ እባክዎ የፎርሙን ስህተቶች ሳያስተካክሉ መረጃ መላክ አይችሉም!');
       return;
     }
 
     setSearchStatus('⏳ መረጃው እየታረመ ነው...');
+    
+    // ከባክኤንድ የመጡና አብረው መላክ የሌለባቸውን ፊልዶች እንነጥላለን
     const { editHistory, createdAt, updatedAt, ...cleanEditData } = editData;
 
     try {
@@ -115,8 +139,12 @@ function IdCardGenerationAndSearch() {
 
       const result = await response.json();
       if (result.success) {
-        setRegisteredData({ ...result.data, imageSrc: result.data.photoUrl });
+        setRegisteredData({ 
+          ...result.data, 
+          imageSrc: result.data.photoUrl 
+        });
         setIsEditing(false);
+        setValidationErrors({}); // የነበሩ የቫሊዴሽን ስህተቶችን ያጸዳል
         setSearchStatus('🎉 መረጃው በተሳካ ሁኔታ ታርሟል!');
       } else {
         setSearchStatus(`❌ ስህተት፡ ${result.message}`);
@@ -125,6 +153,7 @@ function IdCardGenerationAndSearch() {
       setSearchStatus(`❌ ማስተካከል አልተቻለም፡ ${err.message}`);
     }
   };
+
 
   // 💀 3. የህይወት ሁኔታ መቀየሪያ
   const toggleLifeStatus = async (newStatus) => {
