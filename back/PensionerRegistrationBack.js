@@ -28,6 +28,33 @@ router.get("/search", async (req, res) => {
 });
 
 // ==========================================================================
+// 🔍 1.5️⃣ በሪል-ታይም መደጋገም ማረጋገጫ (GET) - በፍሮንት-ኤንድ ለቀረበው ቼከር
+// ==========================================================================
+router.get("/check-duplicate", async (req, res) => {
+  try {
+    const { field, value } = req.query;
+
+    // ለደህንነት ሲባል የሚፈቀዱትን ቁልፍ ፊልዶች ብቻ መገደብ
+    const allowedFields = ['pensionerId', 'tin', 'faydaNumber'];
+    if (!allowedFields.includes(field)) {
+      return res.status(400).json({ success: false, error: "ልክ ያልሆነ የፊልድ ስም ነው!" });
+    }
+
+    if (!value) {
+      return res.status(400).json({ success: false, error: "እባክዎ የሚመረመረውን ዋጋ ያስገቡ!" });
+    }
+
+    // በዳታቤዝ ውስጥ መኖሩን መፈለግ
+    const exists = await UserPensioner.exists({ [field]: value });
+
+    // ካለ true ከሌለ false ይመልሳል (.exists() ፈጣንና አነስተኛ ሚሞሪ የሚወስድ ነው)
+    return res.status(200).json({ exists: !!exists });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "የመደጋገም ማረጋገጫ ላይ ስህተት አጋጥሟል" });
+  }
+});
+
+// ==========================================================================
 // 2️⃣ 📝 መረጃ ማስተካከያ እና 4️⃣ 💀 የህይወት ሁኔታ መቆጣጠሪያ (PUT)
 // ==========================================================================
 router.put("/update/:id", async (req, res) => {
