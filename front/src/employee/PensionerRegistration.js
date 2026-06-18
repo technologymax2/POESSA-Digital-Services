@@ -5,10 +5,17 @@ const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
 function PensionerRegistration() {
   const [currentEmployee, setCurrentEmployee] = useState('የፖኤሳ ሰራተኛ');
+  
+  // 🔥 ባለሁለት ቋንቋ ፊልዶችን ባካተተ መልኩ የተሻሻለ formData
   const [formData, setFormData] = useState({
-    pensionerId: '', name: '', tin: '', phone: '', age: '', gender: '',
-    faydaNumber: '', poessaBranch: '', bankName: '', bankBranch: '', pensionAmount: '',
-    address: '', issueDate: '', expiryDate: ''
+    pensionerId: '', 
+    nameAmh: '', nameEng: '', 
+    tin: '', phone: '', age: '', gender: '',
+    faydaNumber: '', poessaBranch: '', 
+    bankNameAmh: '', bankNameEng: '', 
+    bankBranch: '', pensionAmount: '',
+    addressAmh: '', addressEng: '', 
+    issueDate: '', expiryDate: ''
   });
 
   const [image, setImage] = useState(null);
@@ -17,14 +24,50 @@ function PensionerRegistration() {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
 
+  // 🔥 ለቫሊዴሽን ስህተቶች መልዕክት ማስቀመጫ ስቴት
+  const [validationErrors, setValidationErrors] = useState({});
+
   useEffect(() => {
     const storedName = localStorage.getItem('fullName') || localStorage.getItem('username');
     if (storedName) setCurrentEmployee(storedName);
   }, []);
 
+  // 🔥 ጥብቅ የቁጥር እና የርዝመት ቫሊዴሽን የሚሰራው የሪል-ታይም መቆጣጠሪያ
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    let errors = { ...validationErrors };
+
+    // 🔢 ቁጥር ብቻ እና ልክ 10 ዲጂት መሆን ያለባቸው ፊልዶች ህግ
+    if (['pensionerId', 'phone', 'tin'].includes(name)) {
+      // ከቁጥር ውጪ ያሉትን ፊደላት በሙሉ ያጠፋል
+      let cleanValue = value.replace(/\D/g, ''); 
+
+      // 📱 ለስልክ ቁጥር ልዩ ህግ፡ መጀመሪያ የሚገባው ቁጥር 0 መሆን አለበት
+      if (name === 'phone' && cleanValue.length > 0 && cleanValue[0] !== '0') {
+        errors[name] = "⚠️ ስልክ ቁጥር በ '0' መጀመር አለበት!";
+        setValidationErrors(errors);
+        return; // በ '0' ካልጀመረ ወደ ስቴት እንዳይገባ እዚሁ ይቆማል
+      }
+
+      // 🛑 ቁልፍ ህግ፡ ከ10 ዲጂት በላይ እንዳይሄድ መገደብ (Max Length = 10)
+      if (cleanValue.length > 10) {
+        cleanValue = cleanValue.substring(0, 10);
+      }
+
+      // የዲጂት ብዛት ማረጋገጫ (ልክ 10 መሆኑን ቼክ ያደርጋል)
+      if (cleanValue.length > 0 && cleanValue.length < 10) {
+        errors[name] = `⚠️ ልክ 10 ዲጂት መሆን አለበት! (አሁን፡ ${cleanValue.length})`;
+      } else {
+        delete errors[name]; // ልክ 10 ሲሞላ ስህተቱን ያጸዳል
+      }
+
+      setFormData(prev => ({ ...prev, [name]: cleanValue }));
+    } else {
+      // ለሌሎች መደበኛ የጽሑፍ ፊልዶች
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+
+    setValidationErrors(errors);
   };
 
   const handleImageChange = (e) => {
@@ -38,8 +81,25 @@ function PensionerRegistration() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (!image) {
       setStatus('⚠️ እባክዎ የጡረተኛውን ፎቶ ይምረጡ!');
+      return;
+    }
+
+    // 🛑 ፎርሙ ከመላኩ በፊት እያንዳንዱ ቁጥር ልክ 10 ዲጂት መሆኑን የመጨረሻ ማረጋገጫ
+    const requiredNumbers = ['pensionerId', 'phone', 'tin'];
+    let finalErrors = {};
+    
+    requiredNumbers.forEach(field => {
+      if (!formData[field] || formData[field].length !== 10) {
+        finalErrors[field] = "⚠️ ይህ መረጃ ልክ 10 ዲጂት መሆን አለበት!";
+      }
+    });
+
+    if (Object.keys(finalErrors).length > 0) {
+      setValidationErrors(finalErrors);
+      setStatus('❌ እባክዎ የፎርሙን ስህተቶች ያስተካክሉ!');
       return;
     }
 
@@ -63,9 +123,9 @@ function PensionerRegistration() {
       const finalData = { 
         ...formData, 
         photoUrl: imgResult.data.url, 
-        employeeName: currentEmployee ,
-  lastAction: 'Created',
-  lastActionTime: new Date().toISOString()
+        employeeName: currentEmployee,
+        lastAction: 'Created',
+        lastActionTime: new Date().toISOString()
       };
 
       // 3. ወደ ሰርቨር መላክ
@@ -78,8 +138,13 @@ function PensionerRegistration() {
       const result = await response.json();
       if (result.success) {
         setStatus('🎉 መረጃው በተሳካ ሁኔታ ተመዝግቧል!');
-        // Form ማጽዳት
-        setFormData({ pensionerId: '', name: '', tin: '', phone: '', age: '', gender: '', faydaNumber: '', poessaBranch: '', bankName: '', bankBranch: '', pensionAmount: '', address: '', issueDate: '', expiryDate: '' });
+        setValidationErrors({});
+        // Form ማጽዳት (ሁሉንም አዳዲስ ባለሁለት ቋንቋ ፊልዶች ጨምሮ)
+        setFormData({ 
+          pensionerId: '', nameAmh: '', nameEng: '', tin: '', phone: '', age: '', gender: '',
+          faydaNumber: '', poessaBranch: '', bankNameAmh: '', bankNameEng: '', bankBranch: '', pensionAmount: '',
+          addressAmh: '', addressEng: '', issueDate: '', expiryDate: '' 
+        });
         setImage(null);
         setImagePreview(null);
       } else {
@@ -107,24 +172,46 @@ function PensionerRegistration() {
         </div>
 
         <div className="pr-grid">
-          <div className="pr-input-group"><label>Pension ID</label><input type="text" name="pensionerId" value={formData.pensionerId} onChange={handleChange} required /></div>
-          <div className="pr-input-group"><label>ሙሉ ስም</label><input type="text" name="name" value={formData.name} onChange={handleChange} required /></div>
+          {/* ጥብቅ የቁጥር ቫሊዴሽን ያላቸው ፊልዶች */}
+          <div className="pr-input-group">
+            <label>Pension ID (10 Digits)</label>
+            <input type="text" name="pensionerId" value={formData.pensionerId} onChange={handleChange} required />
+            {validationErrors.pensionerId && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.pensionerId}</span>}
+          </div>
+          <div className="pr-input-group">
+            <label>TIN ቁጥር / TIN (10 Digits)</label>
+            <input type="text" name="tin" value={formData.tin} onChange={handleChange} required />
+            {validationErrors.tin && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.tin}</span>}
+          </div>
+          <div className="pr-input-group">
+            <label>ስልክ ቁጥር / Phone (0... 10 Digits)</label>
+            <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required />
+            {validationErrors.phone && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.phone}</span>}
+          </div>
           <div className="pr-input-group"><label>የፋይዳ ቁጥር</label><input type="text" name="faydaNumber" value={formData.faydaNumber} onChange={handleChange} required /></div>
-          <div className="pr-input-group"><label>TIN ቁጥር</label><input type="text" name="tin" value={formData.tin} onChange={handleChange} required /></div>
-          <div className="pr-input-group"><label>ስልክ ቁጥር</label><input type="tel" name="phone" value={formData.phone} onChange={handleChange} required /></div>
+
+          {/* 🌐 ባለሁለት ቋንቋ ፊልዶች ክፍል */}
+          <div className="pr-input-group"><label>ሙሉ ስም (አማርኛ)</label><input type="text" name="nameAmh" value={formData.nameAmh} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>Full Name (English)</label><input type="text" name="nameEng" value={formData.nameEng} onChange={handleChange} required /></div>
+
+          <div className="pr-input-group"><label>አድራሻ (አማርኛ)</label><input type="text" name="addressAmh" value={formData.addressAmh} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>Address (English)</label><input type="text" name="addressEng" value={formData.addressEng} onChange={handleChange} required /></div>
+
+          <div className="pr-input-group"><label>ባንክ ስም (አማርኛ)</label><input type="text" name="bankNameAmh" value={formData.bankNameAmh} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>Bank Name (English)</label><input type="text" name="bankNameEng" value={formData.bankNameEng} onChange={handleChange} required /></div>
+
+          {/* የቀሩት መደበኛ ፊልዶች */}
           <div className="pr-input-group"><label>ዕድሜ</label><input type="number" name="age" value={formData.age} onChange={handleChange} required /></div>
           <div className="pr-input-group"><label>ጾታ</label>
             <select name="gender" value={formData.gender} onChange={handleChange} required>
               <option value="">ይምረጡ</option>
-              <option value="Male">ወንድ</option>
-              <option value="Female">ሴት</option>
+              <option value="Male">ወንድ / Male</option>
+              <option value="Female">ሴት / Female</option>
             </select>
           </div>
-          <div className="pr-input-group"><label>አድራሻ</label><input type="text" name="address" value={formData.address} onChange={handleChange} required /></div>
           <div className="pr-input-group"><label>የተሰጠበት ቀን</label><input type="date" name="issueDate" value={formData.issueDate} onChange={handleChange} required /></div>
           <div className="pr-input-group"><label>የማብቂያ ቀን</label><input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} required /></div>
           <div className="pr-input-group"><label>ቅርንጫፍ</label><input type="text" name="poessaBranch" value={formData.poessaBranch} onChange={handleChange} required /></div>
-          <div className="pr-input-group"><label>ባንክ</label><input type="text" name="bankName" value={formData.bankName} onChange={handleChange} required /></div>
           <div className="pr-input-group"><label>ባንክ ቅርንጫፍ</label><input type="text" name="bankBranch" value={formData.bankBranch} onChange={handleChange} required /></div>
           <div className="pr-input-group"><label>የጡረታ መጠን</label><input type="number" name="pensionAmount" value={formData.pensionAmount} onChange={handleChange} required /></div>
         </div>
