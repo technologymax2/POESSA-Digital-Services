@@ -2,35 +2,28 @@ const mongoose = require("mongoose");
 
 const UserPensionerSchema = new mongoose.Schema({
   pensionerId: { type: String, required: true, unique: true },
-  name: { type: String, required: true },
+  nameAmh: { type: String, required: true }, // አማርኛ ስም
+  nameEng: { type: String, required: true }, // እንግሊዝኛ ስም
   tin: { type: String, default: "" },
   phone: { type: String, required: true },
   age: { type: Number, required: true },
   gender: { type: String, required: true },
   faydaNumber: { type: String, required: true, unique: true },
   poessaBranch: { type: String, default: "" },
-  bankName: { type: String, default: "" },
+  bankNameAmh: { type: String, default: "" }, // አማርኛ ባንክ
+  bankNameEng: { type: String, default: "" }, // እንግሊዝኛ ባንክ
   bankBranch: { type: String, default: "" },
   pensionAmount: { type: Number, required: true },
-  address: { type: String, required: true },
+  addressAmh: { type: String, required: true }, // አማርኛ አድራሻ
+  addressEng: { type: String, required: true }, // እንግሊዝኛ አድራሻ
   issueDate: { type: String },
   expiryDate: { type: String },
   photoUrl: { type: String, required: true }, 
-  
-  // የህይወት ሁኔታ
-  status: { 
-    type: String, 
-    enum: ["Active", "Passive"], 
-    default: "Active" 
-  },
+  status: { type: String, enum: ["Active", "Passive"], default: "Active" },
   statusChangedDate: { type: Date, default: Date.now },
-
-  // CRUD ኦዲት መከታተያ
   registeredBy: { type: String, required: true }, 
   lastEditedBy: { type: String, default: "" },    
   lastEditedAt: { type: Date, default: Date.now }, 
-  
-  // 🔥 ፊክስ፦ የሁሉንም የለውጥ ታሪክ ዝርዝር (Array) አድርገን የያዝንበት ክፍል
   editHistory: [
     {
       editedBy: { type: String },
@@ -38,7 +31,6 @@ const UserPensionerSchema = new mongoose.Schema({
       details: { type: String }
     }
   ],
-
   createdAt: { type: Date, default: Date.now }
 });
 
