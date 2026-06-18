@@ -26,13 +26,15 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/video-call" element={<VideoCallAccess />} />
           <Route path="/agent-call-center" element={<AgentVideoPage />} />
-           <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
-           <Route path="/admin-dashboard" element={<AdminDashboard />} />
-           <Route path="/customer-dashboard" element={<CustomerDashboard />} />
-           <Route path="/liveness" element={<LivenessTest />} />
-           <Route path="/pensioner-registration" element ={<PensionerRegistration />} />
-    <Route path="/idcard-generation-search" element={<IdCardGenerationAndSearch />} />
- <Route path="/api/pensioners/verify/:faydaNum" element={<ScanVerify />} />
+          <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+          <Route path="/liveness" element={<LivenessTest />} />
+          <Route path="/pensioner-registration" element ={<PensionerRegistration />} />
+          <Route path="/idcard-generation-search" element={<IdCardGenerationAndSearch />} />
+          
+          {/* 🚨 ከባክኤንድ ጋር እንዳይጋጭ /api/pensioners የሚለው ጠፍቶ ወደ ንጹህ ፍሮንትኤንድ መንገድ ተቀይሯል */}
+          <Route path="/verify/:faydaNum" element={<ScanVerify />} />
         </Routes>
       </div>
     </Router>
