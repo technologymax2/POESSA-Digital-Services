@@ -64,46 +64,58 @@ body{
 /* ===================================
    Image Section
 =================================== */
-
-.pr-image-section{
-    display:flex;
-    justify-content:center;
+/* የፎቶው አጠቃላይ መያዣ ክፍል */
+.pr-image-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 25px;
+  width: 100%;
 }
 
-.pr-image-box{
-    width:180px;
-    height:220px;
-    border:3px dashed #2563eb;
-    border-radius:18px;
-    overflow:hidden;
-    cursor:pointer;
-    background:#f8fafc;
-    transition:.3s;
+/* 📸 የፎቶ መምረጫ ሳጥን - ይበልጥ ዘመናዊና የተመጣጠነ የተደረገ */
+.pr-image-box {
+  width: 140px;
+  height: 140px;
+  border: 2px dashed #3b82f6; /* ይበልጥ ደመቅ ያለ ሰማያዊ ነጠብጣብ መስመር */
+  border-radius: 16px;       /* ማዕዘኑን በሚያምር ሁኔታ ያለሰልሰዋል */
+  background-color: #f8fafc; /* ንጹህና ቀላል የጀርባ ቀለም */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;         /* ፎቶው ከሳጥኑ እንዳይወጣ ይቆርጠዋል */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-.pr-image-box:hover{
-    border-color:#1d4ed8;
-    transform:translateY(-5px);
-    box-shadow:0 10px 25px rgba(37,99,235,.3);
+/* በተጠቃሚው እጅ ሲነካ (Hover ሲሆን) የሚኖረው ውበት */
+.pr-image-box:hover {
+  background-color: #eff6ff;
+  border-color: #1d4ed8;
+  transform: translateY(-2px); /* ጥቂት ከፍ የማለት ማራኪ ውጤት */
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1);
 }
 
-.pr-preview-img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
+/* 📷 በሳጥኑ ውስጥ ያለው የጽሑፍ እና የኢሞጂ አቀማመጥ */
+.pr-placeholder {
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  gap: 6px;
+  display: flex;
+  flex-direction: column;
 }
 
-.pr-placeholder{
-    height:100%;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color:#64748b;
-    font-size:18px;
-    font-weight:600;
-    text-align:center;
-    padding:15px;
+/* 🖼️ ፎቶው ከተመረጠ በኋላ ሙሉ በሙሉ ሳጥኑን እንዲሞላ የሚያደርግ */
+.pr-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* ፎቶው ሳይጨፈለቅ በትክክል እንዲቀመጥ ያደርጋል */
 }
+
 
 /* ===================================
    Grid
