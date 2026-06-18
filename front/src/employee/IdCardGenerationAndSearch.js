@@ -52,7 +52,7 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-  // 📝 2. መረጃ ማሻሻያ
+  // 📝 2. መረጃ ማሻሻያ (የተሻሻሉ ፊልዶችን ዝርዝር ከባክኤንድ ለመቀበል የፊክስ የተደረገ)
   const handleUpdate = async (e) => {
     e.preventDefault();
     setSearchStatus('⏳ መረጃው እየታረመ ነው...');
@@ -66,7 +66,11 @@ function IdCardGenerationAndSearch() {
 
       const result = await response.json();
       if (result.success) {
-        setRegisteredData({ ...registeredData, ...result.data, imageSrc: result.data.photoUrl });
+        // 🔥 ሙሉውን አዲስ ዳታ (editHistory ን ጨምሮ) እዚህ ላይ እንተካዋለን
+        setRegisteredData({ 
+          ...result.data, 
+          imageSrc: result.data.photoUrl 
+        });
         setIsEditing(false);
         setSearchStatus('🎉 መረጃው በተሳካ ሁኔታ ታርሟል!');
       } else {
@@ -77,7 +81,7 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-  // 💀 3. የህይወት ሁኔታ መቀየሪያ (Active / Passive)
+  // 💀 3. የህይወት ሁኔታ መቀየሪያ (Active / Passive) - (እዚህም ላይ ሙሉውን አዲስ ዳታ እንዲተካ ተደርጓል)
   const toggleLifeStatus = async (newStatus) => {
     const confirmation = window.confirm(`ይህንን የጡረተኛ ሁኔታ ወደ [${newStatus === 'Passive' ? 'Passive (የአረፉ)' : 'Active (በህይወት ያሉ)'}] ለመቀየር እርግጠኛ ነዎት?`);
     if (!confirmation) return;
@@ -95,7 +99,11 @@ function IdCardGenerationAndSearch() {
 
       const result = await response.json();
       if (result.success) {
-        setRegisteredData({ ...registeredData, ...result.data, imageSrc: result.data.photoUrl });
+        // 🔥 ከባክኤንድ የመጣውን አዲሱን መረጃ ሙሉ በሙሉ እንተካዋለን
+        setRegisteredData({ 
+          ...result.data, 
+          imageSrc: result.data.photoUrl 
+        });
         setSearchStatus(`🎉 የዜጋው ሁኔታ ወደ ${newStatus === 'Passive' ? 'Passive' : 'Active'} ተቀይሯል!`);
       } else {
         setSearchStatus(`❌ ስህተት፡ ${result.message}`);
@@ -184,7 +192,7 @@ function IdCardGenerationAndSearch() {
             <button onClick={handleDelete} className="delete-action-btn">🗑️ አጥፋ</button>
           </div>
 
-          {/* ዲጂታል መታወቂያ ካርድ (የባንዲራ መስመር እና ፊርማዎች ተነስተዋል) */}
+          {/* ዲጂታል መታወቂያ ካርድ */}
           <div className={`id-card ${registeredData.status === 'Passive' ? 'pensioner-dead' : ''}`} id="pensioner-id-card">
             <div className="id-card-header">
               <div className="logo-placeholder">🇪🇹</div>
@@ -223,17 +231,16 @@ function IdCardGenerationAndSearch() {
                 )}
               </div>
 
-              {/* 🎯 የ QR ኮድ ማሻሻያ፡ አሁን በቀጥታ ወደ ሪአክቱ ScanVerify ገጽ ይመራል */}
-<div className="id-qr-zone">
-  <QRCodeSVG 
-    value={`${window.location.origin}/verify/${registeredData.faydaNumber}`} 
-    size={105} 
-    level={"H"}
-    includeMargin={true}
-  />
-  <span className="qr-label">DIGITAL SIGNATURE</span>
-</div>
-
+              {/* የ QR ኮድ ማሻሻያ */}
+              <div className="id-qr-zone">
+                <QRCodeSVG 
+                  value={`${window.location.origin}/verify/${registeredData.faydaNumber}`} 
+                  size={105} 
+                  level={"H"}
+                  includeMargin={true}
+                />
+                <span className="qr-label">DIGITAL SIGNATURE</span>
+              </div>
             </div>
 
             <div className="id-card-footer">
@@ -241,27 +248,26 @@ function IdCardGenerationAndSearch() {
             </div>
           </div>
 
-{/* 🔍 ማነው የሰራው? (CRUD Logs View Panel) */}
-<div className="crud-audit-panel no-print">
-  <h4>📋 የስርዓት ክትትል መረጃ (CRUD Log)</h4>
-  <div className="audit-row">
-    <span><strong>የመዘገበው ባለሙያ (Registered By):</strong> {registeredData.registeredBy || 'ያልታወቀ'}</span>
-    <span><strong>የተመዘገበበት ቀን፡</strong> {registeredData.createdAt ? new Date(registeredData.createdAt).toLocaleString('et-ET') : 'N/A'}</span>
-  </div>
-  {registeredData.lastEditedBy && (
-    <div className="audit-row border-top">
-      <span><strong>የመጨረሻ ማሻሻያ (Last Edited By):</strong> {registeredData.lastEditedBy}</span>
-      <span><strong>የተሻሻለበት ቀን፡</strong> {registeredData.lastEditedAt ? new Date(registeredData.lastEditedAt).toLocaleString('et-ET') : 'N/A'}</span>
-    </div>
-  )}
-  {/* 🟢 አዲስ የተጨመረ፦ ምን አይነት ማሻሻያ እንደተደረገ የሚገልጽ መስመር */}
-  {registeredData.editHistory && (
-    <div className="audit-row border-top" style={{ color: '#0056b3', fontWeight: '500' }}>
-      <span>ℹ️ {registeredData.editHistory}</span>
-    </div>
-  )}
-</div>
-
+          {/* 🔍 ማነው የሰራው? (CRUD Logs View Panel) */}
+          <div className="crud-audit-panel no-print">
+            <h4>📋 የስርዓት ክትትል መረጃ (CRUD Log)</h4>
+            <div className="audit-row">
+              <span><strong>የመዘገበው ባለሙያ (Registered By):</strong> {registeredData.registeredBy || 'ያልታወቀ'}</span>
+              <span><strong>የተመዘገበበት ቀን፡</strong> {registeredData.createdAt ? new Date(registeredData.createdAt).toLocaleString('et-ET') : 'N/A'}</span>
+            </div>
+            {registeredData.lastEditedBy && (
+              <div className="audit-row border-top">
+                <span><strong>የመጨረሻ ማሻሻያ (Last Edited By):</strong> {registeredData.lastEditedBy}</span>
+                <span><strong>የተሻሻለበት ቀን፡</strong> {registeredData.lastEditedAt ? new Date(registeredData.lastEditedAt).toLocaleString('et-ET') : 'N/A'}</span>
+              </div>
+            )}
+            {/* 🟢 አዲስ የተጨመረ፦ ምን አይነት ማሻሻያ እንደተደረገ የሚገልጽ መስመር */}
+            {registeredData.editHistory && (
+              <div className="audit-row border-top" style={{ color: '#0056b3', fontWeight: '500' }}>
+                <span>ℹ️ {registeredData.editHistory}</span>
+              </div>
+            )}
+          </div>
 
           <button onClick={() => window.print()} className="print-btn no-print">🖨️ መታወቂያውን አትም (Print ID)</button>
         </div>
