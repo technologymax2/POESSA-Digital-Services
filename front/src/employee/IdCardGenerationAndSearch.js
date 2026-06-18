@@ -11,34 +11,50 @@ function IdCardGenerationAndSearch() {
   const [registeredData, setRegisteredData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
-  
-  // 🔥 አዲስ ስቴት፦ የጠፉ መረጃዎችን ታሪክ (Deleted Logs) ለመያዝ
   const [deletedLogs, setDeletedLogs] = useState([]);
+  
+  // 🔥 ለቫሊዴሽን ስህተቶች መልዕክት ማስቀመጫ ስቴት
+  const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
     const storedUser = localStorage.getItem('fullName') || localStorage.getItem('username') || 'የፖኤሳ ሰራተኛ';
     setCurrentEmployee(storedUser);
-    
-    // ገጹ መጀመሪያ ሲከፈት የጠፉ መረጃዎችን ታሪክ ከባክኤንድ ያመጣል
     fetchDeletedLogs();
   }, []);
 
-  // 🔥 አዲስ ፈንክሽን፦ የጠፉ መረጃዎችን ታሪክ ከባክኤንድ ማምጫ
   const fetchDeletedLogs = async () => {
     try {
       const response = await fetch('https://poessa-digital-services-1.onrender.com/api/pensioners/deleted-logs');
       const result = await response.json();
-      if (result.success) {
-        setDeletedLogs(result.data);
-      }
+      if (result.success) setDeletedLogs(result.data);
     } catch (err) {
       console.error("የጠፉ መረጃዎችን ታሪክ ማምጣት አልተቻለም፦", err.message);
     }
   };
 
+  // 🔥 ሪል-ታይም ቫሊዴሽን የሚሰራው የ input መቀየሪያ
   const handleEditChange = (e) => {
     const { name, value } = e.target;
-    setEditData({ ...editData, [name]: value });
+    let errors = { ...validationErrors };
+
+    // 🔢 10 ዲጂት ቁጥር ብቻ መሆን ያለባቸው ፊልዶች ህግ
+    if (['pensionerId', 'phone', 'tin'].includes(name)) {
+      // ቁጥር ካልሆኑ ነገሮች ነፃ ማድረግ
+      const cleanValue = value.replace(/\D/g, ''); 
+      setEditData({ ...editData, [name]: cleanValue });
+
+      if (value !== cleanValue) {
+        errors[name] = "⚠️ ቁጥር ብቻ ማስገባት ይቻላል!";
+      } else if (cleanValue.length < 10) {
+        errors[name] = `⚠️ ቢያንስ 10 ዲጂት መሆን አለበት! (አሁን፡ ${cleanValue.length})`;
+      } else {
+        delete errors[name];
+      }
+    } else {
+      setEditData({ ...editData, [name]: value });
+    }
+
+    setValidationErrors(errors);
   };
 
   // 🔍 1. መረጃ መፈለጊያ
@@ -57,10 +73,7 @@ function IdCardGenerationAndSearch() {
       const result = await response.json();
 
       if (result.success) {
-        setRegisteredData({
-          ...result.data,
-          imageSrc: result.data.photoUrl,
-        });
+        setRegisteredData({ ...result.data, imageSrc: result.data.photoUrl });
         setEditData(result.data);
         setSearchStatus('🎉 የጡረተኛው መረጃ ተገኝቷል!');
       } else {
@@ -74,8 +87,23 @@ function IdCardGenerationAndSearch() {
   // 📝 2. መረጃ ማሻሻያ
   const handleUpdate = async (e) => {
     e.preventDefault();
+
+    // ፎርሙን ከመላካችን በፊት ስህተቶች መኖራቸውን በድጋሚ ማረጋገጫ
+    const requiredNumbers = ['pensionerId', 'phone', 'tin'];
+    let finalErrors = {};
+    requiredNumbers.forEach(field => {
+      if (editData[field] && editData[field].length < 10) {
+        finalErrors[field] = "⚠️ ይህ መረጃ ከ10 ዲጂት ማነስ የለበትም!";
+      }
+    });
+
+    if (Object.keys(finalErrors).length > 0) {
+      setValidationErrors(finalErrors);
+      setSearchStatus('❌ እባክዎ የፎርሙን ስህተቶች ያስተካክሉ!');
+      return;
+    }
+
     setSearchStatus('⏳ መረጃው እየታረመ ነው...');
-    
     const { editHistory, createdAt, updatedAt, ...cleanEditData } = editData;
 
     try {
@@ -87,10 +115,7 @@ function IdCardGenerationAndSearch() {
 
       const result = await response.json();
       if (result.success) {
-        setRegisteredData({ 
-          ...result.data, 
-          imageSrc: result.data.photoUrl 
-        });
+        setRegisteredData({ ...result.data, imageSrc: result.data.photoUrl });
         setIsEditing(false);
         setSearchStatus('🎉 መረጃው በተሳካ ሁኔታ ታርሟል!');
       } else {
@@ -101,9 +126,9 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-  // 💀 3. የህይወት ሁኔታ መቀየሪያ (Active / Passive)
+  // 💀 3. የህይወት ሁኔታ መቀየሪያ
   const toggleLifeStatus = async (newStatus) => {
-    const confirmation = window.confirm(`ይህንን የጡረተኛ ሁኔታ ወደ [${newStatus === 'Passive' ? 'Passive (የአረፉ)' : 'Active (በህይወት ያሉ)'}] ለመቀየር እርግጠኛ ነዎት?`);
+    const confirmation = window.confirm(`ይህንን የጡረተኛ ሁኔታ ለመቀየር እርግጠኛ ነዎት?`);
     if (!confirmation) return;
 
     setSearchStatus('⏳ የዜጋው ሁኔታ እየተቀየረ ነው...');
@@ -111,22 +136,14 @@ function IdCardGenerationAndSearch() {
       const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/update/${registeredData._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          status: newStatus, 
-          lastEditedBy: currentEmployee 
-        }),
+        body: JSON.stringify({ status: newStatus, lastEditedBy: currentEmployee }),
       });
 
       const result = await response.json();
       if (result.success) {
-        setRegisteredData({ 
-          ...result.data, 
-          imageSrc: result.data.photoUrl 
-        });
+        setRegisteredData({ ...result.data, imageSrc: result.data.photoUrl });
         setEditData(result.data);
-        setSearchStatus(`🎉 የዜጋው ሁኔታ ወደ ${newStatus === 'Passive' ? 'Passive' : 'Active'} ተቀይሯል!`);
-      } else {
-        setSearchStatus(`❌ ስህተት፡ ${result.message}`);
+        setSearchStatus(`🎉 የዜጋው ሁኔታ ተቀይሯል!`);
       }
     } catch (err) {
       setSearchStatus(`❌ መቀየር አልተቻለም፡ ${err.message}`);
@@ -135,18 +152,14 @@ function IdCardGenerationAndSearch() {
 
   // 🗑️ 4. መረጃ ማጥፊያ
   const handleDelete = async () => {
-    if (!window.confirm("🚨 ይህንን መረጃ ማጥፋት ይፈልጋሉ? ያጠፉት ባለሙያ ስም በታሪክ መዝገብ ላይ ይሰፍራል!")) return;
+    if (!window.confirm("🚨 ይህንን መረጃ ማጥፋት ይፈልጋሉ?")) return;
     try {
       const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/delete/${registeredData._id}?employeeName=${currentEmployee}`, { method: 'DELETE' });
       const result = await response.json();
       if (result.success) {
         setRegisteredData(null);
         setSearchStatus(`🗑️ ${result.message}`);
-        
-        // 🔥 አንድ መረጃ ሲጠፋ ወዲያውኑ የታችኛውን ዝርዝር እንዲያድስ እናደርጋለን
         fetchDeletedLogs();
-      } else {
-        setSearchStatus(`❌ sktet: ${result.message}`);
       }
     } catch (err) {
       setSearchStatus(`❌ ማጥፋት አልተቻለም፡ ${err.message}`);
@@ -165,32 +178,55 @@ function IdCardGenerationAndSearch() {
         {searchStatus && <p className="status-indicator">{searchStatus}</p>}
       </div>
 
-      {/* 📝 የማስተካከያ ፎርም */}
+      {/* 📝 ባለሁለት ቋንቋ መረጃ ማስተካከያ ፎርም */}
       {isEditing && (
         <div className="edit-form-section no-print">
           <h3>📝 የጡረተኛ መረጃ ማስተካከያ (ፈጻሚ ባለሙያ፡ {currentEmployee})</h3>
           <form onSubmit={handleUpdate} className="pensioner-form">
             <div className="form-grid">
-              <div className="input-group"><label>Pension ID</label><input type="text" name="pensionerId" value={editData.pensionerId || ''} onChange={handleEditChange} required /></div>
-              <div className="input-group"><label>ሙሉ ስም</label><input type="text" name="name" value={editData.name || ''} onChange={handleEditChange} required /></div>
+              {/* ቁጥርና 10 ዲጂት ቫሊዴሽን ያላቸው ፊልዶች */}
+              <div className="input-group">
+                <label>Pension ID (10+ Digits Only)</label>
+                <input type="text" name="pensionerId" value={editData.pensionerId || ''} onChange={handleEditChange} required />
+                {validationErrors.pensionerId && <span className="error-text" style={{color: 'red', fontSize: '11px'}}>{validationErrors.pensionerId}</span>}
+              </div>
+              <div className="input-group">
+                <label>ስልክ ቁጥር / Phone (10+ Digits)</label>
+                <input type="tel" name="phone" value={editData.phone || ''} onChange={handleEditChange} required />
+                {validationErrors.phone && <span className="error-text" style={{color: 'red', fontSize: '11px'}}>{validationErrors.phone}</span>}
+              </div>
+              <div className="input-group">
+                <label>ቲን ቁጥር / TIN (10+ Digits)</label>
+                <input type="text" name="tin" value={editData.tin || ''} onChange={handleEditChange} />
+                {validationErrors.tin && <span className="error-text" style={{color: 'red', fontSize: '11px'}}>{validationErrors.tin}</span>}
+              </div>
               <div className="input-group"><label>የፋይዳ ቁጥር</label><input type="text" name="faydaNumber" value={editData.faydaNumber || ''} onChange={handleEditChange} required /></div>
-              <div className="input-group"><label>ቲን ቁጥር (TIN)</label><input type="text" name="tin" value={editData.tin || ''} onChange={handleEditChange} /></div>
-              <div className="input-group"><label>ስልክ ቁጥር</label><input type="tel" name="phone" value={editData.phone || ''} onChange={handleEditChange} required /></div>
+              
+              {/* 🌐 የቋንቋ ከፋይ ፊልዶች */}
+              <div className="input-group"><label>ሙሉ ስም (በአማርኛ)</label><input type="text" name="nameAmh" value={editData.nameAmh || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>Full Name (In English)</label><input type="text" name="nameEng" value={editData.nameEng || ''} onChange={handleEditChange} required /></div>
+              
+              <div className="input-group"><label>አድራሻ (ክልል/ዞን/ወረዳ)</label><input type="text" name="addressAmh" value={editData.addressAmh || ''} onChange={handleEditChange} required /></div>
+              <div className="input-group"><label>Address (Region/Zone/Woreda)</label><input type="text" name="addressEng" value={editData.addressEng || ''} onChange={handleEditChange} required /></div>
+              
+              <div className="input-group"><label>የባንክ ስም (አማርኛ)</label><input type="text" name="bankNameAmh" value={editData.bankNameAmh || ''} onChange={handleEditChange} /></div>
+              <div className="input-group"><label>Bank Name (English)</label><input type="text" name="bankNameEng" value={editData.bankNameEng || ''} onChange={handleEditChange} /></div>
+
+              {/* መደበኛ ፊልዶች */}
               <div className="input-group"><label>ዕድሜ</label><input type="number" name="age" value={editData.age || ''} onChange={handleEditChange} required /></div>
               <div className="input-group">
                 <label>ጾታ</label>
                 <select name="gender" value={editData.gender || ''} onChange={handleEditChange}>
-                  <option value="Male">ወንድ</option>
-                  <option value="Female">ሴት</option>
+                  <option value="Male">ወንድ / Male</option>
+                  <option value="Female">ሴት / Female</option>
                 </select>
               </div>
-              <div className="input-group"><label>አድራሻ</label><input type="text" name="address" value={editData.address || ''} onChange={handleEditChange} required /></div>
               <div className="input-group"><label>የጡረታ አበል (ETB)</label><input type="number" name="pensionAmount" value={editData.pensionAmount || ''} onChange={handleEditChange} required /></div>
-              <div className="input-group"><label>የባንክ ስም</label><input type="text" name="bankName" value={editData.bankName || ''} onChange={handleEditChange} /></div>
-              <div className="input-group"><label>የቅርንጫፍ ስም (Bank)</label><input type="text" name="bankBranch" value={editData.bankBranch || ''} onChange={handleEditChange} /></div>
+              <div className="input-group"><label>የባንክ ቅርንጫፍ</label><input type="text" name="bankBranch" value={editData.bankBranch || ''} onChange={handleEditChange} /></div>
               <div className="input-group"><label>የፖኤሳ ቅርንጫፍ (POESSA)</label><input type="text" name="poessaBranch" value={editData.poessaBranch || ''} onChange={handleEditChange} /></div>
               <div className="input-group"><label>የተሰጠበት ቀን</label><input type="date" name="issueDate" value={editData.issueDate ? editData.issueDate.substring(0,10) : ''} onChange={handleEditChange} /></div>
             </div>
+            
             <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
               <button type="submit" className="save-btn">ለውጦችን አስቀምጥ</button>
               <button type="button" onClick={() => setIsEditing(false)} className="cancel-btn">አንሳ</button>
@@ -199,7 +235,7 @@ function IdCardGenerationAndSearch() {
         </div>
       )}
 
-      {/* 🪪 የመታወቂያ ማሳያ ሳጥን */}
+      {/* 🪪 የሁለት ቋንቋ ዲጂታል መታወቂያ ካርድ */}
       {registeredData && (
         <div className="id-card-wrapper-section">
           <div className="admin-actions no-print">
@@ -212,12 +248,14 @@ function IdCardGenerationAndSearch() {
             <button onClick={handleDelete} className="delete-action-btn">🗑️ አጥፋ</button>
           </div>
 
+          {/* ዲጂታል መታወቂያ ካርድ */}
           <div className={`id-card ${registeredData.status === 'Passive' ? 'pensioner-dead' : ''}`} id="pensioner-id-card">
             <div className="id-card-header">
               <div className="logo-placeholder">🇪🇹</div>
               <div className="header-titles">
                 <h3>POESSA DIGITAL ID CARD</h3>
-                <p>የፌዴራል የጡረታና ማህበራዊ ዋስትና ኤጀንሲ</p>
+                <p style={{fontSize: '11px', margin: 0}}>የፌዴራል የጡረታና ማህበራዊ ዋስትና ኤጀንሲ</p>
+                <p style={{fontSize: '9px', margin: 0, color: '#ddd'}}>Federal Pension & Social Security Agency</p>
               </div>
               <div className={`status-badge-view ${registeredData.status === 'Passive' ? 'badge-passive' : 'badge-active'}`}>
                 {registeredData.status === 'Passive' ? "PASSIVE" : "ACTIVE"}
@@ -226,27 +264,25 @@ function IdCardGenerationAndSearch() {
 
             <div className="id-card-body">
               <div className="id-photo-zone">
-                <img 
-                  src={registeredData.imageSrc || "https://via.placeholder.com/150?text=No+Photo"} 
-                  alt="Pensioner" 
-                  className="id-pensioner-img" 
-                  onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=No+Photo"; }}
-                />
+                <img src={registeredData.imageSrc || "https://via.placeholder.com/150"} alt="Pensioner" className="id-pensioner-img" onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
                 <div className="id-dates-box">
-                  <p><strong>የተሰጠበት ቀን:</strong></p>
+                  <p><strong>የተሰጠበት ቀን / Issue:</strong></p>
                   <p>{registeredData.issueDate ? registeredData.issueDate.substring(0,10) : 'N/A'}</p>
                 </div>
               </div>
 
+              {/* 🌐 በሁለት ቋንቋ ጎን ለጎን የተደረደረ የዝርዝር መረጃ ክፍል */}
               <div className="id-details-zone">
-                <p><span className="lbl">ስም / Name:</span> <span className="val-name">{registeredData.name}</span></p>
+                <p><span className="lbl">ስም / Name:</span> <span className="val-name">{registeredData.nameAmh} / {registeredData.nameEng}</span></p>
+                <p><span className="lbl">አይዲ / Pension ID:</span> <span className="val">{registeredData.pensionerId}</span></p>
                 <p><span className="lbl">ፋይዳ / FAYDA:</span> <span className="val">{registeredData.faydaNumber}</span></p>
                 <p><span className="lbl">ቲን / TIN:</span> <span className="val">{registeredData.tin || 'N/A'}</span></p> 
                 <p><span className="lbl">ስልክ / Phone:</span> <span className="val">{registeredData.phone}</span></p>
-                <p><span className="lbl">አድራሻ / Address:</span> <span className="val">{registeredData.address}</span></p>
+                <p><span className="lbl">አድራሻ / Address:</span> <span className="val">{registeredData.addressAmh} | {registeredData.addressEng}</span></p>
+                <p><span className="lbl">ባንክ / Bank:</span> <span className="val">{registeredData.bankNameAmh || 'N/A'} ({registeredData.bankNameEng || 'N/A'})</span></p>
                 <p><span className="lbl">ቅርንጫፍ / Branch:</span> <span className="val">{registeredData.poessaBranch || 'ዋናው ቅርንጫፍ'}</span></p>
                 {registeredData.status === 'Passive' && registeredData.statusChangedDate && (
-                  <p style={{ color: '#dc3545', fontSize: '10px', fontWeight: 'bold', border: 'none', marginTop: '5px' }}>🚨 ህልፈት የተመዘገበበት፡ {new Date(registeredData.statusChangedDate).toLocaleDateString('et-ET')}</p>
+                  <p style={{ color: '#dc3545', fontSize: '10px', fontWeight: 'bold', marginTop: '5px' }}>🚨 ህልፈት የተመዘገበበት፡ {new Date(registeredData.statusChangedDate).toLocaleDateString('et-ET')}</p>
                 )}
               </div>
 
@@ -256,26 +292,20 @@ function IdCardGenerationAndSearch() {
               </div>
             </div>
 
-            <div className="id-card-footer"><p>የሀገር ባለውለታዎችን በክብር እናገለግላለን! | POESSA 2026</p></div>
+            <div className="id-card-footer">
+              <p>የሀገር ባለውለታዎችን በክብር እናገለግላለን! | POESSA 2026</p>
+            </div>
           </div>
 
-          {/* 📋 የአንድ ጡረተኛ የለውጥ መከታተያ (CRUD Log) ፓነል */}
+          {/* 📋 የጡረተኛ CRUD Log ፓነል */}
           <div className="crud-audit-panel no-print">
             <h4>📋 የዚህ ጡረተኛ የክትትል መረጃ (PENSIONER CRUD LOG)</h4>
             <div className="audit-row">
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span><strong>የመዘገበው ባለሙያ (Registered By):</strong> {registeredData.registeredBy || 'ያልታወቀ'}</span>
+                <span><strong>የመዘገበው ባለሙያ:</strong> {registeredData.registeredBy || 'ያልታወቀ'}</span>
                 <span><strong>የተመዘገበበት ቀን፡</strong> {registeredData.createdAt ? new Date(registeredData.createdAt).toLocaleString('et-ET') : 'N/A'}</span>
               </div>
             </div>
-            {registeredData.lastEditedBy && (
-              <div className="audit-row border-top">
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span><strong>የመጨረሻ ማሻሻያ (Last Edited By):</strong> {registeredData.lastEditedBy}</span>
-                  <span><strong>የተሻሻለበት ቀን፡</strong> {registeredData.lastEditedAt ? new Date(registeredData.lastEditedAt).toLocaleString('et-ET') : 'N/A'}</span>
-                </div>
-              </div>
-            )}
             {registeredData.editHistory && (
               <div className="audit-row border-top" style={{ color: '#0056b3', fontWeight: '500', padding: '8px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {Array.isArray(registeredData.editHistory) ? (
@@ -296,16 +326,15 @@ function IdCardGenerationAndSearch() {
         </div>
       )}
 
-      {/* 🔥 ፊክስ፦ የጠፉ መረጃዎች ታሪክ (DELETED LOGS) ፓነል */}
-      {/* ይህ ፓነል ከ 'registeredData' ውጭ ስለሆነ ምንም ፍለጋ ሳይደረግ ገጹ ሲከፈት ሁሌም ከታች ይታያል! */}
+      {/* 🚨 የጠፉ መረጃዎች ታሪክ (DELETED LOGS) ፓነል */}
       <div className="crud-audit-panel no-print" style={{ marginTop: '30px', borderTop: '3px solid #dc3545', background: '#fff5f5' }}>
         <h4 style={{ color: '#c53030' }}>🚨 የጠፉ/የተደለዙ መረጃዎች የታሪክ መዝገብ (DELETED LOGS)</h4>
         {deletedLogs.length === 0 ? (
-          <p style={{ color: '#666', fontSize: '13px', padding: '10px 0' }}>עדነ አሁን የጠፋ የጡረተኛ መረጃ የለም።</p>
+          <p style={{ color: '#666', fontSize: '13px', padding: '10px 0' }}>እስከ አሁን የጠፋ የጡረተኛ መረጃ የለም።</p>
         ) : (
           <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
             {deletedLogs.map((log, index) => (
-              <div key={log._id || index} style={{ fontSize: '13px', padding: '10px', background: '#fff', borderRadius: '4px', borderLeft: '4px solid #dc3545', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'between', flexWrap: 'wrap', gap: '10px' }}>
+              <div key={log._id || index} style={{ fontSize: '13px', padding: '10px', background: '#fff', borderRadius: '4px', borderLeft: '4px solid #dc3545', display: 'flex', justifyContent: 'between', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ flex: 1 }}>
                   🗑️ <strong>የጡረተኛው ስም:</strong> {log.pensionerName} | 🆔 <strong>ፋይዳ ቁጥር:</strong> {log.faydaNumber}
                 </div>
