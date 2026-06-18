@@ -421,6 +421,7 @@
 /* ==========================================================================
    🖨️ 6. የህትመት ማስተካከያ (Pure Print Optimization)
 @media print {
+@media print {
   /* 1. ከእውነተኛው መታወቂያ ካርድ ውጭ ያሉ ማናቸውንም የገጽ ክፍሎች በሙሉ ማጥፊያ */
   body * {
     visibility: hidden;
@@ -431,11 +432,11 @@
     visibility: visible;
   }
 
-  /* 3. መታወቂያው በወረቀቱ ላይ በትክክል ከላይ እንዲቀመጥ ማድረጊያ */
+  /* 3. መታወቂያው በወረቀቱ ላይ በትክክል ከላይ እና መሃል ላይ እንዲቀመጥ ማድረጊያ */
   #pensioner-id-card {
     position: absolute;
     left: 50%;
-    top: 20px;
+    top: 0; /* 🚨 ወደ ላይ ጠጋ እንዲል እና በሁለተኛው ገጽ ላይ ባዶ ቦታ እንዳይፈጥር 0 ተደርጓል */
     transform: translateX(-50%);
     border: 2px solid #1a365d !important;
     box-shadow: none !important;
@@ -443,10 +444,17 @@
     print-color-adjust: exact !important;
   }
 
-  /* 4. የብሮውዘር ማርጂን ማስተካከያ */
+  /* 4. የብሮውዘር ማርጂን ማስተካከያ እና ሁለተኛ ባዶ ገጽ እንዳይመጣ መከላከያ */
   @page {
     size: auto;
-    margin: 10mm;
+    margin: 0; /* 🚨 የብሮውዘርን ትርፍ ማርጂን በማጥፋት ሄደር እና ፉተር እንዳይወጡ በግድ ይከላከላል */
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden; /* 🚨 ትርፍ ቁመት እንዳይኖር በማድረግ 2ኛ ገጽ እንዳይፈጠር ያደርጋል */
   }
 
   /* 5. የቀለም ማስተካከያዎች */
@@ -459,3 +467,4 @@
     print-color-adjust: exact !important;
   }
 }
+
