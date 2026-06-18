@@ -1,14 +1,15 @@
 import React from 'react';
 import './Footer.css';
-import myPhoto from './my_photo.jpg'; // 👈 የእርስዎ ፎቶ እዚህ ፎልደር ውስጥ መኖሩን ያረጋግጡ
+import myPhoto from './my_photo.jpg';
 
 function Footer() {
   return (
-    <footer className="admin-premium-footer">
+    /* 🚨 ፕሪንት ሲደረግ ሙሉ በሙሉ እንዲደበቅ 'no-print' ክላስ እዚህ ጋር ተጨምሯል */
+    <footer className="admin-premium-footer no-print">
       <div className="footer-divider"></div>
       <div className="footer-content-wrapper">
         
-        {/* የግራ ክፍል፦ የእርስዎ ፕሮፋይል እና ስም */}
+        {/* የግራ ክፍል፦ ፕሮፋይል እና ስም */}
         <div className="footer-profile-box">
           <div className="footer-avatar-container">
             <img 
@@ -16,7 +17,6 @@ function Footer() {
               alt="Mamaru Anmaw" 
               className="footer-profile-img" 
               onError={(e) => {
-                // ፎቶው ካልተገኘ ዲፎልት አምሳያ (Placeholder) እንዲተካ
                 e.target.src = "https://via.placeholder.com/150";
               }}
             />
@@ -43,7 +43,6 @@ function Footer() {
         {/* የቀኝ ክፍል፦ የባለቤትነት መብት ማረጋገጫ */}
         <div className="footer-copyright-box">
           <p>© {new Date().getFullYear()} <span>POESSA</span>. All Rights Reserved.</p>
-          
         </div>
 
       </div>
