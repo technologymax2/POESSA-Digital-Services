@@ -64,6 +64,72 @@ body{
 /* ===================================
    Image Section
 =================================== */
+/* ===================================
+   POESSA Pension Registration
+=================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:"Segoe UI",sans-serif;
+}
+
+/* ===================================
+   Main Container
+=================================== */
+
+.pr-reg-container{
+    width:100%;
+    max-width:1400px;
+    margin:auto;
+    padding:30px;
+    background:#ffffff;
+    border-radius:20px;
+    box-shadow:0 10px 35px rgba(0,0,0,.15);
+    position:relative;
+    z-index:100;
+}
+
+/* ===================================
+   Titles
+=================================== */
+
+.pr-form-title{
+    font-size:34px;
+    font-weight:700;
+    color:#0f172a;
+    text-align:center;
+    margin-bottom:10px;
+}
+
+.pr-form-subtitle{
+    text-align:center;
+    color:#64748b;
+    font-size:16px;
+    margin-bottom:30px;
+}
+
+.pr-form-subtitle strong{
+    color:#2563eb;
+}
+
+/* ===================================
+   Form
+=================================== */
+
+.pr-main-form{
+    display:flex;
+    flex-direction:column;
+    gap:30px;
+}
+
+/* ===================================
+   Image Section
+=================================== */
 /* የፎቶው አጠቃላይ መያዣ ክፍል */
 .pr-image-section {
   display: flex;
@@ -114,6 +180,180 @@ body{
   width: 100%;
   height: 100%;
   object-fit: cover; /* ፎቶው ሳይጨፈለቅ በትክክል እንዲቀመጥ ያደርጋል */
+}
+
+
+/* ===================================
+   Grid
+=================================== */
+
+.pr-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:22px;
+}
+
+/* ===================================
+   Input Groups
+=================================== */
+
+.pr-input-group{
+    display:flex;
+    flex-direction:column;
+}
+
+.pr-input-group label{
+    font-size:14px;
+    font-weight:700;
+    color:#1e293b;
+    margin-bottom:8px;
+}
+
+/* ===================================
+   Inputs
+=================================== */
+
+.pr-input-group input,
+.pr-input-group select{
+    width:100%;
+    height:55px;
+    border:1px solid #dbe3ee;
+    border-radius:14px;
+    background:#ffffff;
+    padding:0 18px;
+    font-size:15px;
+    color:#0f172a;
+    transition:.3s;
+}
+
+.pr-input-group input::placeholder{
+    color:#94a3b8;
+}
+
+.pr-input-group input:hover,
+.pr-input-group select:hover{
+    border-color:#60a5fa;
+}
+
+.pr-input-group input:focus,
+.pr-input-group select:focus{
+    outline:none;
+    border-color:#2563eb;
+    box-shadow:0 0 0 5px rgba(37,99,235,.15);
+}
+
+/* ===================================
+   Status Message
+=================================== */
+
+.pr-status-msg{
+    padding:18px;
+    background:#f8fafc;
+    border-left:5px solid #2563eb;
+    border-radius:12px;
+    color:#1e293b;
+    font-weight:600;
+    font-size:15px;
+}
+
+/* ===================================
+   Submit Button
+=================================== */
+
+.pr-submit-btn{
+    height:60px;
+    border:none;
+    border-radius:15px;
+    background:linear-gradient(135deg,#0f172a,#2563eb);
+    color:white;
+    font-size:18px;
+    font-weight:700;
+    cursor:pointer;
+    transition:.3s;
+    box-shadow:0 12px 30px rgba(37,99,235,.3);
+}
+
+.pr-submit-btn:hover{
+    transform:translateY(-3px);
+    box-shadow:0 18px 40px rgba(37,99,235,.4);
+}
+
+.pr-submit-btn:disabled{
+    opacity:.7;
+    cursor:not-allowed;
+}
+
+/* ===================================
+   Scrollbar
+=================================== */
+
+::-webkit-scrollbar{
+    width:8px;
+}
+
+::-webkit-scrollbar-track{
+    background:#f1f5f9;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#2563eb;
+    border-radius:20px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:#1d4ed8;
+}
+
+/* ===================================
+   Responsive
+=================================== */
+
+@media(max-width:992px){
+
+    .pr-grid{
+        grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    }
+
+}
+
+@media(max-width:768px){
+
+    .pr-reg-container{
+        padding:20px;
+    }
+
+    .pr-form-title{
+        font-size:28px;
+    }
+
+    .pr-grid{
+        grid-template-columns:1fr;
+    }
+
+    .pr-image-box{
+        width:150px;
+        height:190px;
+    }
+
+}
+
+@media(max-width:480px){
+
+    .pr-form-title{
+        font-size:24px;
+    }
+
+    .pr-input-group input,
+    .pr-input-group select{
+        height:50px;
+        font-size:14px;
+    }
+
+    .pr-submit-btn{
+        height:55px;
+        font-size:16px;
+    }
+
 }
 
 
