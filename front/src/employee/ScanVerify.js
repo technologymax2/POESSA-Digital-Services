@@ -57,7 +57,7 @@ function ScanVerify() {
   return (
     <div className="scan-verify-page" style={{ padding: '20px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       
-      {/* 🟢 ትልቁ አረንጓዴ የሪቪው ምልክት እና የላይኛው ርዕስ (ከምስል 1000004954.jpg ጋር አንድ ለአንድ) */}
+      {/* 🟢 ትልቁ አረንጓዴ የሪቪው ምልክት እና የላይኛው ርዕስ */}
       <div className="success-badge-header" style={{ textAlign: 'center', marginBottom: '20px' }}>
         <div className="success-icon-circle" style={{ width: '70px', height: '70px', backgroundColor: '#4ade80', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto', boxShadow: '0 4px 10px rgba(74, 222, 128, 0.3)' }}>
           <span style={{ color: 'white', fontSize: '35px', fontWeight: 'bold' }}>✓</span>
@@ -67,7 +67,7 @@ function ScanVerify() {
       </div>
 
       {pensioner && (
-        /* 🪪 ዋናው ካርድ - ከመታወቂያው ዲዛይን ጋር ፍጹም አንድ አይነት የተደረገ */
+        /* 🪪 ዋናው ካርድ - ከምስል 1000004956.jpg ጋር ፍጹም አንድ አይነት የተደረገ */
         <div className={`verified-id-card ${pensioner.status?.toLowerCase() === 'passive' ? 'pensioner-dead' : ''}`} style={{ border: '2px solid #162447', borderRadius: '12px', overflow: 'hidden', width: '100%', maxWidth: '430px', background: '#ffffff', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', boxSizing: 'border-box' }}>
           
           {/* 💙 ሰማያዊው የሄደር ክፍል */}
@@ -96,7 +96,7 @@ function ScanVerify() {
           {/* 👤 የካርዱ አካል */}
           <div className="verified-card-body" style={{ padding: '15px', display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
             
-            {/* የግራ ፎቶ እና ቀኖች ዞን */}
+            {/* የግራ ፎቶ እና የተሰጠበት ቀን ዞን (የማብቂያ ጊዜ ተወግዷል) */}
             <div className="verified-photo-zone" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '110px' }}>
               <img 
                 src={pensioner.photoUrl || "https://via.placeholder.com/150"} 
@@ -105,14 +105,12 @@ function ScanVerify() {
                 style={{ width: '100px', height: '110px', borderRadius: '6px', objectFit: 'cover', border: '1px solid #cbd5e1' }}
                 onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }}
               />
-              {/* 📅 ቀኖቹ በምስል 1000004954.jpg ላይ እንዳሉት ልክ ከፎቶው ስር ገብተዋል */}
               <div className="verified-dates-box" style={{ marginTop: '8px', fontSize: '9px', backgroundColor: '#f8fafc', padding: '6px', borderRadius: '6px', border: '1px solid #e2e8f0', width: '100%', boxSizing: 'border-box', textAlign: 'center', lineHeight: '1.4' }}>
-                <p style={{ margin: '0 0 4px 0', color: '#64748b' }}>የተሰጠበት፦ <span style={{ fontWeight: 'bold', color: '#334155', display: 'block' }}>{pensioner.issueDate ? pensioner.issueDate.substring(0,10) : '2026-06-18'}</span></p>
-                <p style={{ margin: 0, color: '#64748b' }}>የሚያበቃው፦ <span style={{ fontWeight: 'bold', color: '#334155', display: 'block' }}>{pensioner.expiryDate ? pensioner.expiryDate.substring(0,10) : '2026-07-04'}</span></p>
+                <p style={{ margin: 0, color: '#64748b' }}>የተሰጠበት፦ <span style={{ fontWeight: 'bold', color: '#334155', display: 'block', fontSize: '10px', marginTop: '2px' }}>{pensioner.issueDate ? pensioner.issueDate.substring(0,10) : '2026-06-18'}</span></p>
               </div>
             </div>
 
-            {/* 📝 የቀኝ መረጃዎች ዞን (N/Aዎችን ለማጥፋት የኪይ ስሞች ተስተካክለዋል) */}
+            {/* 📝 የቀኝ መረጃዎች ዞን */}
             <div className="verified-details-zone" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: '#334155' }}>
               <p style={{ margin: 0, display: 'flex', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
                 <span className="lbl" style={{ color: '#64748b', width: '75px', flexShrink: 0 }}>ስም / Name:</span>
@@ -145,8 +143,8 @@ function ScanVerify() {
             </div>
           </div>
 
-          {/* 🪙 የበታች ጥቅስ ፉተር */}
-          <div className="verified-card-footer" style={{ background: '#f1f5f9', padding: '10px', textAlign: 'center', fontSize: '10px', color: '#475569', borderTop: '1px solid #e2e8f0', fontWeight: '500' }}>
+          {/* 🪙 የበታች ጥቅስ ፉተር (ከምስል 1000004956.jpg ጋር ፍጹም ተመሳሳይ) */}
+          <div className="verified-card-footer" style={{ background: '#f1f5f9', padding: '12px', textAlign: 'center', fontSize: '11px', color: '#475569', borderTop: '1px solid #e2e8f0', fontWeight: '500' }}>
             <p style={{ margin: 0 }}>የአይዲ ባለቤትነትን በስካን ማረጋገጫ ሰሌዳ | POESSA 2026</p>
           </div>
         </div>
