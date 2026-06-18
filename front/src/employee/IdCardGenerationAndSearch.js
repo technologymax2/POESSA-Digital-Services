@@ -268,10 +268,22 @@ function IdCardGenerationAndSearch() {
               </div>
             )}
             
-            {/* 🔥 የእርማት አይነት (editHistory) በግልጽ በፍሮንትኤንድ ላይ የሚያሳየው አዲሱ መስመር */}
+            {/* 🔥 ማሻሻያ፦ የሁሉንም የለውጥ ታሪኮች ዝርዝር በቅደም ተከተል የሚያሳየው ክፍል */}
             {registeredData.editHistory && (
-              <div className="audit-row border-top" style={{ color: '#0056b3', fontWeight: '500', padding: '8px 0' }}>
-                <span>ℹ️ <strong>የእርማት አይነት፦</strong> {registeredData.editHistory}</span>
+              <div className="audit-row border-top" style={{ color: '#0056b3', fontWeight: '500', padding: '8px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {Array.isArray(registeredData.editHistory) ? (
+                  registeredData.editHistory.map((history, index) => (
+                    <span key={index}>
+                      ℹ️ <strong>የእርማት አይነት፦</strong> {history.details} 
+                      <small style={{ color: '#666', fontWeight: 'normal', marginLeft: '5px' }}>
+                        ({history.editedBy} - {new Date(history.editedAt).toLocaleString('et-ET')})
+                      </small>
+                    </span>
+                  ))
+                ) : (
+                  // ድሮ በ String የተመዘገቡ የቆዩ መረጃዎች ካሉ እንዳይበላሽ ለማዳን
+                  <span>ℹ️ <strong>የእርማት አይነት፦</strong> {registeredData.editHistory}</span>
+                )}
               </div>
             )}
           </div>
