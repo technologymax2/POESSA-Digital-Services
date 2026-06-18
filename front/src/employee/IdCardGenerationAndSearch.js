@@ -52,7 +52,7 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-  // 📝 2. መረጃ ማሻሻያ (የተሻሻሉ ፊልዶችን ዝርዝር ከባክኤንድ ለመቀበል የፊክስ የተደረገ)
+  // 📝 2. መረጃ ማሻሻያ
   const handleUpdate = async (e) => {
     e.preventDefault();
     setSearchStatus('⏳ መረጃው እየታረመ ነው...');
@@ -66,7 +66,7 @@ function IdCardGenerationAndSearch() {
 
       const result = await response.json();
       if (result.success) {
-        // 🔥 ሙሉውን አዲስ ዳታ (editHistory ን ጨምሮ) እዚህ ላይ እንተካዋለን
+        // 🔥 ባክኤንድ ያደሰውን ሙሉ መረጃ (editHistory ን ጨምሮ) በፍሮንትኤንድ ስቴት ላይ እንተካለን
         setRegisteredData({ 
           ...result.data, 
           imageSrc: result.data.photoUrl 
@@ -81,7 +81,7 @@ function IdCardGenerationAndSearch() {
     }
   };
 
-  // 💀 3. የህይወት ሁኔታ መቀየሪያ (Active / Passive) - (እዚህም ላይ ሙሉውን አዲስ ዳታ እንዲተካ ተደርጓል)
+  // 💀 3. የህይወት ሁኔታ መቀየሪያ (Active / Passive)
   const toggleLifeStatus = async (newStatus) => {
     const confirmation = window.confirm(`ይህንን የጡረተኛ ሁኔታ ወደ [${newStatus === 'Passive' ? 'Passive (የአረፉ)' : 'Active (በህይወት ያሉ)'}] ለመቀየር እርግጠኛ ነዎት?`);
     if (!confirmation) return;
@@ -99,11 +99,11 @@ function IdCardGenerationAndSearch() {
 
       const result = await response.json();
       if (result.success) {
-        // 🔥 ከባክኤንድ የመጣውን አዲሱን መረጃ ሙሉ በሙሉ እንተካዋለን
         setRegisteredData({ 
           ...result.data, 
           imageSrc: result.data.photoUrl 
         });
+        setEditData(result.data); // የፎርሙ ዳታም አብሮ እንዲታደስ
         setSearchStatus(`🎉 የዜጋው ሁኔታ ወደ ${newStatus === 'Passive' ? 'Passive' : 'Active'} ተቀይሯል!`);
       } else {
         setSearchStatus(`❌ ስህተት፡ ${result.message}`);
@@ -123,7 +123,7 @@ function IdCardGenerationAndSearch() {
         setRegisteredData(null);
         setSearchStatus(`🗑️ ${result.message}`);
       } else {
-        setSearchStatus(`❌ ስህተት፡ ${result.message}`);
+        setSearchStatus(`❌ sktet: ${result.message}`);
       }
     } catch (err) {
       setSearchStatus(`❌ ማጥፋት አልተቻለም፡ ${err.message}`);
@@ -178,8 +178,10 @@ function IdCardGenerationAndSearch() {
       )}
 
       {/* 🪪 የመታወቂያ ማሳያ ሳጥን */}
-      {registeredData && !isEditing && (
+      {registeredData && (
         <div className="id-card-wrapper-section">
+          
+          {/* 🔘 የአስተዳዳሪ ድርጊት ማዘዣ ቁልፎች (አሁን መታወቂያው ሲመጣ ሁሌም በግልጽ ይታያሉ) */}
           <div className="admin-actions no-print">
             <button onClick={() => setIsEditing(true)} className="edit-action-btn">📝 አርም</button>
             
@@ -248,23 +250,28 @@ function IdCardGenerationAndSearch() {
             </div>
           </div>
 
-          {/* 🔍 ማነው የሰራው? (CRUD Logs View Panel) */}
+          {/* 📋 የስርዓት ክትትል መረጃ (CRUD Log) ፓነል */}
           <div className="crud-audit-panel no-print">
             <h4>📋 የስርዓት ክትትል መረጃ (CRUD Log)</h4>
             <div className="audit-row">
-              <span><strong>የመዘገበው ባለሙያ (Registered By):</strong> {registeredData.registeredBy || 'ያልታወቀ'}</span>
-              <span><strong>የተመዘገበበት ቀን፡</strong> {registeredData.createdAt ? new Date(registeredData.createdAt).toLocaleString('et-ET') : 'N/A'}</span>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span><strong>የመዘገበው ባለሙያ (Registered By):</strong> {registeredData.registeredBy || 'ያልታወቀ'}</span>
+                <span><strong>የተመዘገበበት ቀን፡</strong> {registeredData.createdAt ? new Date(registeredData.createdAt).toLocaleString('et-ET') : 'N/A'}</span>
+              </div>
             </div>
             {registeredData.lastEditedBy && (
               <div className="audit-row border-top">
-                <span><strong>የመጨረሻ ማሻሻያ (Last Edited By):</strong> {registeredData.lastEditedBy}</span>
-                <span><strong>የተሻሻለበት ቀን፡</strong> {registeredData.lastEditedAt ? new Date(registeredData.lastEditedAt).toLocaleString('et-ET') : 'N/A'}</span>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span><strong>የመጨረሻ ማሻሻያ (Last Edited By):</strong> {registeredData.lastEditedBy}</span>
+                  <span><strong>የተሻሻለበት ቀን፡</strong> {registeredData.lastEditedAt ? new Date(registeredData.lastEditedAt).toLocaleString('et-ET') : 'N/A'}</span>
+                </div>
               </div>
             )}
-            {/* 🟢 አዲስ የተጨመረ፦ ምን አይነት ማሻሻያ እንደተደረገ የሚገልጽ መስመር */}
+            
+            {/* 🔥 የእርማት አይነት (editHistory) በግልጽ በፍሮንትኤንድ ላይ የሚያሳየው አዲሱ መስመር */}
             {registeredData.editHistory && (
-              <div className="audit-row border-top" style={{ color: '#0056b3', fontWeight: '500' }}>
-                <span>ℹ️ {registeredData.editHistory}</span>
+              <div className="audit-row border-top" style={{ color: '#0056b3', fontWeight: '500', padding: '8px 0' }}>
+                <span>ℹ️ <strong>የእርማት አይነት፦</strong> {registeredData.editHistory}</span>
               </div>
             )}
           </div>
