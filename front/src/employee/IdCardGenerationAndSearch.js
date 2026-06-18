@@ -244,9 +244,9 @@ function IdCardGenerationAndSearch() {
           <div className="admin-actions no-print">
             <button onClick={() => setIsEditing(true)} className="edit-action-btn">📝 አርም</button>
             {registeredData.status === 'Passive' ? (
-              <button onClick={() => toggleLifeStatus('Active')} className="status-active-btn">💚 ወደ Active ቀይር</button>
+              <button onClick={() => toggleLifeStatus('Active')} className="status-active-btn">ወደ Active ቀይር</button>
             ) : (
-              <button onClick={() => toggleLifeStatus('Passive')} className="status-passive-btn">💀 ወደ Passive ቀይር</button>
+              <button onClick={() => toggleLifeStatus('Passive')} className="status-passive-btn">ወደ Passive ቀይር</button>
             )}
             <button onClick={handleDelete} className="delete-action-btn">🗑️ አጥፋ</button>
           </div>
@@ -284,7 +284,7 @@ function IdCardGenerationAndSearch() {
                 <img src={registeredData.imageSrc || "https://via.placeholder.com/150"} alt="Pensioner" className="id-pensioner-img" style={{ width: '110px', height: '125px', borderRadius: '6px', objectFit: 'cover', border: '2px solid #162447', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }} onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }} />
                 
                 {/* 🔴 ከፎቶው በታች ያለው ጽሑፍ ቀይ */}
-                <div className="id-dates-box" style={{ marginTop: '10px', fontSize: '11px', color: '#dc2626' }}>
+                <div className="id-dates-box" style={{ fontSize: '9px', color: '#dc2626' }}>
                   <p style={{ margin: '2px 0 0 0', fontWeight: 'bold', fontSize: '12px' }}>{registeredData.issueDate ? registeredData.issueDate.substring(0,10) : 'N/A'}</p>
                 </div>
               </div>
