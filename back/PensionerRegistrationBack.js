@@ -29,7 +29,6 @@ router.get("/search", async (req, res) => {
 
 // ==========================================================================
 // 2️⃣ 📝 መረጃ ማስተካከያ እና 4️⃣ 💀 የህይወት ሁኔታ መቆጣጠሪያ (PUT)
-//     🔥 ማሻሻያ፦ የተቀየሩትን ፊልዶች በዝርዝር ለይቶ መመዝገቢያ ተጨምሯል!
 // ==========================================================================
 router.put("/update/:id", async (req, res) => {
   try {
@@ -65,35 +64,39 @@ router.put("/update/:id", async (req, res) => {
       issueDate: "የተሰጠበት ቀን"
     };
 
-    // በሰውየው የተላኩትን ፊልዶች ከአሮጌው ዳታ ጋር ማወዳደር
-    for (const key in updateFields) {
+    // 🔥 ፊክስ፦ ማነጻጸር ያለብን እውነተኛ የተጠቃሚ ፊልዶችን ብቻ ነው (የውስጥ ፊልዶች እዚህ ሉፕ ውስጥ አይገቡም)
+    for (const key in fieldMapping) {
       if (updateFields[key] !== undefined && String(oldPensioner[key]) !== String(updateFields[key])) {
-        const amharicName = fieldMapping[key] || key;
-        changedFields.push(amharicName);
+        changedFields.push(fieldMapping[key]);
       }
     }
 
-    // የህይወት ሁኔታ (Status) ተቀይሮ ከሆነ መመዝገብ
+    // 💀 የህይወት ሁኔታ (Status) ተቀይሮ ከሆነ መመዝገብ እና ቀኑን ማደስ
     if (status && oldPensioner.status !== status) {
-      changedFields.push(`የህይወት ሁኔታ (${status})`);
+      changedFields.push(`የህይወት ሁኔታ (${status === 'Passive' ? 'Passive/የአረፉ' : 'Active/በህይወት ያሉ'})`);
       updateFields.status = status;
       updateFields.statusChangedDate = new Date();
+    } else {
+      // ስታተስ ካልተላከ የቆየውን ስታተስ እንዳይቀየር ጠብቅ
+      updateFields.status = oldPensioner.status;
     }
 
-    // የተቀየሩ ነገሮች ካሉ በታሪክ ማህደሩ (editHistory) ላይ እንመዘግባለን
+    // የተቀየሩ ነገሮች ካሉ ብቻ በታሪክ ማህደሩ (editHistory) ላይ እንመዘግባለን
     if (changedFields.length > 0) {
       updateFields.editHistory = `የተሻሻሉ መረጃዎች፦ [${changedFields.join(", ")}]`;
+      updateFields.lastEditedBy = lastEditedBy || "ያልታወቀ ባለሙያ";
+      updateFields.lastEditedAt = new Date();
     } else {
-      updateFields.editHistory = "ምንም የተቀየረ መረጃ የለም (የድጋሚ ማረጋገጫ)";
+      // ምንም ካልተቀየረ የቆየውን ታሪክ እንዳይፋለስ እንዳለ እናቆየዋለን
+      updateFields.editHistory = oldPensioner.editHistory;
+      updateFields.lastEditedBy = oldPensioner.lastEditedBy;
+      updateFields.lastEditedAt = oldPensioner.lastEditedAt;
     }
 
-    // ማሻሻያ ያደረገውን ባለሙያ እና ሰዓት መመዝገብ
-    updateFields.lastEditedBy = lastEditedBy || "ያልታወቀ ባለሙያ";
-    updateFields.lastEditedAt = new Date();
-
+    // ዳታቤዝ ላይ እናስተካክላለን
     const updatedPensioner = await UserPensioner.findByIdAndUpdate(
       id, 
-      updateFields, 
+      { $set: updateFields }, // $set መጠቀም አስተማማኝ ያደርገዋል
       { new: true }
     );
 
@@ -163,7 +166,7 @@ router.post("/register", async (req, res) => {
       age: Number(pensionerData.age) || 0,
       pensionAmount: Number(pensionerData.pensionAmount) || 0,
       registeredBy: pensionerData.employeeName || "ያልታወቀ ባለሙያ",
-      editHistory: "አዲስ የተመዘገበ መረጃ" // መጀመሪያ ሲፈጠር
+      editHistory: "አዲስ የተመዘገበ መረጃ" 
     });
 
     await newPensioner.save();
