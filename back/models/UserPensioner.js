@@ -17,7 +17,7 @@ const UserPensionerSchema = new mongoose.Schema({
   expiryDate: { type: String },
   photoUrl: { type: String, required: true }, 
   
-  // 🟢 የህይወት ሁኔታ እና የተቀየረበት ቀን
+  // የህይወት ሁኔታ
   status: { 
     type: String, 
     enum: ["Active", "Passive"], 
@@ -25,13 +25,19 @@ const UserPensionerSchema = new mongoose.Schema({
   },
   statusChangedDate: { type: Date, default: Date.now },
 
-  // 🟢 CRUD (የታሪክ መዝገብ)
-  registeredBy: { type: String, required: true }, // መጀመሪያ የመዘገበው ባለሙያ
-  lastEditedBy: { type: String, default: "" },    // ለመጨረሻ ጊዜ ያረመው ባለሙያ
-  lastEditedAt: { type: Date, default: Date.now }, // ለመጨረሻ ጊዜ የታረመበት ሰዓት
+  // CRUD ኦዲት መከታተያ
+  registeredBy: { type: String, required: true }, 
+  lastEditedBy: { type: String, default: "" },    
+  lastEditedAt: { type: Date, default: Date.now }, 
   
-  // 🔥 ፊክስ፦ የእርማት ዝርዝር መግለጫ (CRUD Log ጽሑፍ) በፍሮንትኤንድ እንዲታይ ይህ መስመር የግድ ያስፈልጋል!
-  editHistory: { type: String, default: "" },
+  // 🔥 ፊክስ፦ የሁሉንም የለውጥ ታሪክ ዝርዝር (Array) አድርገን የያዝንበት ክፍል
+  editHistory: [
+    {
+      editedBy: { type: String },
+      editedAt: { type: Date, default: Date.now },
+      details: { type: String }
+    }
+  ],
 
   createdAt: { type: Date, default: Date.now }
 });
