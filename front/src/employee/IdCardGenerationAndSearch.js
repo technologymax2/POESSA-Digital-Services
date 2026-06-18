@@ -263,7 +263,7 @@ function IdCardGenerationAndSearch() {
             <div className="id-card-header" style={{ background: '#162447', padding: '15px 20px', color: '#fff', display: 'flex', alignItems: 'center', position: 'relative' }}>
               
               {/* በግራ ጫፍ ላይ ያለ ውብ ክብ የኢትዮጵያ ባንዲራ */}
-              <div className="ethiopian-flag-badge" style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.2)', flexShrink: 0 }}>
+              <div className="ethiopian-flag-badge" style={{ width: '42px', height: '42px', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '2px solid #fff', boxShadow: '0 2px 4px rgba(0,0,0,0.2)', flexShrink: 0 }}>
                 <div style={{ flex: 1, backgroundColor: '#28a745' }}></div>
                 <div style={{ flex: 1, backgroundColor: '#ffc107' }}></div>
                 <div style={{ flex: 1, backgroundColor: '#dc3545' }}></div>
