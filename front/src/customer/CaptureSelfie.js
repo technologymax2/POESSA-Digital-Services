@@ -1,38 +1,76 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import Webcam from "react-webcam";
 
 function CaptureSelfie({ onSuccess }) {
 
   const webcamRef = useRef(null);
 
-  const capture = () => {
+  const [selfie, setSelfie] = useState(null);
 
-    const image = webcamRef.current.getScreenshot();
+  const captureSelfie = () => {
 
-    if (!image) return;
+    const imageSrc = webcamRef.current.getScreenshot();
 
-    onSuccess(image);
+    if (!imageSrc) {
+      alert("Unable to capture image");
+      return;
+    }
+
+    setSelfie(imageSrc);
+
   };
 
   return (
-    <div>
 
-      <h2>እባክዎን ፎቶ ያንሱ</h2>
+    <div style={{ textAlign: "center" }}>
 
-      <Webcam
-        ref={webcamRef}
-        screenshotFormat="image/jpeg"
-        videoConstraints={{
-          facingMode: "user"
-        }}
-      />
+      <h2>እባክዎን የእርስዎን ፎቶ ያንሱ</h2>
 
-      <button onClick={capture}>
-        Capture Selfie
-      </button>
+      {!selfie ? (
+        <>
+          <Webcam
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            videoConstraints={{
+              facingMode: "user"
+            }}
+            style={{
+              width: "450px",
+              borderRadius: "15px"
+            }}
+          />
+
+          <br /><br />
+
+          <button onClick={captureSelfie}>
+            Capture Selfie
+          </button>
+        </>
+      ) : (
+        <>
+          <img
+            src={selfie}
+            alt="Selfie"
+            width="450"
+            style={{
+              borderRadius: "15px"
+            }}
+          />
+
+          <br /><br />
+
+          <button
+            onClick={() => onSuccess(selfie)}
+          >
+            Continue
+          </button>
+        </>
+      )}
 
     </div>
+
   );
+
 }
 
 export default CaptureSelfie;
