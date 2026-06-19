@@ -1,46 +1,76 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import Webcam from "react-webcam";
-import jsQR from "jsqr";
 
 function CaptureIDCard({ onSuccess }) {
 
   const webcamRef = useRef(null);
 
-  const capture = () => {
+  const [capturedImage, setCapturedImage] = useState(null);
 
-    const image = webcamRef.current.getScreenshot();
+  const captureImage = () => {
 
-    if (!image) {
-      alert("Image not captured");
+    const imageSrc = webcamRef.current.getScreenshot();
+
+    if (!imageSrc) {
+      alert("Unable to capture image");
       return;
     }
 
-    // በኋላ QR scan እና database verification
+    setCapturedImage(imageSrc);
+  };
+
+  const continueVerification = () => {
+
+    // ለጊዜው QR Scan እስኪጨመር
     const faydaNumber = "123456789";
 
     onSuccess({
-      image,
+      image: capturedImage,
       faydaNumber
     });
 
   };
 
   return (
-    <div>
+    <div style={{ textAlign: "center" }}>
 
       <h2>የዲጂታል መታወቂያዎን ፎቶ ያንሱ</h2>
 
-      <Webcam
-        ref={webcamRef}
-        screenshotFormat="image/jpeg"
-        videoConstraints={{
-          facingMode: "environment"
-        }}
-      />
+      {!capturedImage ? (
+        <>
+          <Webcam
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            videoConstraints={{
+              facingMode: "environment"
+            }}
+            style={{
+              width: "450px",
+              borderRadius: "15px"
+            }}
+          />
 
-      <button onClick={capture}>
-        Capture ID Card
-      </button>
+          <br />
+
+          <button onClick={captureImage}>
+            Capture ID Card
+          </button>
+        </>
+      ) : (
+        <>
+          <img
+            src={capturedImage}
+            alt="ID Card"
+            width="450"
+          />
+
+          <br /><br />
+
+          <button onClick={continueVerification}>
+            Continue
+          </button>
+        </>
+      )}
 
     </div>
   );
