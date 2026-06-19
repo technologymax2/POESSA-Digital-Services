@@ -1,69 +1,140 @@
-import React, { useState, useRef, useEffect } from 'react';
-import * as faceapi from '@vladmandic/face-api';
+import React, { useState, useRef, useEffect } from "react";
+import * as faceapi from "@vladmandic/face-api";
 
 function LivenessTest({ faydaNumber, idPhoto }) {
   const videoRef = useRef(null);
-  const [task, setTask] = useState("ካሜራ በመጫን ላይ...");
-  const [stage, setStage] = useState(0); // 0:Idle, 1:Smile, 2:Nod, 3:Turn, 4:Done
+  const intervalRef = useRef(null);
+  const stageRef = useRef(0);
+
+  const [task, setTask] = useState("ሞዴሎች በመጫን ላይ...");
+  const [stage, setStage] = useState(0);
 
   useEffect(() => {
-    const loadModels = async () => {
-      const MODEL_URL = 'https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/';
+    loadModels();
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+
+      if (videoRef.current?.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    stageRef.current = stage;
+  }, [stage]);
+
+  const loadModels = async () => {
+    try {
+      const MODEL_URL =
+        "https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/";
+
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
         faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
+        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
       ]);
-      startVideo();
-    };
-    loadModels();
-  }, []);
 
-  const startVideo = () => {
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => { videoRef.current.srcObject = stream; setTask("እባክዎ ፈገግ ይበሉ (Smile)"); })
-      .catch(err => setTask("ካሜራ አልተገኘም"));
+      startVideo();
+    } catch (err) {
+      setTask("Model መጫን አልተሳካም");
+    }
+  };
+
+  const startVideo = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+      });
+
+      videoRef.current.srcObject = stream;
+
+      setTask("ፈገግ ይበሉ 😊");
+
+      startLiveness();
+    } catch (err) {
+      setTask("ካሜራ አልተገኘም");
+    }
   };
 
   const verifySuccess = async () => {
-    await fetch('https://poessa-digital-services-1.onrender.com/api/pensioners/verify-success', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ faydaNumber, status: 'Verified' })
-    });
-    setTask("ማረጋገጫው በተሳካ ሁኔታ ተጠናቋል! ✅");
+    try {
+      await fetch(
+        "https://poessa-digital-services-1.onrender.com/api/pensioners/verify-success",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            faydaNumber,
+            status: "Verified",
+          }),
+        }
+      );
+
+      setTask("ማረጋገጫው ተሳክቷል ✅");
+
+      clearInterval(intervalRef.current);
+    } catch (err) {
+      console.log(err);
+    }
   };
 
-  const runLiveness = async () => {
-    const interval = setInterval(async () => {
-      if (!videoRef.current || stage === 4) { clearInterval(interval); return; }
+  const startLiveness = () => {
+    intervalRef.current = setInterval(async () => {
+      if (!videoRef.current) return;
 
-      const detection = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks().withFaceExpressions();
+      const detection = await faceapi
+        .detectSingleFace(
+          videoRef.current,
+          new faceapi.TinyFaceDetectorOptions()
+        )
+        .withFaceLandmarks()
+        .withFaceExpressions();
+
       if (!detection) return;
 
       const { expressions, landmarks } = detection;
+
       const nose = landmarks.getNose()[0];
 
-      // 1. Smile
-      if (stage === 0 && expressions.happy > 0.7) {
-        setStage(1); setTask("ጭንቅላትዎን ወደ ላይ እና ታች ያድርጉ (Nod)");
+      // Smile
+      if (stageRef.current === 0 && expressions.happy > 0.7) {
+        setStage(1);
+        setTask("ጭንቅላትዎን ወደ ላይና ታች ያንቀሳቅሱ");
       }
-      // 2. Nod
-      else if (stage === 1 && Math.abs(nose.y - 150) > 30) {
-        setStage(2); setTask("ወደ ግራ እና ቀኝ ያወዛውዙ (Turn)");
+
+      // Nod
+      else if (stageRef.current === 1 && Math.abs(nose.y - 150) > 30) {
+        setStage(2);
+        setTask("ወደ ግራና ቀኝ ያዙሩ");
       }
-      // 3. Turn
-      else if (stage === 2 && Math.abs(nose.x - 200) > 40) {
-        setStage(4); verifySuccess();
+
+      // Turn
+      else if (stageRef.current === 2 && Math.abs(nose.x - 200) > 40) {
+        setStage(3);
+        verifySuccess();
       }
     }, 1000);
   };
 
   return (
-    <div style={{ textAlign: 'center' }}>
+    <div style={{ textAlign: "center" }}>
       <h2>{task}</h2>
-      <video ref={videoRef} autoPlay muted onPlay={runLiveness} style={{ width: '400px', borderRadius: '10px' }} />
+
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        style={{
+          width: "400px",
+          borderRadius: "15px",
+          border: "3px solid #0077ff",
+        }}
+      />
     </div>
   );
 }
