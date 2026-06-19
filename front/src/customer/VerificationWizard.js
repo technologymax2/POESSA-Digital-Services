@@ -1,40 +1,56 @@
-import React, { useState } from 'react';
-import CaptureID from './CaptureID'; 
-import LivenessTest from './LivenessTest'; 
+import React, { useState } from "react";
+import CaptureIDCard from "./CaptureIDCard";
+import CaptureSelfie from "./CaptureSelfie";
+import FaceMatch from "./FaceMatch";
+import LivenessTest from "./LivenessTest";
+import VerificationSuccess from "./VerificationSuccess";
 
 function VerificationWizard() {
-  const [step, setStep] = useState(1); 
-  const [faydaNum, setFaydaNum] = useState(null); 
-  const [idPhoto, setIdPhoto] = useState(null);
 
-  // 1. QR ከ CaptureID ሲገኝ ፋይዳ ቁጥሩን እና ምስሉን ይይዛል
-  const handleCaptureComplete = (data) => {
-    setFaydaNum(data.faydaNum);
-    setIdPhoto(data.imageSrc);
-    setStep(2); // ቀጥታ ወደ LivenessTest ይቀይራል
-  };
+  const [step, setStep] = useState(1);
+
+  const [idData, setIdData] = useState(null);
+  const [selfie, setSelfie] = useState(null);
 
   return (
-    <div className="wizard-container" style={{ padding: '20px', textAlign: 'center' }}>
-      
-      {/* ደረጃ 1፡ QR መቃኘት እና ፎቶ ማንሳት */}
+    <div>
+
       {step === 1 && (
-        <div className="step-content">
-          <h2>መታወቂያ እና ፎቶ ማረጋገጫ</h2>
-          <CaptureID onComplete={handleCaptureComplete} />
-        </div>
+        <CaptureIDCard
+          onSuccess={(data) => {
+            setIdData(data);
+            setStep(2);
+          }}
+        />
       )}
 
-      {/* ደረጃ 2፡ የህይወት ማረጋገጫ */}
       {step === 2 && (
-        <div className="step-content">
-          <h2>የህይወት ማረጋገጫ (Liveness Test)</h2>
-          <LivenessTest 
-            faydaNumber={faydaNum} 
-            idPhoto={idPhoto} 
-          />
-        </div>
+        <CaptureSelfie
+          onSuccess={(image) => {
+            setSelfie(image);
+            setStep(3);
+          }}
+        />
       )}
+
+      {step === 3 && (
+        <FaceMatch
+          idPhoto={idData.image}
+          selfiePhoto={selfie}
+          onSuccess={() => setStep(4)}
+        />
+      )}
+
+      {step === 4 && (
+        <LivenessTest
+          onSuccess={() => setStep(5)}
+        />
+      )}
+
+      {step === 5 && (
+        <VerificationSuccess />
+      )}
+
     </div>
   );
 }
