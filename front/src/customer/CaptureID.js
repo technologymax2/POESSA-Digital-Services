@@ -1,31 +1,46 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { QrReader } from "react-qr-reader";
 import Webcam from "react-webcam";
 
 function CaptureID({ onComplete }) {
   const [step, setStep] = useState("SCAN");
   const [faydaNum, setFaydaNum] = useState("");
-  const [scanned, setScanned] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
 
   const webcamRef = useRef(null);
 
-  // QR Scan
-  const handleScan = (result) => {
-    if (result && !scanned) {
-      const qrValue = result?.text || "";
+  // Camera permission request
+  useEffect(() => {
+    const requestCamera = async () => {
+      try {
+        await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
 
-      setScanned(true);
-      setFaydaNum(qrValue);
+        setCameraReady(true);
+      } catch (err) {
+        console.log(err);
+        alert("Camera permission denied!");
+      }
+    };
+
+    requestCamera();
+  }, []);
+
+  // QR scan
+  const handleScan = (result) => {
+    if (result && step === "SCAN") {
+      setFaydaNum(result.text);
       setStep("CAPTURE");
     }
   };
 
-  // Camera Photo Capture
+  // Capture ID card image
   const capturePhoto = () => {
     const imageSrc = webcamRef.current?.getScreenshot();
 
     if (!imageSrc) {
-      alert("ፎቶ ማንሳት አልተሳካም!");
+      alert("Failed to capture image");
       return;
     }
 
@@ -35,33 +50,23 @@ function CaptureID({ onComplete }) {
     });
   };
 
+  if (!cameraReady) {
+    return <h2>Requesting camera permission...</h2>;
+  }
+
   return (
-    <div
-      className="capture-wrapper"
-      style={{
-        padding: "20px",
-        textAlign: "center",
-      }}
-    >
+    <div style={{ textAlign: "center" }}>
       {step === "SCAN" && (
         <>
-          <h2>ደረጃ 1፡ የጡረተኛውን QR Code ይቃኙ</h2>
+          <h2>Step 1: Scan QR Code</h2>
 
-          <div
-            style={{
-              maxWidth: "400px",
-              margin: "20px auto",
-            }}
-          >
+          <div style={{ width: 400, margin: "auto" }}>
             <QrReader
               constraints={{
                 facingMode: "environment",
               }}
-              scanDelay={500}
-              onResult={(result, error) => {
-                if (result) {
-                  handleScan(result);
-                }
+              onResult={(result) => {
+                if (result) handleScan(result);
               }}
             />
           </div>
@@ -70,24 +75,18 @@ function CaptureID({ onComplete }) {
 
       {step === "CAPTURE" && (
         <>
-          <h2>ደረጃ 2፡ ፎቶ ያንሱ</h2>
-
-          <p>
-            Fayda Number: <strong>{faydaNum}</strong>
-          </p>
+          <h2>Step 2: Capture ID Card</h2>
 
           <Webcam
             ref={webcamRef}
             audio={false}
             screenshotFormat="image/jpeg"
             videoConstraints={{
-              facingMode: "user",
+              facingMode: "environment"
             }}
             style={{
-              width: "100%",
-              maxWidth: "400px",
-              borderRadius: "15px",
-              border: "3px solid #007bff",
+              width: 500,
+              borderRadius: 10
             }}
           />
 
@@ -96,17 +95,11 @@ function CaptureID({ onComplete }) {
           <button
             onClick={capturePhoto}
             style={{
-              marginTop: "20px",
-              padding: "12px 30px",
-              fontSize: "16px",
-              border: "none",
-              borderRadius: "8px",
-              backgroundColor: "#007bff",
-              color: "#fff",
-              cursor: "pointer",
+              marginTop: 20,
+              padding: "10px 30px"
             }}
           >
-            ፎቶውን አንሳ
+            Capture ID Card
           </button>
         </>
       )}
