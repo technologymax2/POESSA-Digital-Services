@@ -8,11 +8,13 @@ function LivenessTest({ onSuccess }) {
   const [task, setTask] = useState("Loading camera...");
   const [stage, setStage] = useState(0);
 
-  useEffect(() => {
+useEffect(() => {
+  const interval = setInterval(() => {
+    runDetection();
+  }, 1000);
 
-    loadModels();
-
-  }, []);
+  return () => clearInterval(interval);
+}, [stage]);;
 
   const loadModels = async () => {
 
