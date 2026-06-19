@@ -1,41 +1,79 @@
 // src/App.js
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import VideoCallAccess from './customer/VideoCallAccess';
-import AgentVideoPage from './employee/AgentVideoPage' ; 
-import EmployeeDashboard from './employee/EmployeeDashboard';  
+
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+
+import VideoCallAccess from "./customer/VideoCallAccess";
+import AgentVideoPage from "./employee/AgentVideoPage";
+import EmployeeDashboard from "./employee/EmployeeDashboard";
 import AdminDashboard from "./admin/AdminDashboard";
 import CustomerDashboard from "./customer/CustomerDashboard";
-import LivenessTest from './customer/LivenessTest';
-import PensionerRegistration from './employee/PensionerRegistration';
-import IdCardGenerationAndSearch from './employee/IdCardGenerationAndSearch';
-import ScanVerify from './employee/ScanVerify';
-import VerificationWizard from './customer/VerificationWizard';
-import './App.css';
 
+import LivenessTest from "./customer/LivenessTest";
+import VerificationWizard from "./customer/VerificationWizard";
+
+import PensionerRegistration from "./employee/PensionerRegistration";
+import IdCardGenerationAndSearch from "./employee/IdCardGenerationAndSearch";
+import ScanVerify from "./employee/ScanVerify";
+
+import "./App.css";
 
 function App() {
   return (
     <Router>
       <div className="App">
         <Routes>
+
+          {/* Home */}
           <Route path="/" element={<Dashboard />} />
+
+          {/* Authentication */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/video-call" element={<VideoCallAccess />} />
-          <Route path="/agent-call-center" element={<AgentVideoPage />} />
+
+          {/* Dashboards */}
           <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/customer-dashboard" element={<CustomerDashboard />} />
-          <Route path="/liveness" element={<LivenessTest />} />
-          <Route path="/pensioner-registration" element ={<PensionerRegistration />} />
-          <Route path="/idcard-generation-search" element={<IdCardGenerationAndSearch />} />
-          <Route path="/verify-process/:faydaNum" element={<VerificationWizard />} />
-          {/* 🚨 ከባክኤንድ ጋር እንዳይጋጭ /api/pensioners የሚለው ጠፍቶ ወደ ንጹህ ፍሮንትኤንድ መንገድ ተቀይሯል */}
-          <Route path="/verify/:faydaNum" element={<ScanVerify />} />
+
+          {/* Video Call */}
+          <Route path="/video-call" element={<VideoCallAccess />} />
+          <Route path="/agent-call-center" element={<AgentVideoPage />} />
+
+          {/* Pension Registration */}
+          <Route
+            path="/pensioner-registration"
+            element={<PensionerRegistration />}
+          />
+
+          {/* ID Card */}
+          <Route
+            path="/idcard-generation-search"
+            element={<IdCardGenerationAndSearch />}
+          />
+
+          {/* Scan Verify */}
+          <Route
+            path="/verify/:faydaNum"
+            element={<ScanVerify />}
+          />
+
+          {/* Full Life Verification Process */}
+          <Route
+            path="/verification"
+            element={<VerificationWizard />}
+          />
+
+          {/* Direct Liveness Test (Optional) */}
+          <Route
+            path="/liveness"
+            element={<LivenessTest />}
+          />
+
         </Routes>
       </div>
     </Router>
