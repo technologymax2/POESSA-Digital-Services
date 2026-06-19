@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import "./Verification.css";
 
-// እባክዎን እነዚህን ፋይሎች በፕሮጀክትዎ ውስጥ መኖራቸውን ያረጋግጡ
+// የደረጃ ክፍሎቹን ማስገባት
 import CaptureIDCard from "./CaptureIDCard";
 import CaptureSelfie from "./CaptureSelfie";
 import FaceMatch from "./FaceMatch";
@@ -15,7 +15,7 @@ function VerificationWizard() {
   const [idPhoto, setIdPhoto] = useState(null);
   const [selfiePhoto, setSelfiePhoto] = useState(null);
 
-  // የመጨረሻውን መረጃ ወደ ሰርቨር የሚልክ ተግባር
+  // የመጨረሻውን የደህንነት ማረጋገጫ ወደ ሰርቨር መላክ
   const handleFinalSuccess = async () => {
     try {
       await axios.post("https://poessa-digital-services-1.onrender.com/api/verify-success", {
@@ -25,32 +25,40 @@ function VerificationWizard() {
         faceMatched: true,
         smilePassed: true,
         nodPassed: true,
-        turnPassed: true
+        turnPassed: true,
+        verificationStatus: "Verified"
       });
       setStep(5);
     } catch (err) {
       console.error("Verification Save Error:", err);
-      alert("መረጃውን ለማስቀመጥ ተሞከረ ነገር ግን ስህተት ተፈጥሯል።");
+      alert("የማረጋገጫ መረጃን ለማስቀመጥ ስህተት ተፈጥሯል፤ እባክዎ እንደገና ይሞክሩ።");
     }
   };
 
   return (
-    <div className="wizard-container">
+    <div className="verification-wizard-container">
+      {/* ደረጃ 1: መታወቂያ መቃኘት */}
       {step === 1 && (
-        <CaptureIDCard onSuccess={(data) => {
-          setFaydaNumber(data.faydaNumber);
-          setIdPhoto(data.image);
-          setStep(2);
-        }} />
+        <CaptureIDCard 
+          onSuccess={(data) => {
+            setFaydaNumber(data.faydaNumber);
+            setIdPhoto(data.image);
+            setStep(2);
+          }} 
+        />
       )}
 
+      {/* ደረጃ 2: የራስ ፎቶ (Selfie) ማንሳት */}
       {step === 2 && (
-        <CaptureSelfie onSuccess={(image) => {
-          setSelfiePhoto(image);
-          setStep(3);
-        }} />
+        <CaptureSelfie 
+          onSuccess={(image) => {
+            setSelfiePhoto(image);
+            setStep(3);
+          }} 
+        />
       )}
 
+      {/* ደረጃ 3: የፊት ማነፃፀሪያ (Face Matching) */}
       {step === 3 && (
         <FaceMatch 
           idPhoto={idPhoto} 
@@ -59,16 +67,20 @@ function VerificationWizard() {
         />
       )}
 
+      {/* ደረጃ 4: የህያውነት ፈተና (Liveness Detection) */}
       {step === 4 && (
         <LivenessTest onSuccess={handleFinalSuccess} />
       )}
 
+      {/* ደረጃ 5: ስኬታማ ማረጋገጫ */}
       {step === 5 && <VerificationSuccess />}
       
       {/* የሂደት ማሳያ (Progress Indicator) */}
-      <div style={{ marginTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
-        Step {step} of 5
-      </div>
+      {step < 5 && (
+        <div className="verification-wizard-step-info">
+          ደረጃ {step} ከ 5 | እባክዎ መመሪያዎችን ይከተሉ
+        </div>
+      )}
     </div>
   );
 }
