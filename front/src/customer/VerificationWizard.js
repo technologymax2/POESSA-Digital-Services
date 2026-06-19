@@ -1,47 +1,52 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import CaptureID from './CaptureID'; 
 import LivenessTest from './LivenessTest'; 
+import { QrReader } from 'react-qr-reader';
 
 function VerificationWizard() {
-  const { faydaNum } = useParams();
-  const navigate = useNavigate();
   const [step, setStep] = useState(1); 
-  const [idPhoto, setIdPhoto] = useState(null); // ለFace Matching የምንጠቀምበት ምስል
+  const [faydaNum, setFaydaNum] = useState(null); 
+  const [idPhoto, setIdPhoto] = useState(null);
 
-  // 1. የፎቶ ቀረጻ ሲጠናቀቅ የሚጠራ
-  const handleCaptureComplete = (capturedPhoto) => {
-    setIdPhoto(capturedPhoto); // ምስሉን በስቴት እናስቀምጣለን
-    setStep(2); // ወደ LivenessTest እንሄዳለን
+  // 1. QR ሲቃኝ የሚከናወን (ፋይዳ ቁጥርን ከQR ያወጣል)
+  const handleScan = (result) => {
+    if (result) {
+      setFaydaNum(result?.text); // ከQR ኮድ የተገኘው መረጃ
+      setStep(2); // ቀጥታ ወደ ፎቶ ማንሻ
+    }
   };
 
-  // 2. የህይወት ማረጋገጫ ሲጠናቀቅ የሚጠራ
-  const handleVerificationComplete = () => {
-    alert("የጡረተኛው ማረጋገጫ በተሳካ ሁኔታ ተጠናቋል!");
-    navigate('/customer-dashboard'); // ወደ ዳሽቦርድ መመለስ
+  // 2. ፎቶ ሲነሳ የሚከናወን
+  const handleCaptureComplete = (photo) => {
+    setIdPhoto(photo);
+    setStep(3); // ቀጥታ ወደ Liveness Test
   };
 
   return (
     <div className="wizard-container" style={{ padding: '20px', textAlign: 'center' }}>
+      
+      {/* ደረጃ 1፡ QR መቃኘት */}
       {step === 1 && (
-        <div className="step-content">
-          <h2>ደረጃ 1፡ የመታወቂያ ማረጋገጫ</h2>
-          <CaptureID 
-            faydaNum={faydaNum} 
-            onComplete={handleCaptureComplete} 
-          />
+        <div>
+          <h3>ደረጃ 1፡ የጡረተኛውን መታወቂያ QR ይቃኙ</h3>
+          <QrReader onResult={handleScan} constraints={{ facingMode: 'environment' }} />
         </div>
       )}
-      
+
+      {/* ደረጃ 2፡ ፎቶ ማንሳት */}
       {step === 2 && (
-        <div className="step-content">
-          <h2>ደረጃ 2፡ የህይወት ማረጋገጫ (Liveness Test)</h2>
-          <LivenessTest 
-            faydaNumber={faydaNum} 
-            idPhoto={idPhoto} 
-            onSuccess={handleVerificationComplete}
-          />
-        </div>
+        <CaptureID 
+          faydaNum={faydaNum} 
+          onComplete={handleCaptureComplete} 
+        />
+      )}
+
+      {/* ደረጃ 3፡ የህይወት ማረጋገጫ */}
+      {step === 3 && (
+        <LivenessTest 
+          faydaNumber={faydaNum} 
+          idPhoto={idPhoto} 
+        />
       )}
     </div>
   );
