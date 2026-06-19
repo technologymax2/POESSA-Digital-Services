@@ -1,23 +1,20 @@
 import React, { useEffect, useState } from "react";
 import * as faceapi from "@vladmandic/face-api";
+import "./Verification.css";
 
 function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
-
-  const [message, setMessage] = useState("Comparing Faces...");
+  const [message, setMessage] = useState("ፊቶችን በማወዳደር ላይ...");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
     verifyFace();
-
   }, []);
 
   const verifyFace = async () => {
-
     try {
-
-      const MODEL_URL =
-        "https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/";
-
+      const MODEL_URL = "https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/";
+      
+      // ሞዴሎችን መጫን
       await Promise.all([
         faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
         faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -27,59 +24,36 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
       const idImg = await faceapi.fetchImage(idPhoto);
       const selfieImg = await faceapi.fetchImage(selfiePhoto);
 
-      const idDescriptor = await faceapi
-        .detectSingleFace(idImg)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      const selfieDescriptor = await faceapi
-        .detectSingleFace(selfieImg)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+      const idDescriptor = await faceapi.detectSingleFace(idImg).withFaceLandmarks().withFaceDescriptor();
+      const selfieDescriptor = await faceapi.detectSingleFace(selfieImg).withFaceLandmarks().withFaceDescriptor();
 
       if (!idDescriptor || !selfieDescriptor) {
-
-        setMessage("Face not detected");
+        setMessage("❌ ፊት አልተገኘም፤ እባክዎ እንደገና ይሞክሩ።");
+        setLoading(false);
         return;
-
       }
 
-      const distance = faceapi.euclideanDistance(
-        idDescriptor.descriptor,
-        selfieDescriptor.descriptor
-      );
+      const distance = faceapi.euclideanDistance(idDescriptor.descriptor, selfieDescriptor.descriptor);
 
-      if (distance < 0.5) {
-
-        setMessage("Face Matched Successfully ✅");
-
-        setTimeout(() => {
-
-          onSuccess();
-
-        }, 1500);
-
+      if (distance < 0.6) {
+        setMessage("✅ የፊት ማመሳሰል ተሳክቷል!");
+        setLoading(false);
+        setTimeout(() => onSuccess(), 1500);
       } else {
-
-        setMessage("Face Match Failed ❌");
-
+        setMessage("❌ ፊቶች አይመሳሰሉም። እባክዎ ጥርት ያለ ፎቶ ይጠቀሙ።");
+        setLoading(false);
       }
-
     } catch (err) {
-
-      console.log(err);
-
-      setMessage("Error while matching");
-
+      console.error(err);
+      setMessage("⚠️ የስርዓት ስህተት ተፈጥሯል።");
+      setLoading(false);
     }
-
   };
 
   return (
-    <div style={{ textAlign: "center" }}>
-
-      <h2>{message}</h2>
-
+    <div className="verification-wizard-container">
+      {loading && <div className="verification-wizard-loader"></div>}
+      <h2 className="verification-wizard-status">{message}</h2>
     </div>
   );
 }
