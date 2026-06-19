@@ -2,7 +2,7 @@ const express = require("express");
 
 const router = express.Router();
 
-const LivenessVerification = require("../models/livenessSchema");
+const LivenessVerification = require("./models/livenessSchema");
 
 
 // Save successful verification
