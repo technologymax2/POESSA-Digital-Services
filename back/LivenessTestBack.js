@@ -1,56 +1,127 @@
-// routes/pensionerRoutes.js (የBackend ክፍል)
-const express = require('express');
+const express = require("express");
+
 const router = express.Router();
-const Pensioner = require('../models/Pensioner'); // የእርስዎ የሞዴል ፋይል
 
-// 1. የህይወት ማረጋገጫ ከተጠናቀቀ በኋላ ውጤቱን መቀበል
-router.post('/verify-success', async (req, res) => {
-    const { faydaNumber, status } = req.body;
+const LivenessVerification = require("../models/livenessSchema");
 
-    try {
-        // የጡረተኛውን መረጃ ማግኘት እና ማዘመን
-        const updatedPensioner = await Pensioner.findOneAndUpdate(
-            { faydaNumber: faydaNumber },
-            { 
-                $set: { 
-                    lastVerifiedDate: new Date(),
-                    verificationStatus: status, // 'Verified'
-                    isAlive: true
-                } 
-            },
-            { new: true }
-        );
 
-        if (!updatedPensioner) {
-            return res.status(404).json({ success: false, message: "ጡረተኛው አልተገኘም" });
-        }
+// Save successful verification
+router.post("/verify-success", async (req, res) => {
+  try {
 
-        console.log(`ጡረተኛው ${faydaNumber} በተሳካ ሁኔታ ተረጋግጧል`);
-        res.json({ success: true, message: "የህይወት ማረጋገጫ ተመዝግቧል" });
+    const {
+      faydaNumber,
+      idPhoto,
+      selfiePhoto,
+      faceMatched,
+      smilePassed,
+      nodPassed,
+      turnPassed
+    } = req.body;
 
-    } catch (err) {
-        console.error("Verification Update Error:", err);
-        res.status(500).json({ success: false, message: "ሰርቨር ስህተት ተፈጥሯል" });
+    let record =
+      await LivenessVerification.findOne({
+        faydaNumber
+      });
+
+    if (!record) {
+
+      record = new LivenessVerification({
+        faydaNumber
+      });
+
     }
+
+    record.idPhoto = idPhoto;
+
+    record.selfiePhoto = selfiePhoto;
+
+    record.faceMatched = faceMatched;
+
+    record.smilePassed = smilePassed;
+
+    record.nodPassed = nodPassed;
+
+    record.turnPassed = turnPassed;
+
+    record.verificationStatus = "Verified";
+
+    record.lastVerificationDate = new Date();
+
+    await record.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Verification completed successfully"
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+
+  }
 });
 
-// 2. የ OTP ማረጋገጫ (VerificationCode.js የሚጠራው)
-router.post('/verify-otp', async (req, res) => {
-    const { faydaNumber, code } = req.body;
 
-    try {
-        const pensioner = await Pensioner.findOne({ faydaNumber });
-        
-        // የOTP ኮድ ማመሳከር (ከዳታቤዝ ጋር)
-        if (pensioner && pensioner.otp === code) {
-            // ጊዜው ያለፈበት መሆኑን ማረጋገጥ ይቻላል
-            res.json({ success: true, message: "ኮድ ትክክል ነው" });
-        } else {
-            res.status(400).json({ success: false, message: "የተሳሳተ ኮድ" });
-        }
-    } catch (err) {
-        res.status(500).json({ success: false, message: "ስህተት ተፈጥሯል" });
+// Get one pensioner verification
+router.get("/:faydaNumber", async (req, res) => {
+
+  try {
+
+    const record =
+      await LivenessVerification.findOne({
+        faydaNumber: req.params.faydaNumber
+      });
+
+    if (!record) {
+
+      return res.status(404).json({
+        success: false,
+        message: "Record not found"
+      });
+
     }
+
+    res.json(record);
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+
+  }
+
+});
+
+
+// Alive pensioners list
+router.get("/", async (req, res) => {
+
+  try {
+
+    const alive =
+      await LivenessVerification.find({
+        verificationStatus: "Verified"
+      }).sort({
+        lastVerificationDate: -1
+      });
+
+    res.json(alive);
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+
+  }
+
 });
 
 module.exports = router;
