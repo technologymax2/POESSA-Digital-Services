@@ -1,81 +1,79 @@
-import React, { useRef, useState } from "react";
-import Webcam from "react-webcam";
-import "./Verification.css";
+import React, { useState, useRef } from "react";
 
 function CaptureSelfie({ onSuccess }) {
-  const webcamRef = useRef(null);
-  const [selfie, setSelfie] = useState(null);
+  const [image, setImage] = useState(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const videoRef = useRef(null);
+
+  const startSelfieCamera = async () => {
+    setCameraActive(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: "user" } // የፊት ለፊት (Selfie) ካሜራን ይከፍታል
+      });
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    } catch (err) {
+      console.error("ሴልፊ ካሜራ መክፈት አልተቻለም፦", err);
+      alert("እባክዎ የካሜራ ፌርሚሽን ይፍቀዱ!");
+    }
+  };
 
   const captureSelfie = () => {
-    const imageSrc = webcamRef.current.getScreenshot({
-      width: 400,
-      height: 400
-    });
-    if (!imageSrc) {
-      alert("ፎቶውን ማንሳት አልተቻለም");
+    const video = videoRef.current;
+    if (!video) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    const base64Image = canvas.toDataURL("image/jpeg");
+    setImage(base64Image);
+
+    const stream = video.srcObject;
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+    setCameraActive(false);
+  };
+
+  const handleNext = () => {
+    if (!image) {
+      alert("⚠️ እባክዎ የጡረተኛውን የራስ ፎቶ (Selfie) ያንሱ!");
       return;
     }
-    setSelfie(imageSrc);
+    onSuccess(image);
   };
 
   return (
-    <div className="verification-wizard-container">
-      <h2>የራስዎን ፎቶ (Selfie) ያንሱ</h2>
-      <p className="verification-wizard-status">እባክዎን ፊትዎን በክፈፉ መሃል ያድርጉ</p>
+    <div style={{ padding: "20px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
+      <h3 style={{ color: "#162447" }}>👤 ደረጃ 2፡ የጡረተኛው የራስ ፎቶ (Selfie)</h3>
+      <p style={{ color: "#64748b", fontSize: "14px" }}>እባክዎ የጡረተኛውን ቀጥተኛ የፊት ገጽታ ፎቶ ያንሱ</p>
 
-      {!selfie ? (
-        <>
-          <Webcam
-            ref={webcamRef}
-            screenshotFormat="image/jpeg"
-            videoConstraints={{
-              facingMode: "user",
-              aspectRatio: 1 // የሰልፊ ፎቶ አደራረግ ለፊት እንዲመች
-            }}
-            className="verification-wizard-webcam"
-            style={{
-              width: "100%",
-              maxWidth: "350px",
-              aspectRatio: "1/1",
-              objectFit: "cover",
-              borderRadius: "50%", // ክብ ቅርጽ ለሰልፊ
-              border: "4px solid #162447"
-            }}
-          />
+      <div style={{ background: "#f1f5f9", borderRadius: "50%", width: "200px", height: "200px", margin: "25px auto", overflow: "hidden", position: "relative", border: "4px solid #162447", boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
+        {cameraActive && <video ref={videoRef} autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+        {image && !cameraActive && <img src={image} alt="Selfie Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+        {!cameraActive && !image && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#94a3b8", fontSize: "40px" }}>👤</div>}
+      </div>
 
-          <button className="verification-wizard-btn" onClick={captureSelfie}>
-            Selfie ያንሱ
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {!cameraActive ? (
+          <button type="button" onClick={startSelfieCamera} style={{ background: "#475569", color: "#fff", padding: "12px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+            {image ? "🔄 እንደገና በትክክል አንሳ" : "🤳 የራስ ፎቶ ካሜራ ክፈት"}
           </button>
-        </>
-      ) : (
-        <>
-          <img
-            src={selfie}
-            alt="Selfie"
-            style={{
-              width: "100%",
-              maxWidth: "350px",
-              aspectRatio: "1/1",
-              objectFit: "cover",
-              borderRadius: "50%",
-              border: "4px solid #162447",
-              marginTop: "15px"
-            }}
-          />
+        ) : (
+          <button type="button" onClick={captureSelfie} style={{ background: "#22c55e", color: "#fff", padding: "12px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+            📸 ፎቶ አንሳ
+          </button>
+        )}
 
-          <button className="verification-wizard-btn" onClick={() => onSuccess(selfie)}>
-            ወደ ቀጣዩ ደረጃ ይሂዱ
+        {image && (
+          <button type="button" onClick={handleNext} style={{ background: "#162447", color: "#fff", padding: "14px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", marginTop: "15px" }}>
+            ወደ ፊት ማነፃፀሪያ ደረጃ እለፍ (Face Match) →
           </button>
-          
-          <button 
-            className="verification-wizard-btn" 
-            style={{ background: '#64748b' }} 
-            onClick={() => setSelfie(null)}
-          >
-            እንደገና ያንሱ
-          </button>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
