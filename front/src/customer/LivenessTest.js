@@ -1,141 +1,119 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as faceapi from "@vladmandic/face-api";
 
-function LivenessTest({ faydaNumber, idPhoto }) {
-  const videoRef = useRef(null);
-  const intervalRef = useRef(null);
-  const stageRef = useRef(0);
+function LivenessTest({ onSuccess }) {
 
-  const [task, setTask] = useState("ሞዴሎች በመጫን ላይ...");
+  const videoRef = useRef();
+
+  const [task, setTask] = useState("Loading camera...");
   const [stage, setStage] = useState(0);
 
   useEffect(() => {
+
     loadModels();
 
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-
-      if (videoRef.current?.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-      }
-    };
   }, []);
 
-  useEffect(() => {
-    stageRef.current = stage;
-  }, [stage]);
-
   const loadModels = async () => {
-    try {
-      const MODEL_URL =
-        "https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/";
 
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
-      ]);
+    const MODEL_URL =
+      "https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/";
 
-      startVideo();
-    } catch (err) {
-      setTask("Model መጫን አልተሳካም");
-    }
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+    ]);
+
+    startVideo();
+
   };
 
   const startVideo = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-      });
 
-      videoRef.current.srcObject = stream;
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true
+    });
 
-      setTask("ፈገግ ይበሉ 😊");
+    videoRef.current.srcObject = stream;
 
-      startLiveness();
-    } catch (err) {
-      setTask("ካሜራ አልተገኘም");
-    }
+    setTask("😊 Smile");
+
   };
 
-  const verifySuccess = async () => {
-    try {
-      await fetch(
-        "https://poessa-digital-services-1.onrender.com/api/pensioners/verify-success",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            faydaNumber,
-            status: "Verified",
-          }),
-        }
-      );
+  const runDetection = async () => {
 
-      setTask("ማረጋገጫው ተሳክቷል ✅");
+    const detection = await faceapi
+      .detectSingleFace(
+        videoRef.current,
+        new faceapi.TinyFaceDetectorOptions()
+      )
+      .withFaceLandmarks()
+      .withFaceExpressions();
 
-      clearInterval(intervalRef.current);
-    } catch (err) {
-      console.log(err);
+    if (!detection) return;
+
+    const nose = detection.landmarks.getNose()[0];
+
+    if (
+      stage === 0 &&
+      detection.expressions.happy > 0.7
+    ) {
+
+      setStage(1);
+      setTask("⬆️⬇️ Move head up and down");
+
     }
-  };
 
-  const startLiveness = () => {
-    intervalRef.current = setInterval(async () => {
-      if (!videoRef.current) return;
+    else if (
+      stage === 1 &&
+      Math.abs(nose.y - 150) > 30
+    ) {
 
-      const detection = await faceapi
-        .detectSingleFace(
-          videoRef.current,
-          new faceapi.TinyFaceDetectorOptions()
-        )
-        .withFaceLandmarks()
-        .withFaceExpressions();
+      setStage(2);
+      setTask("⬅️➡️ Turn left and right");
 
-      if (!detection) return;
+    }
 
-      const { expressions, landmarks } = detection;
+    else if (
+      stage === 2 &&
+      Math.abs(nose.x - 200) > 40
+    ) {
 
-      const nose = landmarks.getNose()[0];
+      setStage(3);
 
-      // Smile
-      if (stageRef.current === 0 && expressions.happy > 0.7) {
-        setStage(1);
-        setTask("ጭንቅላትዎን ወደ ላይና ታች ያንቀሳቅሱ");
-      }
+      setTask("Verification Successful ✅");
 
-      // Nod
-      else if (stageRef.current === 1 && Math.abs(nose.y - 150) > 30) {
-        setStage(2);
-        setTask("ወደ ግራና ቀኝ ያዙሩ");
-      }
+      setTimeout(() => {
 
-      // Turn
-      else if (stageRef.current === 2 && Math.abs(nose.x - 200) > 40) {
-        setStage(3);
-        verifySuccess();
-      }
-    }, 1000);
+        onSuccess();
+
+      }, 2000);
+
+    }
+
   };
 
   return (
+
     <div style={{ textAlign: "center" }}>
+
       <h2>{task}</h2>
 
       <video
         ref={videoRef}
         autoPlay
         muted
-        playsInline
-        style={{
-          width: "400px",
-          borderRadius: "15px",
-          border: "3px solid #0077ff",
+        width="450"
+        onPlay={() => {
+
+          setInterval(runDetection, 1000);
+
         }}
       />
+
     </div>
+
   );
 }
 
