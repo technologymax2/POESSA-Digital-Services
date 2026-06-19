@@ -5,6 +5,7 @@ const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const path = require("path"); // 🚨 የተጨመረ፦ ለፎልደር መንገድ መፈለጊያ (Path module)
 require("dotenv").config();
+const livenessRoute = require("./LivenessTestBack");
 
 const app = express();
 
@@ -209,6 +210,7 @@ io.on("connection", (socket) => {
 app.use("/api/auth", require("./LoginBack"));
 app.use("/api/admin", require("./AdminBack")(io, users, busyAgents, forceDisconnectUser));
 app.use("/api/pensioners", require("./PensionerRegistrationBack"));
+app.use("/api/liveness", livenessRoute);
 
 /* =========================
    PORT
