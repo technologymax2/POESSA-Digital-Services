@@ -3,75 +3,61 @@ import * as faceapi from "@vladmandic/face-api";
 import "./Verification.css";
 
 function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
-  const [message, setMessage] = useState("ፊቶችን በማወዳደር ላይ...");
-  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("ሞዴሎችን በመጫን ላይ...");
 
   useEffect(() => {
-    verifyFace();
-  }, []);
-
-  const verifyFace = async () => {
-    try {
-      const MODEL_URL = "https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/";
-      
-      // 1. ሞዴሎችን መጫን (ለሞባይል ሲባል TinyFaceDetector ተጠቅሟል)
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-      ]);
-
-      const idImg = await faceapi.fetchImage(idPhoto);
-      const selfieImg = await faceapi.fetchImage(selfiePhoto);
-
-      // 2. ፊቶችን መለየት (TinyFaceDetector ለሞባይል ፈጣን ነው)
-      const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224 });
-      
-      const idDescriptor = await faceapi
-        .detectSingleFace(idImg, options)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+    const runVerification = async () => {
+      try {
+        // የሞዴል መጫኛ URL
+        const MODEL_URL = "https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/";
         
-      const selfieDescriptor = await faceapi
-        .detectSingleFace(selfieImg, options)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+        setMessage("ሞዴሎችን በመጫን ላይ (እባክዎ ይጠብቁ)...");
+        
+        // ለሞባይል ስልኮች ፈጣን እና ቀለል ያለ ሞዴል መጫን
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
 
-      if (!idDescriptor || !selfieDescriptor) {
-        setMessage("❌ ፊት አልተገኘም፤ እባክዎ ጥርት ያለ ፎቶ እንደገና ያንሱ።");
-        setLoading(false);
-        return;
+        setMessage("ፎቶዎችን በማወዳደር ላይ...");
+
+        // ምስሎችን ማዘጋጀት
+        const idImg = await faceapi.fetchImage(idPhoto);
+        const selfieImg = await faceapi.fetchImage(selfiePhoto);
+
+        // ፊቶችን መለየት (TinyFaceDetector በመጠቀም)
+        const idDescriptor = await faceapi.detectSingleFace(idImg, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+        
+        const selfieDescriptor = await faceapi.detectSingleFace(selfieImg, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+
+        if (!idDescriptor || !selfieDescriptor) {
+          setMessage("❌ ፊት አልተገኘም፤ እባክዎ ፎቶውን በግልጽ ያንሱ።");
+          return;
+        }
+
+        // የርቀት መለኪያ (Distance) ማነፃፀር
+        const distance = faceapi.euclideanDistance(idDescriptor.descriptor, selfieDescriptor.descriptor);
+
+        if (distance < 0.6) {
+          setMessage("✅ የፊት ማመሳሰል ተሳክቷል!");
+          setTimeout(() => onSuccess(), 1000);
+        } else {
+          setMessage("❌ ፊቶች አይመሳሰሉም። እባክዎ ጥርት ያለ ፎቶ ይጠቀሙ።");
+        }
+      } catch (err) {
+        console.error("FaceMatch Error:", err);
+        setMessage("⚠️ የስርዓት ስህተት ተፈጥሯል፤ እባክዎ የኢንተርኔት ግንኙነትዎን ይፈትሹ።");
       }
+    };
 
-      // 3. ማነፃፀር
-      const distance = faceapi.euclideanDistance(
-        idDescriptor.descriptor, 
-        selfieDescriptor.descriptor
-      );
-
-      if (distance < 0.6) {
-        setMessage("✅ የፊት ማመሳሰል ተሳክቷል!");
-        setLoading(false);
-        setTimeout(() => onSuccess(), 1500);
-      } else {
-        setMessage("❌ ፊቶች አይመሳሰሉም። እባክዎ ጥርት ያለ ፎቶ ይጠቀሙ።");
-        setLoading(false);
-      }
-    } catch (err) {
-      console.error(err);
-      setMessage("⚠️ የስርዓት ስህተት ተፈጥሯል፤ እባክዎ ኢንተርኔትዎን ይፈትሹ።");
-      setLoading(false);
-    }
-  };
+    runVerification();
+  }, [idPhoto, selfiePhoto, onSuccess]);
 
   return (
     <div className="verification-wizard-container">
-      {loading && (
-        <>
-          <div className="verification-wizard-loader"></div>
-          <p style={{ color: "#64748b" }}>እባክዎን ይጠብቁ...</p>
-        </>
-      )}
       <h2 className="verification-wizard-status">{message}</h2>
     </div>
   );
