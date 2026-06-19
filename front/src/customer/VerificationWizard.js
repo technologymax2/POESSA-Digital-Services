@@ -1,52 +1,39 @@
 import React, { useState } from 'react';
 import CaptureID from './CaptureID'; 
 import LivenessTest from './LivenessTest'; 
-import { QrReader } from 'react-qr-reader';
 
 function VerificationWizard() {
   const [step, setStep] = useState(1); 
   const [faydaNum, setFaydaNum] = useState(null); 
   const [idPhoto, setIdPhoto] = useState(null);
 
-  // 1. QR ሲቃኝ የሚከናወን (ፋይዳ ቁጥርን ከQR ያወጣል)
-  const handleScan = (result) => {
-    if (result) {
-      setFaydaNum(result?.text); // ከQR ኮድ የተገኘው መረጃ
-      setStep(2); // ቀጥታ ወደ ፎቶ ማንሻ
-    }
-  };
-
-  // 2. ፎቶ ሲነሳ የሚከናወን
-  const handleCaptureComplete = (photo) => {
-    setIdPhoto(photo);
-    setStep(3); // ቀጥታ ወደ Liveness Test
+  // 1. QR ከ CaptureID ሲገኝ ፋይዳ ቁጥሩን እና ምስሉን ይይዛል
+  const handleCaptureComplete = (data) => {
+    setFaydaNum(data.faydaNum);
+    setIdPhoto(data.imageSrc);
+    setStep(2); // ቀጥታ ወደ LivenessTest ይቀይራል
   };
 
   return (
     <div className="wizard-container" style={{ padding: '20px', textAlign: 'center' }}>
       
-      {/* ደረጃ 1፡ QR መቃኘት */}
+      {/* ደረጃ 1፡ QR መቃኘት እና ፎቶ ማንሳት */}
       {step === 1 && (
-        <div>
-          <h3>ደረጃ 1፡ የጡረተኛውን መታወቂያ QR ይቃኙ</h3>
-          <QrReader onResult={handleScan} constraints={{ facingMode: 'environment' }} />
+        <div className="step-content">
+          <h2>መታወቂያ እና ፎቶ ማረጋገጫ</h2>
+          <CaptureID onComplete={handleCaptureComplete} />
         </div>
       )}
 
-      {/* ደረጃ 2፡ ፎቶ ማንሳት */}
+      {/* ደረጃ 2፡ የህይወት ማረጋገጫ */}
       {step === 2 && (
-        <CaptureID 
-          faydaNum={faydaNum} 
-          onComplete={handleCaptureComplete} 
-        />
-      )}
-
-      {/* ደረጃ 3፡ የህይወት ማረጋገጫ */}
-      {step === 3 && (
-        <LivenessTest 
-          faydaNumber={faydaNum} 
-          idPhoto={idPhoto} 
-        />
+        <div className="step-content">
+          <h2>የህይወት ማረጋገጫ (Liveness Test)</h2>
+          <LivenessTest 
+            faydaNumber={faydaNum} 
+            idPhoto={idPhoto} 
+          />
+        </div>
       )}
     </div>
   );
