@@ -1,11 +1,9 @@
 const express = require("express");
 const router = express.Router();
-// 🟢 ያንተን ኦሪጅናል የጡረተኛ ሞዴል በትክክል መጥራት
-const UserPensioner = require("./models/UserPensioner"); 
+const UserPensioner = require("./models/UserPensioner"); // ያንተ ሞዴል
 
 /* ==========================================================================
-   1️⃣ POST: /api/liveness/verify-success
-   (በህያውነት ፈተና ያለፈውን ጡረተኛ ዳታቤዝ ላይ "Verified" ማድረጊያ)
+   📬 POST: /api/liveness/verify-success
 ========================================================================== */
 router.post("/verify-success", async (req, res) => {
   try {
@@ -14,11 +12,10 @@ router.post("/verify-success", async (req, res) => {
       faceMatched,
       smilePassed,
       nodPassed,
-      turnPassed,
-      verificationStatus // ከሪአክት "Verified" ተብሎ የሚመጣው
+      turnPassed
     } = req.body;
 
-    // 1. የፋይዳ ቁጥር መኖሩን ማረጋገጥ
+    // 1. መረጃው ሙሉ መሆኑን ማረጋገጥ
     if (!faydaNumber) {
       return res.status(400).json({
         success: false,
@@ -26,7 +23,7 @@ router.post("/verify-success", async (req, res) => {
       });
     }
 
-    // 2. የደህንነት ማጣሪያ (Security Guard)
+    // 2. የባዮሜትሪክስ ደህንነት ማጣሪያ
     if (!faceMatched || !smilePassed || !nodPassed) {
       return res.status(400).json({
         success: false,
@@ -34,41 +31,37 @@ router.post("/verify-success", async (req, res) => {
       });
     }
 
-    // 3. ያንተን UserPensioner ዳታቤዝ መፈለግ
+    // 3. ጡረተኛውን በፋይዳ ቁጥር መፈለግ
     const pensioner = await UserPensioner.findOne({ faydaNumber: faydaNumber });
     if (!pensioner) {
       return res.status(404).json({
         success: false,
-        message: "❌ ይህ የፋይዳ ቁጥር በሲስተሙ ላይ አልተመዘገበም!"
+        message: "❌ ይህ የፋይዳ ቁጥር በሲስተሙ ላይ አልተገኘም!"
       });
     }
 
-    // 4. በታሪክ መዝገብ (editHistory) ውስጥ አዲስ የማረጋገጫ ሎግ ማዘጋጀት
+    // 4. ያንተን ስኪማ መዋቅር የጠበቀ የታሪክ መዝገብ (editHistory) ማዘጋጀት
     const livenessLogEntry = {
       editedBy: "AI Biometric System",
       editedAt: new Date(),
-      details: `🤖 የዲጂታል ህያውነት ማረጋገጫ ተከናውኗል (ፈገግታ፡ ${smilePassed}፣ እንቅስቃሴ፡ ${nodPassed})።`
+      details: `🤖 በህይወት መኖራቸው በባዮሜትሪክስ ተረጋግጧል። (ፈገግታ፡ አልፏል፣ እንቅስቃሴ፡ አልፏል)`
     };
 
-    // 5. ያንተን የዳታቤዝ ፊልዶች ማዘመን
-    pensioner.status = "Verified"; // የህይወት ሁኔታውን "Verified" ማድረግ
+    // 5. መረጃዎቹን ማዘመን (status 'Active' ሆኖ ይቀጥላል)
+    pensioner.status = "Active"; 
     pensioner.statusChangedDate = new Date();
     pensioner.lastEditedBy = "AI Biometric System";
     pensioner.lastEditedAt = new Date();
 
-    // በስኪማህ ላይ ያለው editHistory አሬይ (Array) ከሆነ አዲሱን ታሪክ መግፋት (push)
-    if (Array.isArray(pensioner.editHistory)) {
-      pensioner.editHistory.push(livenessLogEntry);
-    } else {
-      pensioner.editHistory = [livenessLogEntry];
-    }
+    // በስኪማህ መሠረት ወደ editHistory አሬይ መግፋት
+    pensioner.editHistory.push(livenessLogEntry);
 
-    // ለውጦቹን በዳታቤዝ ውስጥ ማዳን
+    // ዳታቤዝ ላይ ሴቭ ማድረግ
     await pensioner.save();
 
-    console.log(`🟢 ጡረተኛው [${pensioner.nameAmh || pensioner.nameEng}] በAI በተሳካ ሁኔታ ተረጋግጧል!`);
+    console.log(`🟢 ጡረተኛው [${pensioner.nameAmh}] በAI በተሳካ ሁኔታ ተረጋግጧል!`);
 
-    // 6. ለሪአክት ስኬታማ ምላሽ መላክ (የጡረተኛውን ዳታ ጨምሮ)
+    // 6. ለሪአክት ስኬታማ ምላሽ መላክ
     return res.status(200).json({
       success: true,
       message: `🎉 የጡረተኛው (${pensioner.nameAmh}) በህይወት መኖር በባዮሜትሪክስ ተረጋግጧል!`,
