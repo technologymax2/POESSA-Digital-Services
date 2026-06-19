@@ -13,6 +13,7 @@ import LivenessTest from './customer/LivenessTest';
 import PensionerRegistration from './employee/PensionerRegistration';
 import IdCardGenerationAndSearch from './employee/IdCardGenerationAndSearch';
 import ScanVerify from './employee/ScanVerify';
+import VerificationWizard from './customer/VerificationWizard';
 import './App.css';
 
 
@@ -32,7 +33,7 @@ function App() {
           <Route path="/liveness" element={<LivenessTest />} />
           <Route path="/pensioner-registration" element ={<PensionerRegistration />} />
           <Route path="/idcard-generation-search" element={<IdCardGenerationAndSearch />} />
-          
+          <Route path="/verify-process/:faydaNum" element={<VerificationWizard />} />
           {/* 🚨 ከባክኤንድ ጋር እንዳይጋጭ /api/pensioners የሚለው ጠፍቶ ወደ ንጹህ ፍሮንትኤንድ መንገድ ተቀይሯል */}
           <Route path="/verify/:faydaNum" element={<ScanVerify />} />
         </Routes>
