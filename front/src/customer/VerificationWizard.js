@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import CaptureIDCard from "./CaptureIDCard";
 import CaptureSelfie from "./CaptureSelfie";
 import FaceMatch from "./FaceMatch";
@@ -9,44 +10,54 @@ function VerificationWizard() {
 
   const [step, setStep] = useState(1);
 
-  const [idData, setIdData] = useState(null);
-  const [selfie, setSelfie] = useState(null);
+  const [faydaNumber, setFaydaNumber] = useState("");
+  const [idPhoto, setIdPhoto] = useState(null);
+  const [selfiePhoto, setSelfiePhoto] = useState(null);
 
   return (
     <div>
 
+      {/* STEP 1 */}
       {step === 1 && (
         <CaptureIDCard
           onSuccess={(data) => {
-            setIdData(data);
+            setFaydaNumber(data.faydaNumber);
+            setIdPhoto(data.image);
             setStep(2);
           }}
         />
       )}
 
+      {/* STEP 2 */}
       {step === 2 && (
         <CaptureSelfie
           onSuccess={(image) => {
-            setSelfie(image);
+            setSelfiePhoto(image);
             setStep(3);
           }}
         />
       )}
 
+      {/* STEP 3 */}
       {step === 3 && (
         <FaceMatch
-          idPhoto={idData.image}
-          selfiePhoto={selfie}
+          idPhoto={idPhoto}
+          selfiePhoto={selfiePhoto}
           onSuccess={() => setStep(4)}
         />
       )}
 
+      {/* STEP 4 */}
       {step === 4 && (
         <LivenessTest
+          faydaNumber={faydaNumber}
+          idPhoto={idPhoto}
+          selfiePhoto={selfiePhoto}
           onSuccess={() => setStep(5)}
         />
       )}
 
+      {/* STEP 5 */}
       {step === 5 && (
         <VerificationSuccess />
       )}
