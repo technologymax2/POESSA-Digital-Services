@@ -1,17 +1,14 @@
 import React, { useRef, useState } from "react";
 import Webcam from "react-webcam";
-import "./Verification.css"; // ቅድም የፈጠርነውን CSS ተጠቀም
+import "./Verification.css"; // ቀደም ሲል የፈጠርነውን CSS ተጠቀም
 
 function CaptureIDCard({ onSuccess }) {
   const webcamRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
 
   const captureImage = () => {
-    // ካሜራው ከፍሬም ውጭ እንዳይሆን ማረጋገጥ
-    const imageSrc = webcamRef.current.getScreenshot({
-      width: 1280,
-      height: 720
-    });
+    // ፎቶው ከፍሬም ውጭ እንዳይሆን እና እንዳይሻፋ ለማድረግ
+    const imageSrc = webcamRef.current.getScreenshot();
 
     if (!imageSrc) {
       alert("ፎቶውን ማንሳት አልተቻለም፤ እባክዎ እንደገና ይሞክሩ።");
@@ -32,34 +29,41 @@ function CaptureIDCard({ onSuccess }) {
   return (
     <div className="verification-wizard-container">
       <h2>የመታወቂያ ካርድዎን ይቃኙ</h2>
-      <p style={{ fontSize: '14px', color: '#64748b' }}>
+      <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '15px' }}>
         እባክዎን መታወቂያዎን በካሜራው ፍሬም ውስጥ ሙሉ በሙሉ ያስገቡ።
       </p>
 
       {!capturedImage ? (
-        <>
+        <div style={{ position: 'relative', width: '100%', maxWidth: '450px', margin: '0 auto' }}>
           <Webcam
             ref={webcamRef}
             screenshotFormat="image/jpeg"
+            // የካሜራውን ጥራት እና መጠን ለመቆጣጠር
             videoConstraints={{
-              facingMode: "environment",
+              facingMode: "environment", // የጀርባ ካሜራ
               aspectRatio: 1.586 // የኢትዮጵያ መታወቂያ ካርድ ቅርጽ (ID-1)
             }}
             className="verification-wizard-webcam"
             style={{
               width: "100%",
-              maxWidth: "450px",
-              aspectRatio: "1.586",
-              objectFit: "cover",
+              aspectRatio: "1.586", // የካርድ ቅርጽ
+              objectFit: "cover", // ምስሉ እንዳይሻፋ ለመከላከል ዋናው ቁልፍ
               borderRadius: "15px",
               border: "3px solid #162447"
             }}
           />
-
-          <button className="verification-wizard-btn" onClick={captureImage}>
-            መታወቂያውን ይቅረጹ (Capture)
-          </button>
-        </>
+          {/* ተጠቃሚው መታወቂያውን የት እንደሚያደርግ የሚያሳይ ክፈፍ */}
+          <div style={{
+            position: 'absolute',
+            top: '5%',
+            left: '5%',
+            right: '5%',
+            bottom: '5%',
+            border: '2px dashed #4ade80',
+            borderRadius: '10px',
+            pointerEvents: 'none'
+          }} />
+        </div>
       ) : (
         <>
           <img
@@ -68,7 +72,10 @@ function CaptureIDCard({ onSuccess }) {
             style={{
               width: "100%",
               maxWidth: "450px",
+              aspectRatio: "1.586",
+              objectFit: "cover",
               borderRadius: "15px",
+              border: "3px solid #162447",
               marginTop: "15px"
             }}
           />
@@ -85,6 +92,12 @@ function CaptureIDCard({ onSuccess }) {
             እንደገና ያንሱ
           </button>
         </>
+      )}
+
+      {!capturedImage && (
+        <button className="verification-wizard-btn" onClick={captureImage}>
+          መታወቂያውን ይቅረጹ (Capture)
+        </button>
       )}
     </div>
   );
