@@ -1,132 +1,80 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as faceapi from '@vladmandic/face-api';
-import './LivenessTest.css'; 
+import './LivenessTest.css';
 
-let isModelsLoading = false;
-let isModelsLoaded = false;
-
-function LivenessTest() {
+function LivenessTest({ faydaNumber }) {
   const videoRef = useRef(null);
-  const [challenge, setChallenge] = useState("እባክዎ ፈገግ ይበሉ (Smile Please)");
-  const [status, setStatus] = useState("የፊት መለያ ሞዴሎች እየተጫኑ ነው...");
+  const [task, setTask] = useState("እባክዎ ፈገግ ይበሉ (Smile)");
+  const [stage, setStage] = useState(0); // 0:Smile, 1:Nod, 2:Turn, 3:Done
+  const [status, setStatus] = useState("ሞዴሎችን በመጫን ላይ...");
   const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
-    if (isModelsLoaded) {
-      setStatus("ሞዴሎች ዝግጁ ናቸው፤ ካሜራ እየተከፈተ ነው...");
+    const loadModels = async () => {
+      const MODEL_URL = 'https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/';
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
+      ]);
       startVideo();
-      return;
-    }
-
-    if (isModelsLoading) return;
-    isModelsLoading = true;
-
-    setStatus("ሞዴሎች በከፍተኛ ፍጥነት እየተጫኑ ነው...");
-
-    // በ Vercel ፈንታ በዓለም ፈጣኑን የ CDN ሰርቨር አድራሻ በመጠቀም ማነቆውን መስበር
-    const cdnModelPath = 'https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/';
-
-    Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri(cdnModelPath),
-      faceapi.nets.faceLandmark68Net.loadFromUri(cdnModelPath),
-      faceapi.nets.faceExpressionNet.loadFromUri(cdnModelPath)
-    ]).then(() => {
-      isModelsLoaded = true;
-      isModelsLoading = false;
-      setStatus("ሞዴሎች በተሳካ ሁኔታ ተጭነዋል! ካሜራ እየተከፈተ ነው...");
-      startVideo();
-    }).catch(err => {
-      console.error("የመጫን ስህተት:", err);
-      isModelsLoading = false;
-      setStatus("የሞዴል ፋይሎችን ማንበብ አልተቻለም። እባክዎ ገጹን Refresh ያድርጉ።");
-    });
-
-    return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject;
-        const tracks = stream.getTracks();
-        tracks.forEach(track => track.stop());
-      }
     };
+    loadModels();
   }, []);
 
   const startVideo = () => {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 300, facingMode: "user" } })
-        .then(stream => { 
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-          setStatus("ካሜራ ተከፍቷል፤ እባክዎ ፈገግ ይበሉ...");
-        })
-        .catch(err => {
-          console.error(err);
-          setStatus("እባክዎ ለብሮውዘርዎ የካሜራ ፈቃድ (Allow) ይስጡ");
-        });
-    } else {
-      setStatus("%E1%8A%A1%E1%8B%AE%E1%8B%8D%E1%8B%98%E1%8Badigftm");
-    }
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => { videoRef.current.srcObject = stream; setStatus("ካሜራ ተከፍቷል"); })
+      .catch(err => setStatus("ካሜራ አልተገኘም"));
   };
 
   const handleVideoPlay = () => {
     const interval = setInterval(async () => {
-      if (!videoRef.current || isVerified) {
-        clearInterval(interval);
-        return;
-      }
-      
-      try {
-        const detections = await faceapi.detectSingleFace(
-          videoRef.current, 
-          new faceapi.TinyFaceDetectorOptions()
-        ).withFaceLandmarks().withFaceExpressions();
+      if (!videoRef.current || stage === 3) { clearInterval(interval); return; }
 
-        if (detections) {
-          setStatus("ፊት ተገኝቷል፤ ትዕዛዙን ይፈጽሙ...");
-          const smileValue = detections.expressions.happy;
-          
-          if (smileValue > 0.75) { 
-            setIsVerified(true);
-            setStatus("በአሸናፊነት ተረጋግጧል! (Verified) 🎉");
-            clearInterval(interval);
-          }
-        } else {
-          setStatus("እባክዎ ፊትዎን ወደ ካሜራው ያቅናው...");
-        }
-      } catch (e) {
-        // የቪዲዮ ፍሬም መቋረጥ ስህተቶችን በዝምታ ለማለፍ
+      const detection = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks().withFaceExpressions();
+
+      if (!detection) return;
+
+      const { expressions, landmarks } = detection;
+      const nose = landmarks.getNose()[0]; // የአፍንጫ መሃል
+
+      // 1. ፈገግታ ማረጋገጫ
+      if (stage === 0 && expressions.happy > 0.8) {
+        setTask("በጣም ጥሩ! አሁን ጭንቅላትዎን ወደ ላይ እና ታች ያድርጉ (Nod)");
+        setStage(1);
+      } 
+      // 2. Nod (Up/Down) - በጊዜ ሂደት የ Y አቀማመጥ ለውጥ
+      else if (stage === 1 && Math.abs(nose.y - 150) > 30) {
+        setTask("አሁን ጭንቅላትዎን ወደ ግራ እና ቀኝ ያወዛውዙ (Turn)");
+        setStage(2);
       }
-    }, 500);
+      // 3. Turn (Left/Right) - የ X አቀማመጥ ለውጥ
+      else if (stage === 2 && Math.abs(nose.x - 200) > 40) {
+        setStage(3);
+        verifyUser();
+      }
+    }, 1000);
+  };
+
+  const verifyUser = async () => {
+    setIsVerified(true);
+    setTask("የህይወት ማረጋገጫ ተጠናቋል!");
+    // ወደ Backend የመጨረሻውን የኦዲት መረጃ መላክ
+    await fetch('https://poessa-digital-services-1.onrender.com/api/pensioners/verify-success', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ faydaNumber, status: 'Verified', timestamp: new Date() })
+    });
   };
 
   return (
     <div className="liveness-container">
-      <h2 className="liveness-title">POESSA ዲጂታል አገልግሎት</h2>
-      <p className="liveness-subtitle">የጡረተኞች የህይወት ማረጋገጫ ሲስተም</p>
-      
-      <div className="challenge-box">
-        {challenge}
-      </div>
-      
-      <div className="video-wrapper">
-        <video 
-          ref={videoRef} 
-          autoPlay 
-          muted 
-          onPlay={handleVideoPlay} 
-          className="video-element" 
-          playsInline 
-        />
-        {isVerified && (
-          <div className="verified-overlay">
-            <span className="verified-badge">✓ ተረጋግጧል</span>
-          </div>
-        )}
-      </div>
-      
-      <p className={`status-text ${isVerified ? 'success' : 'loading'}`}>
-        {status}
-      </p>
+      <h2>{task}</h2>
+      <video ref={videoRef} autoPlay muted onPlay={handleVideoPlay} style={{ width: '400px', borderRadius: '10px' }} />
+      <p>{status}</p>
+      {isVerified && <div className="success-badge">✅ የተረጋገጠ</div>}
     </div>
   );
 }
