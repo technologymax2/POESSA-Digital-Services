@@ -1,36 +1,133 @@
-/* Verification.css */
-
+/* =========================
+   BASE LAYOUT
+========================= */
 .verification-wizard-container {
-  max-width: 450px;
-  margin: 20px auto;
-  padding: 25px;
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
   text-align: center;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: Arial, sans-serif;
+  background: #f8fafc;
+}
+
+/* =========================
+   HEADINGS
+========================= */
+.verification-wizard-container h2 {
   color: #162447;
+  margin-bottom: 15px;
 }
 
-.verification-wizard-status {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin: 20px 0;
-  color: #162447;
-  padding: 10px;
+/* =========================
+   BUTTONS
+========================= */
+.verification-wizard-btn {
+  background: #162447;
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  margin: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  width: 100%;
+  max-width: 300px;
+  transition: 0.2s;
 }
 
-.verification-wizard-loader {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #162447;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin: 20px auto;
+.verification-wizard-btn:hover {
+  background: #1f4068;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* =========================
+   WEBCAM CONTAINER
+========================= */
+.verification-wizard-webcam {
+  width: 100%;
+  max-width: 450px;
+  border-radius: 15px;
+  border: 3px solid #162447;
+  object-fit: cover;
+}
+
+/* =========================
+   IMAGE PREVIEW
+========================= */
+.verification-wizard-container img {
+  width: 100%;
+  max-width: 450px;
+  border-radius: 15px;
+  border: 3px solid #162447;
+}
+
+/* =========================
+   STEP INFO
+========================= */
+.verification-wizard-step-info {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* =========================
+   TABLET (iPad / 768px)
+========================= */
+@media (max-width: 768px) {
+  .verification-wizard-container {
+    padding: 15px;
+  }
+
+  .verification-wizard-btn {
+    font-size: 15px;
+    padding: 11px;
+    max-width: 100%;
+  }
+
+  .verification-wizard-webcam,
+  .verification-wizard-container img {
+    max-width: 100%;
+  }
+}
+
+/* =========================
+   MOBILE (Android / 480px)
+========================= */
+@media (max-width: 480px) {
+  .verification-wizard-container {
+    padding: 10px;
+  }
+
+  .verification-wizard-container h2 {
+    font-size: 18px;
+  }
+
+  .verification-wizard-btn {
+    font-size: 14px;
+    padding: 10px;
+    width: 100%;
+  }
+
+  .verification-wizard-step-info {
+    font-size: 12px;
+  }
+
+  /* Webcam becomes full screen-friendly */
+  .verification-wizard-webcam {
+    max-width: 100%;
+    border-radius: 10px;
+  }
+}
+
+/* =========================
+   VERY SMALL PHONES (optional)
+========================= */
+@media (max-width: 360px) {
+  .verification-wizard-container h2 {
+    font-size: 16px;
+  }
+
+  .verification-wizard-btn {
+    font-size: 13px;
+  }
 }
