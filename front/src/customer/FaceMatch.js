@@ -14,9 +14,9 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
     try {
       const MODEL_URL = "https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/";
       
-      // ሞዴሎችን መጫን
+      // 1. ሞዴሎችን መጫን (ለሞባይል ሲባል TinyFaceDetector ተጠቅሟል)
       await Promise.all([
-        faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
         faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
         faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
       ]);
@@ -24,16 +24,30 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
       const idImg = await faceapi.fetchImage(idPhoto);
       const selfieImg = await faceapi.fetchImage(selfiePhoto);
 
-      const idDescriptor = await faceapi.detectSingleFace(idImg).withFaceLandmarks().withFaceDescriptor();
-      const selfieDescriptor = await faceapi.detectSingleFace(selfieImg).withFaceLandmarks().withFaceDescriptor();
+      // 2. ፊቶችን መለየት (TinyFaceDetector ለሞባይል ፈጣን ነው)
+      const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224 });
+      
+      const idDescriptor = await faceapi
+        .detectSingleFace(idImg, options)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+        
+      const selfieDescriptor = await faceapi
+        .detectSingleFace(selfieImg, options)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
 
       if (!idDescriptor || !selfieDescriptor) {
-        setMessage("❌ ፊት አልተገኘም፤ እባክዎ እንደገና ይሞክሩ።");
+        setMessage("❌ ፊት አልተገኘም፤ እባክዎ ጥርት ያለ ፎቶ እንደገና ያንሱ።");
         setLoading(false);
         return;
       }
 
-      const distance = faceapi.euclideanDistance(idDescriptor.descriptor, selfieDescriptor.descriptor);
+      // 3. ማነፃፀር
+      const distance = faceapi.euclideanDistance(
+        idDescriptor.descriptor, 
+        selfieDescriptor.descriptor
+      );
 
       if (distance < 0.6) {
         setMessage("✅ የፊት ማመሳሰል ተሳክቷል!");
@@ -45,14 +59,19 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
       }
     } catch (err) {
       console.error(err);
-      setMessage("⚠️ የስርዓት ስህተት ተፈጥሯል።");
+      setMessage("⚠️ የስርዓት ስህተት ተፈጥሯል፤ እባክዎ ኢንተርኔትዎን ይፈትሹ።");
       setLoading(false);
     }
   };
 
   return (
     <div className="verification-wizard-container">
-      {loading && <div className="verification-wizard-loader"></div>}
+      {loading && (
+        <>
+          <div className="verification-wizard-loader"></div>
+          <p style={{ color: "#64748b" }}>እባክዎን ይጠብቁ...</p>
+        </>
+      )}
       <h2 className="verification-wizard-status">{message}</h2>
     </div>
   );
