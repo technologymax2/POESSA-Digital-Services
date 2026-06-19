@@ -16,15 +16,9 @@ const Sidebar = ({ currentLang, toggleLanguage, collapsed, setCollapsed }) => {
   };
 
   // የህይወት ማረጋገጫን በፕሮፌሽናል መንገድ የሚይዝ ተግባር
-  const handleLivenessNavigation = () => {
-    const faydaNum = localStorage.getItem("faydaNumber"); // በሲስተሙ የተያዘው ፋይዳ ቁጥር
-    if (faydaNum) {
-      navigate(`/verify-process/${faydaNum}`);
-    } else {
-      // ፋይዳ ቁጥር ከሌለ ወደ ፍለጋ ገጽ በመምራት ተጠቃሚውን መምራት
-      alert(currentLang === "am" ? "እባክዎ መጀመሪያ ፋይዳ ቁጥርዎን ያረጋግጡ" : "Please verify your Fayda number first");
-      navigate("/idcard-generation-search");
-    }
+const handleLivenessNavigation = () => {
+    // ምንም የፋይዳ ቁጥር አይጠየቅም፣ ቀጥታ ወደ ስካን ገጽ
+    navigate(`/verify-process/scan`);
     setCollapsed(true);
   };
 
