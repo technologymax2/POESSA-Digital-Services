@@ -1,60 +1,114 @@
-import React, { useState, useRef } from 'react';
-import { QrReader } from 'react-qr-reader';
-import Webcam from 'react-webcam';
+import React, { useState, useRef } from "react";
+import { QrReader } from "react-qr-reader";
+import Webcam from "react-webcam";
 
 function CaptureID({ onComplete }) {
-  const [step, setStep] = useState('SCAN');
-  const [faydaNum, setFaydaNum] = useState(null);
+  const [step, setStep] = useState("SCAN");
+  const [faydaNum, setFaydaNum] = useState("");
+  const [scanned, setScanned] = useState(false);
+
   const webcamRef = useRef(null);
 
-  // QR ሲቃኝ የሚከናወን
+  // QR Scan
   const handleScan = (result) => {
-    if (result) {
-      // ከ QR የተገኘውን ቁጥር እንይዛለን
-      setFaydaNum(result.text || result); 
-      setStep('CAPTURE');
+    if (result && !scanned) {
+      const qrValue = result?.text || "";
+
+      setScanned(true);
+      setFaydaNum(qrValue);
+      setStep("CAPTURE");
     }
   };
 
-  // ፎቶ ሲነሳ የሚከናወን
+  // Camera Photo Capture
   const capturePhoto = () => {
-    const imageSrc = webcamRef.current.getScreenshot();
-    if (imageSrc) {
-      // ፋይዳ ቁጥር እና ፎቶውን ወደ VerificationWizard እንልካለን
-      onComplete({ faydaNum, imageSrc });
+    const imageSrc = webcamRef.current?.getScreenshot();
+
+    if (!imageSrc) {
+      alert("ፎቶ ማንሳት አልተሳካም!");
+      return;
     }
+
+    onComplete({
+      faydaNum,
+      imageSrc,
+    });
   };
 
   return (
-    <div className="capture-wrapper" style={{ padding: '20px', textAlign: 'center' }}>
-      {step === 'SCAN' ? (
-        <div style={{ width: '100%', maxWidth: '400px', margin: 'auto' }}>
-          <h3>ደረጃ 1፡ የጡረተኛውን መታወቂያ QR ይቃኙ</h3>
-          <QrReader 
-            onResult={(result, error) => {
-              if (result) handleScan(result);
+    <div
+      className="capture-wrapper"
+      style={{
+        padding: "20px",
+        textAlign: "center",
+      }}
+    >
+      {step === "SCAN" && (
+        <>
+          <h2>ደረጃ 1፡ የጡረተኛውን QR Code ይቃኙ</h2>
+
+          <div
+            style={{
+              maxWidth: "400px",
+              margin: "20px auto",
             }}
-            constraints={{ facingMode: 'environment' }}
-            scanDelay={500}
-          />
-        </div>
-      ) : (
-        <div>
-          <h3>ደረጃ 2፡ የጡረተኛውን ፎቶ ያንሱ</h3>
-          <Webcam 
-            ref={webcamRef} 
-            screenshotFormat="image/jpeg" 
-            videoConstraints={{ facingMode: 'user' }}
-            style={{ width: '100%', maxWidth: '400px', borderRadius: '10px' }}
-          />
-          <br />
-          <button 
-            onClick={capturePhoto} 
-            style={{ marginTop: '20px', padding: '10px 30px', fontSize: '16px' }}
           >
-            ፎቶውን አረጋግጥ
+            <QrReader
+              constraints={{
+                facingMode: "environment",
+              }}
+              scanDelay={500}
+              onResult={(result, error) => {
+                if (result) {
+                  handleScan(result);
+                }
+              }}
+            />
+          </div>
+        </>
+      )}
+
+      {step === "CAPTURE" && (
+        <>
+          <h2>ደረጃ 2፡ ፎቶ ያንሱ</h2>
+
+          <p>
+            Fayda Number: <strong>{faydaNum}</strong>
+          </p>
+
+          <Webcam
+            ref={webcamRef}
+            audio={false}
+            screenshotFormat="image/jpeg"
+            videoConstraints={{
+              facingMode: "user",
+            }}
+            style={{
+              width: "100%",
+              maxWidth: "400px",
+              borderRadius: "15px",
+              border: "3px solid #007bff",
+            }}
+          />
+
+          <br />
+
+          <button
+            onClick={capturePhoto}
+            style={{
+              marginTop: "20px",
+              padding: "12px 30px",
+              fontSize: "16px",
+              border: "none",
+              borderRadius: "8px",
+              backgroundColor: "#007bff",
+              color: "#fff",
+              cursor: "pointer",
+            }}
+          >
+            ፎቶውን አንሳ
           </button>
-        </div>
+        </>
       )}
     </div>
   );
