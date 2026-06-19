@@ -1,121 +1,144 @@
 import React, { useEffect, useRef, useState } from "react";
-import * as faceapi from "@vladmandic/face-api";
 
-function LivenessTest({ onSuccess }) {
+function LivenessTest({ faydaNumber, onSuccess }) {
+  const videoRef = useRef(null);
+  const [statusMessage, setStatusMessage] = useState("⏳ ካሜራውን እና የባዮሜትሪክስ ሞዴሉን በማዘጋጀት ላይ...");
+  const [loading, setLoading] = useState(true);
+  
+  // የፈተናዎቹ ሁኔታ (State)
+  const [checks, setChecks] = useState({
+    smilePassed: false,
+    nodPassed: false
+  });
 
-  const videoRef = useRef();
+  const [currentInstruction, setCurrentInstruction] = useState("እባክዎ ካሜራውን ቀጥ ብለው ይመልከቱ");
 
-  const [task, setTask] = useState("Loading camera...");
-  const [stage, setStage] = useState(0);
+  useEffect(() => {
+    let stream = null;
+    let intervalId = null;
 
-useEffect(() => {
-  const interval = setInterval(() => {
-    runDetection();
-  }, 1000);
+    const startLiveness = async () => {
+      try {
+        const faceapi = window.faceapi;
+        if (!faceapi) {
+          setStatusMessage("❌ የፊት መለያው ስክሪፕት አልተጫነም፤ እባክዎ index.htmlን ይፈትሹ።");
+          return;
+        }
 
-  return () => clearInterval(interval);
-}, [stage]);;
+        // 1. የፊት ገጽታ መለያ ሞዴል መጫኑን ማረጋገጥ
+        const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
+        await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
 
-  const loadModels = async () => {
+        // 2. የፊት ለፊት (Selfie) ካሜራን መክፈት
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: 400, height: 400 }
+        });
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
 
-    const MODEL_URL =
-      "https://cdn.jsdelivr.net/gh/vladmandic/face-api/model/";
+        setLoading(false);
+        setStatusMessage("🟢 የህያውነት ፈተናው ተጀምሯል!");
+        setCurrentInstruction("😊 እባክዎ ለካሜራው በግልጽ ፈገግ ይበሉ...");
 
-    await Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-      faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
-    ]);
+        // 3. በየ 400 ሚሊሰከንድ ተጠቃሚው የሚሰጠውን ምላሽ በቪዲዮው ላይ መመርመር
+        intervalId = setInterval(async () => {
+          if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return;
 
-    startVideo();
+          const detection = await faceapi.detectSingleFace(videoRef.current)
+            .withFaceLandmarks()
+            .withFaceExpressions();
 
-  };
+          if (!detection) return;
 
-  const startVideo = async () => {
+          // ሀ. የፈገግታ ማረጋገጫ (Smile Detection)
+          const smileValue = detection.expressions.happy;
+          let currentSmileStatus = checks.smilePassed;
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true
-    });
+          if (!currentSmileStatus && smileValue > 0.75) { // 75% በላይ ፈገግታ ከተገኘ
+            currentSmileStatus = true;
+            setChecks(prev => ({ ...prev, smilePassed: true }));
+            setCurrentInstruction("👋 አሁን ደግሞ ራስዎን ቀስ አድርገው ወደ ግራና ቀኝ ያወዛውዙ...");
+          }
 
-    videoRef.current.srcObject = stream;
+          // ለ. የራስ ማወዛወዝ ማረጋገጫ (Movement/Nod Detection)
+          if (currentSmileStatus && !checks.nodPassed) {
+            // የፊቱን የአፍንጫ መሃል ነጥብ እና የግራ/ቀኝ ጠርዞችን ርቀት በማየት እንቅስቃሴን መለካት
+            const landmarks = detection.landmarks;
+            const nose = landmarks.getNose()[0];
+            const leftEye = landmarks.getLeftEye()[0];
+            const rightEye = landmarks.getRightEye()[0];
 
-    setTask("😊 Smile");
+            // የአፍንጫው መሃል ነጥብ ከሁለቱ አይኖች ያለው ርቀት ሲቀያየር እንቅስቃሴ መኖሩ ይረጋገጣል
+            const leftDist = nose.x - leftEye.x;
+            const rightDist = rightEye.x - nose.x;
+            const ratio = leftDist / rightDist;
 
-  };
+            if (ratio < 0.6 || ratio > 1.6) { // ራሱን ወደ ጎን ማዞሩን ያሳያል
+              setChecks(prev => {
+                const updated = { ...prev, nodPassed: true };
+                
+                // ሁለቱም ፈተናዎች ካለፉ ሂደቱን ያቆማል
+                clearInterval(intervalId);
+                if (stream) stream.getTracks().forEach(track => track.stop());
+                
+                // ውጤቱን ወደ ዋናው ዊዛርድ ማሳለፍ
+                onSuccess({
+                  smilePassed: true,
+                  nodPassed: true,
+                  turnPassed: true
+                });
+                
+                return updated;
+              });
+            }
+          }
+        }, 400);
 
-  const runDetection = async () => {
+      } catch (err) {
+        console.error("Liveness Error:", err);
+        setStatusMessage("❌ ካሜራ መክፈት አልተቻለም ወይም ሞዴሉ አልተጫነም።");
+      }
+    };
 
-    const detection = await faceapi
-      .detectSingleFace(
-        videoRef.current,
-        new faceapi.TinyFaceDetectorOptions()
-      )
-      .withFaceLandmarks()
-      .withFaceExpressions();
+    startLiveness();
 
-    if (!detection) return;
-
-    const nose = detection.landmarks.getNose()[0];
-
-    if (
-      stage === 0 &&
-      detection.expressions.happy > 0.7
-    ) {
-
-      setStage(1);
-      setTask("⬆️⬇️ Move head up and down");
-
-    }
-
-    else if (
-      stage === 1 &&
-      Math.abs(nose.y - 150) > 30
-    ) {
-
-      setStage(2);
-      setTask("⬅️➡️ Turn left and right");
-
-    }
-
-    else if (
-      stage === 2 &&
-      Math.abs(nose.x - 200) > 40
-    ) {
-
-      setStage(3);
-
-      setTask("Verification Successful ✅");
-
-      setTimeout(() => {
-
-        onSuccess();
-
-      }, 2000);
-
-    }
-
-  };
+    // ጽዳት (Cleanup)
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      if (stream) stream.getTracks().forEach(track => track.stop());
+    };
+  }, [onSuccess]);
 
   return (
+    <div style={{ padding: "20px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
+      <h3 style={{ color: "#162447" }}>🎯 ደረጃ 4፦ የህያውነት ፈተና (Liveness Test)</h3>
+      <p style={{ color: "#64748b", fontSize: "14px" }}>ይህ ሰው በትክክል በህይወት ያለና ካሜራው ፊት መኖሩን ማረጋገጫ</p>
 
-    <div style={{ textAlign: "center" }}>
+      {/* መመሪያ ሰሌዳ */}
+      <div style={{ background: "#162447", color: "#fff", padding: "15px", borderRadius: "8px", margin: "15px 0", fontSize: "16px", fontWeight: "bold" }}>
+        {currentInstruction}
+      </div>
 
-      <h2>{task}</h2>
+      {/* የካሜራ ሳጥን */}
+      <div style={{ background: "#000", borderRadius: "12px", width: "260px", height: "260px", margin: "0 auto", overflow: "hidden", position: "relative", border: "4px solid #3b82f6" }}>
+        <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        {loading && <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "#fff", fontSize: "12px" }}>እየጫነ ነው...</div>}
+      </div>
 
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        width="450"
-        onPlay={() => {
+      {/* የበታች ማረጋገጫ ዝርዝር */}
+      <div style={{ marginTop: "20px", textAlign: "left", display: "inline-block" }}>
+        <div style={{ fontSize: "15px", marginBottom: "8px", color: checks.smilePassed ? "#22c55e" : "#64748b" }}>
+          {checks.smilePassed ? "✅" : "⭕"} 1. የፈገግታ ፈተና (Smile Check)
+        </div>
+        <div style={{ fontSize: "15px", color: checks.nodPassed ? "#22c55e" : "#64748b" }}>
+          {checks.nodPassed ? "✅" : "⭕"} 2. የእንቅስቃሴ ፈተና (Motion Check)
+        </div>
+      </div>
 
-          setInterval(runDetection, 1000);
-
-        }}
-      />
-
+      <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "20px" }}>{statusMessage}</p>
     </div>
-
   );
 }
 
