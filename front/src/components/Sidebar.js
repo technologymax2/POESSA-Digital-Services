@@ -15,6 +15,19 @@ const Sidebar = ({ currentLang, toggleLanguage, collapsed, setCollapsed }) => {
     setCollapsed(true);
   };
 
+  // የህይወት ማረጋገጫን በፕሮፌሽናል መንገድ የሚይዝ ተግባር
+  const handleLivenessNavigation = () => {
+    const faydaNum = localStorage.getItem("faydaNumber"); // በሲስተሙ የተያዘው ፋይዳ ቁጥር
+    if (faydaNum) {
+      navigate(`/verify-process/${faydaNum}`);
+    } else {
+      // ፋይዳ ቁጥር ከሌለ ወደ ፍለጋ ገጽ በመምራት ተጠቃሚውን መምራት
+      alert(currentLang === "am" ? "እባክዎ መጀመሪያ ፋይዳ ቁጥርዎን ያረጋግጡ" : "Please verify your Fayda number first");
+      navigate("/idcard-generation-search");
+    }
+    setCollapsed(true);
+  };
+
   return (
     <aside className={`poessa-sidebar ${!collapsed ? "poessa-sidebar--open" : ""}`}>
       <div className="poessa-sidebar__header">
@@ -25,7 +38,6 @@ const Sidebar = ({ currentLang, toggleLanguage, collapsed, setCollapsed }) => {
             <p>Digital Services</p>
           </div>
         </div>
-        
         <button className="poessa-sidebar__close-btn" onClick={() => setCollapsed(true)}>
           <Close style={{ color: "white", fontSize: "28px" }} />
         </button>
@@ -38,7 +50,8 @@ const Sidebar = ({ currentLang, toggleLanguage, collapsed, setCollapsed }) => {
         <div className="poessa-sidebar__menu-item" onClick={() => handleNavigation("/delegations")}>
           <Description /> <span>{currentLang === "am" ? "ውክልናዎች" : "Delegations"}</span>
         </div>
-        <div className="poessa-sidebar__menu-item" onClick={() => handleNavigation("/liveness")}>
+        {/* የተስተካከለ የህይወት ማረጋገጫ ሜኑ */}
+        <div className="poessa-sidebar__menu-item" onClick={handleLivenessNavigation}>
           <VerifiedUser /> <span>{currentLang === "am" ? "የህይወት ማረጋገጫ" : "Life Verification"}</span>
         </div>
         <div className="poessa-sidebar__menu-item" onClick={() => handleNavigation("/admin-dashboard")}>
