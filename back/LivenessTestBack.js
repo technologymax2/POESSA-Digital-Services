@@ -1,127 +1,87 @@
 const express = require("express");
-
 const router = express.Router();
+// 🟢 ያንተን ኦሪጅናል የጡረተኛ ሞዴል በትክክል መጥራት
+const UserPensioner = require("./models/UserPensioner"); 
 
-const LivenessVerification = require("./models/livenessSchema");
-
-
-// Save successful verification
+/* ==========================================================================
+   1️⃣ POST: /api/liveness/verify-success
+   (በህያውነት ፈተና ያለፈውን ጡረተኛ ዳታቤዝ ላይ "Verified" ማድረጊያ)
+========================================================================== */
 router.post("/verify-success", async (req, res) => {
   try {
-
     const {
       faydaNumber,
-      idPhoto,
-      selfiePhoto,
       faceMatched,
       smilePassed,
       nodPassed,
-      turnPassed
+      turnPassed,
+      verificationStatus // ከሪአክት "Verified" ተብሎ የሚመጣው
     } = req.body;
 
-    let record =
-      await LivenessVerification.findOne({
-        faydaNumber
+    // 1. የፋይዳ ቁጥር መኖሩን ማረጋገጥ
+    if (!faydaNumber) {
+      return res.status(400).json({
+        success: false,
+        message: "⚠️ የጡረተኛው የፋይዳ ቁጥር አልተገኘም!"
       });
-
-    if (!record) {
-
-      record = new LivenessVerification({
-        faydaNumber
-      });
-
     }
 
-    record.idPhoto = idPhoto;
-
-    record.selfiePhoto = selfiePhoto;
-
-    record.faceMatched = faceMatched;
-
-    record.smilePassed = smilePassed;
-
-    record.nodPassed = nodPassed;
-
-    record.turnPassed = turnPassed;
-
-    record.verificationStatus = "Verified";
-
-    record.lastVerificationDate = new Date();
-
-    await record.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Verification completed successfully"
-    });
-
-  } catch (error) {
-
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-
-  }
-});
-
-
-// Get one pensioner verification
-router.get("/:faydaNumber", async (req, res) => {
-
-  try {
-
-    const record =
-      await LivenessVerification.findOne({
-        faydaNumber: req.params.faydaNumber
+    // 2. የደህንነት ማጣሪያ (Security Guard)
+    if (!faceMatched || !smilePassed || !nodPassed) {
+      return res.status(400).json({
+        success: false,
+        message: "❌ የደህንነት ጥሰት ተገኝቷል! ሁሉም የባዮሜትሪክስና የህያውነት ፈተናዎች መለፍ አለባቸው።"
       });
+    }
 
-    if (!record) {
-
+    // 3. ያንተን UserPensioner ዳታቤዝ መፈለግ
+    const pensioner = await UserPensioner.findOne({ faydaNumber: faydaNumber });
+    if (!pensioner) {
       return res.status(404).json({
         success: false,
-        message: "Record not found"
+        message: "❌ ይህ የፋይዳ ቁጥር በሲስተሙ ላይ አልተመዘገበም!"
       });
-
     }
 
-    res.json(record);
+    // 4. በታሪክ መዝገብ (editHistory) ውስጥ አዲስ የማረጋገጫ ሎግ ማዘጋጀት
+    const livenessLogEntry = {
+      editedBy: "AI Biometric System",
+      editedAt: new Date(),
+      details: `🤖 የዲጂታል ህያውነት ማረጋገጫ ተከናውኗል (ፈገግታ፡ ${smilePassed}፣ እንቅስቃሴ፡ ${nodPassed})።`
+    };
 
-  } catch (error) {
+    // 5. ያንተን የዳታቤዝ ፊልዶች ማዘመን
+    pensioner.status = "Verified"; // የህይወት ሁኔታውን "Verified" ማድረግ
+    pensioner.statusChangedDate = new Date();
+    pensioner.lastEditedBy = "AI Biometric System";
+    pensioner.lastEditedAt = new Date();
 
-    res.status(500).json({
-      success: false,
-      message: error.message
+    // በስኪማህ ላይ ያለው editHistory አሬይ (Array) ከሆነ አዲሱን ታሪክ መግፋት (push)
+    if (Array.isArray(pensioner.editHistory)) {
+      pensioner.editHistory.push(livenessLogEntry);
+    } else {
+      pensioner.editHistory = [livenessLogEntry];
+    }
+
+    // ለውጦቹን በዳታቤዝ ውስጥ ማዳን
+    await pensioner.save();
+
+    console.log(`🟢 ጡረተኛው [${pensioner.nameAmh || pensioner.nameEng}] በAI በተሳካ ሁኔታ ተረጋግጧል!`);
+
+    // 6. ለሪአክት ስኬታማ ምላሽ መላክ (የጡረተኛውን ዳታ ጨምሮ)
+    return res.status(200).json({
+      success: true,
+      message: `🎉 የጡረተኛው (${pensioner.nameAmh}) በህይወት መኖር በባዮሜትሪክስ ተረጋግጧል!`,
+      data: pensioner
     });
 
-  }
-
-});
-
-
-// Alive pensioners list
-router.get("/", async (req, res) => {
-
-  try {
-
-    const alive =
-      await LivenessVerification.find({
-        verificationStatus: "Verified"
-      }).sort({
-        lastVerificationDate: -1
-      });
-
-    res.json(alive);
-
   } catch (error) {
-
-    res.status(500).json({
+    console.error("Liveness Verification Endpoint Error:", error);
+    return res.status(500).json({
       success: false,
-      message: error.message
+      message: `❌ በሰርቨር ላይ መረጃውን ለማስቀመጥ ያልታሰበ ስህተት አጋጥሟል፦ ${error.message}`
     });
-
   }
-
 });
 
 module.exports = router;
