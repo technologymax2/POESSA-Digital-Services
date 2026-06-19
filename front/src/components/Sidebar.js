@@ -17,10 +17,9 @@ const Sidebar = ({ currentLang, toggleLanguage, collapsed, setCollapsed }) => {
 
   // የህይወት ማረጋገጫን በፕሮፌሽናል መንገድ የሚይዝ ተግባር
 const handleLivenessNavigation = () => {
-    // ምንም የፋይዳ ቁጥር አይጠየቅም፣ ቀጥታ ወደ ስካን ገጽ
-    navigate(`/verify-process/scan`);
-    setCollapsed(true);
-  };
+  navigate("/verification");
+  setCollapsed(true);
+};
 
   return (
     <aside className={`poessa-sidebar ${!collapsed ? "poessa-sidebar--open" : ""}`}>
