@@ -18,7 +18,8 @@ function VerificationWizard() {
   // የመጨረሻውን የደህንነት ማረጋገጫ ወደ ሰርቨር መላክ
   const handleFinalSuccess = async () => {
     try {
-      await axios.post("https://poessa-digital-services-1.onrender.com/api/verify-success", {
+      // ሰርቨርህ ላይ ያለውን ትክክለኛ የ Endpoint አድራሻ መጠቀምህን አረጋግጥ
+      const response = await axios.post("https://poessa-digital-services-1.onrender.com/api/liveness/verify-success", {
         faydaNumber,
         idPhoto,
         selfiePhoto,
@@ -28,7 +29,10 @@ function VerificationWizard() {
         turnPassed: true,
         verificationStatus: "Verified"
       });
-      setStep(5);
+
+      if (response.data.success) {
+        setStep(5);
+      }
     } catch (err) {
       console.error("Verification Save Error:", err);
       alert("የማረጋገጫ መረጃን ለማስቀመጥ ስህተት ተፈጥሯል፤ እባክዎ እንደገና ይሞክሩ።");
@@ -69,7 +73,12 @@ function VerificationWizard() {
 
       {/* ደረጃ 4: የህያውነት ፈተና (Liveness Detection) */}
       {step === 4 && (
-        <LivenessTest onSuccess={handleFinalSuccess} />
+        <LivenessTest 
+          faydaNumber={faydaNumber}
+          idPhoto={idPhoto}
+          selfiePhoto={selfiePhoto}
+          onSuccess={handleFinalSuccess} 
+        />
       )}
 
       {/* ደረጃ 5: ስኬታማ ማረጋገጫ */}
