@@ -1,29 +1,64 @@
-import React from "react";
+import React, { useState } from "react";
+import axios from "axios";
 
 function VerificationSuccess({ pensionerData }) {
+  const [searchFayda, setSearchFayda] = useState("");
+  const [statusResult, setStatusResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const checkMyStatus = async () => {
+    if (!searchFayda) return;
+    setLoading(true);
+    try {
+      const res = await axios.get(`https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${searchFayda}`);
+      if (res.data && res.data.success) {
+        setStatusResult(res.data.data);
+      } else {
+        alert("የፋይዳ ቁጥሩ አልተገኘም!");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div style={{ padding: "30px 20px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
-      <div style={{ width: "80px", height: "80px", backgroundColor: "#22c55e", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px auto", boxShadow: "0 10px 20px rgba(34, 197, 94, 0.2)" }}>
-        <span style={{ color: "white", fontSize: "40px", fontWeight: "bold" }}>✓</span>
-      </div>
-      
-      <h2 style={{ color: "#162447", margin: "0 0 10px 0" }}>🎉 ማረጋገጡ በተሳካ ሁኔታ ተጠናቋል!</h2>
-      <p style={{ color: "#475569", fontSize: "15px", lineHeight: "1.5" }}>
-        የጡረተኛው <strong>{pensionerData?.nameAmh || "ዜጋ"}</strong> በህይወት መኖራቸው በባዮሜትሪክስ ተረጋግጦ በዳታቤዝ ውስጥ <strong>"Verified"</strong> ከሆኑት ጋር በደህንነት ተመድቧል።
+    <div style={{ padding: "20px", maxWidth: "500px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
+      <div style={{ fontSize: "60px", color: "#22c55e" }}>⏳</div>
+      <h3 style={{ color: "#162447" }}>ማረጋገጫዎ ለባለሙያ ተልኳል!</h3>
+      <p style={{ color: "#475569", lineHeight: "1.6" }}>
+        የጡረተኛው <strong>{pensionerData?.name || "Mamaru Anmaw"}</strong> መረጃ በተሳካ ሁኔታ ተመዝግቧል። 
+        አሁን ባለሙያዎቻችን መረጃውን አይተው ያረጋግጣሉ። እባክዎ ጥቂት ቆይተው ሁኔታውን ይፈትሹ።
       </p>
 
-      <div style={{ background: "#f8fafc", padding: "15px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "20px", textAlign: "left", fontSize: "13px" }}>
-        <p style={{ margin: "4px 0" }}>🆔 <strong>ፋይዳ ቁጥር፦</strong> {pensionerData?.faydaNumber}</p>
-        <p style={{ margin: "4px 0" }}>📅 <strong>የተረጋገጠበት ቀን፦</strong> {new Date().toLocaleDateString('et-ET')}</p>
-        <p style={{ margin: "4px 0", color: "#162447" }}>💼 <strong>የጡረታ ሁኔታ፦</strong> Active / በህይወት ያሉ</p>
-      </div>
+      <hr style={{ margin: "25px 0", border: "0", hieght: "1px", background: "#cbd5e1" }} />
 
-      <button 
-        onClick={() => window.location.reload()} 
-        style={{ marginTop: "25px", background: "#162447", color: "#fff", padding: "12px 25px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
-      >
-        🔄 አዲስ ጡረተኛ አረጋግጥ
-      </button>
+      {/* 🔍 ጡረተኛው በፋይዳ ቁጥር ገብቶ ሁኔታውን የሚያይበት ክፍል */}
+      <div style={{ background: "#f8fafc", padding: "15px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+        <h4 style={{ margin: "0 0 10px 0", color: "#162447" }}>🔍 የሁኔታ መከታተያ</h4>
+        <input 
+          type="text" 
+          placeholder="የፋይዳ ቁጥርዎን እዚህ ያስገቡ..." 
+          value={searchFayda}
+          onChange={(e) => setSearchFayda(e.target.value)}
+          style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1", textAlign: "center", boxSizing: "border-box" }}
+        />
+        <button onClick={checkMyStatus} style={{ width: "100%", background: "#162447", color: "#fff", padding: "10px", border: "none", borderRadius: "6px", marginTop: "10px", cursor: "pointer", fontWeight: "bold" }}>
+          {loading ? "በመፈለግ ላይ..." : "የማረጋገጫ ሁኔታዬን እይ"}
+        </button>
+
+        {statusResult && (
+          <div style={{ marginTop: "15px", padding: "10px", borderRadius: "6px", background: statusResult.verificationStatus === "Verified" ? "#dcfce7" : statusResult.verificationStatus === "Rejected" ? "#fee2e2" : "#fef9c3" }}>
+            <strong>የአሁኑ ሁኔታ፦</strong> {statusResult.verificationStatus || "Pending (በሂደት ላይ)"}
+            {statusResult.comment && (
+              <div style={{ marginTop: "5px", color: "#991b1b", fontSize: "13px" }}>
+                <strong>⚠️ ከባለሙያ የተላከ መልዕክት፦</strong> {statusResult.comment}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
