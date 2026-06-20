@@ -53,7 +53,23 @@ function EmployeeSidebar() {
 
       <hr className="sidebar-divider" />
       
-      {/* ... የተቀረው ሜኑ ... */}
+      {/* 📋 የሜኑ ዝርዝር ክፍል */}
+      <div className="sidebar-menu">
+        {/* ካሉህ ሌሎች ሜኑዎች ጎን ለጎን ይህንን አዲሱን የሪፖርት ማውጫ እንጨምራለን */}
+        <button 
+          className={`menu-item ${location.pathname === '/employee/report' ? 'active' : ''}`}
+          onClick={() => navigate('/report')}
+        >
+          <span className="menu-icon">📊</span>
+          <span className="menu-text">የማረጋገጫ ሪፖርት</span>
+        </button>
+
+        {/* 🚪 የመውጫ በተን (Logout) */}
+        <button className="menu-item logout-btn" onClick={handleLogout}>
+          <span className="menu-icon">🚪</span>
+          <span className="menu-text">ውጣ</span>
+        </button>
+      </div>
     </div>
   );
 }
