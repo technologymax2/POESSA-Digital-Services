@@ -20,6 +20,7 @@ import PensionerRegistration from "./employee/PensionerRegistration";
 import IdCardGenerationAndSearch from "./employee/IdCardGenerationAndSearch";
 import ScanVerify from "./employee/ScanVerify";
 import CheckStatus from "./customer/CheckStatus"; // Imported correctly here
+import Report from "./employee/Report";
 import "./App.css";
 
 function App() {
@@ -79,6 +80,7 @@ function App() {
             path="/check-status"
             element={<CheckStatus />}
           />
+              <Route path="/report" element={<Report />} />
         </Routes>
       </div>
     </Router>
