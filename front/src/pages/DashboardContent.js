@@ -1,14 +1,14 @@
-import React from 'react';
+import React from 'react'; // 'import' በትንሽ ፊደል ተስተካክሏል
 import { Videocam } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom'; // ለማገናኘት አስፈላጊ
+import { useNavigate } from 'react-router-dom';
 import './DashboardContent.css';
 
 const DashboardContent = () => {
-  const navigate = useNavigate(); // የገጽ መቀያየሪያ hook
+  const navigate = useNavigate();
 
   return (
     <div className="dashboard-content">
-      {/* የቪዲዮ ጥሪ ባነር - ወደ VideoCallAccess ያገናኛል */}
+      {/* የቪዲዮ ጥሪ ባነር */}
       <div className="floating-banner">
         <div style={{ color: '#ffd700', marginBottom: '10px' }}>
           <Videocam style={{ fontSize: 50 }} />
@@ -19,7 +19,7 @@ const DashboardContent = () => {
         </p>
         <button 
           className="video-btn" 
-          onClick={() => navigate('/video-call')} // ወደ ተፈላጊው ገጽ ይወስዳል
+          onClick={() => navigate('/video-call')}
         >
           ቪዲዮ ጥሪ ይጀምሩ
         </button>
@@ -32,23 +32,28 @@ const DashboardContent = () => {
           <h3>የህይወት ማረጋገጫ</h3>
           <p>Liveness Proof</p>
           <button 
-  className="video-btn" 
-  onClick={() => navigate('/verification')}
->
-  Action now
-</button>
+            className="video-btn" 
+            onClick={() => navigate('/verification')}
+          >
+            አሁኑኑ ይጀምሩ
+          </button>
         </div>
+
         <div className="action-card">
           <div className="icon-box">📄</div>
           <h3>የውክልና ሰነድ ማቅረቢያ</h3>
           <p>Proxy Document Submission</p>
-          <button>Action now</button>
+          <button>አሁኑኑ ይጀምሩ</button>
         </div>
+
         <div className="action-card">
           <div className="icon-box">📂</div>
           <h3>የጉዳይ ክትትል</h3>
           <p>Case Tracking</p>
-          <button  onClick={() => navigate('/cheakstatus')}> cheack Status</button>
+          {/* የApp.js መንገድን እንዲመስል ወደ '/check-status' ተቀይሯል */}
+          <button onClick={() => navigate('/check-status')}>
+            ሁኔታውን ይፈትሹ
+          </button>
         </div>
       </div>
     </div>
