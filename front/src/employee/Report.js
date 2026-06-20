@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "../Verification.css"; // የ CSS ስታይሉን እንዲጠቀም
+import "./Report.css"; // የ CSS ስታይሉን እንዲጠቀም
 
 function Report() {
   const [pensioners, setPensioners] = useState([]);
