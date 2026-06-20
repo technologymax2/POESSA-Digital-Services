@@ -12,13 +12,13 @@ function CaptureIDCard({ onSuccess }) {
   const startCamera = async () => {
     setCameraActive(true);
     setScanStatus("");
-    setFaydaNumber(""); // አዲስ ሲጀመር የድሮውን ማጽዳት
+    setFaydaNumber(""); 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: "environment",
-          width: { ideal: 1280 }, // የፎቶውን ጥራት ከፍ ለማድረግ
-          height: { ideal: 720 }
+          width: { ideal: 1920 }, // ምስሉ ይበልጥ ጥራት እንዲኖረው
+          height: { ideal: 1080 }
         } 
       });
       if (videoRef.current) videoRef.current.srcObject = stream;
@@ -28,16 +28,18 @@ function CaptureIDCard({ onSuccess }) {
     }
   };
 
-  // ፎቶ የመቅረጽ፣ የ QR ኮድ እና የጽሑፍ ንባብ ሂደት
+  // 📸 ፎቶ ለመቅረጽ እና በውስጡ የፋይዳ ቁጥርን ለመፈለግ
   const capturePhoto = async () => {
     const video = videoRef.current;
     if (!video) return;
 
-    // የካሜራውን ትክክለኛ የቪዲዮ ስፋትና ቁመት መውሰድ
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
+    
+    // 🎨 ምስሉን ይበልጥ ለንባብ ግልጽ ለማድረግ ንፅፅር (Contrast) መጨመር
+    ctx.filter = "contrast(1.4) brightness(1.1)";
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
     const base64Image = canvas.toDataURL("image/jpeg");
@@ -51,54 +53,46 @@ function CaptureIDCard({ onSuccess }) {
     setCameraActive(false);
 
     setScanning(true);
-    setScanStatus("⏳ ከመታወቂያው ላይ የ QR ኮድ እና የፋይዳ ቁጥርን በማንበብ ላይ...");
+    setScanStatus("⏳ ከመታወቂያው ላይ የፋይዳ መረጃን በAI በማንበብ ላይ...");
 
-    try {
-      let foundFayda = "";
+    setTimeout(async () => {
+      try {
+        let foundFayda = "";
 
-      // 1️⃣ [ደረጃ 1] የ QR ኮድ መፈተሽ (jsQR)
-      const jsQR = window.jsQR;
-      if (jsQR) {
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
-        
-        if (qrCode && qrCode.data) {
-          console.log("🎯 QR ኮድ ተገኝቷል፦", qrCode.data);
-          const qrMatch = qrCode.data.match(/\d{16}/);
-          if (qrMatch) {
-            foundFayda = qrMatch[0];
-            setScanStatus("🎉 የ QR ኮዱ በተሳካ ሁኔታ ተነቧል!");
+        // 1️⃣ [የመጀመሪያ ሙከራ] ከ window.jsQR ላይ ለማንበብ መሞከር
+        if (window.jsQR) {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const qrCode = window.jsQR(imageData.data, imageData.width, imageData.height);
+          if (qrCode && qrCode.data) {
+            const qrMatch = qrCode.data.match(/\d{16}/);
+            if (qrMatch) foundFayda = qrMatch[0];
           }
         }
-      }
 
-      // 2️⃣ [ደረጃ 2] QR ኮዱ ካልተነበበ ወደ ጽሑፍ ንባብ (Tesseract) መሻገር
-      if (!foundFayda && window.Tesseract) {
-        console.log("🔄 QR አልተነበበም፣ ወደ OCR ንባብ እየተቀየረ ነው...");
-        const result = await window.Tesseract.recognize(base64Image, "eng");
-        const cleanTextOnlyDigits = result.data.text.replace(/[\s-]/g, ""); // ክፍተቶችን ማጥፋት
-        
-        const faydaRegex = /\d{16}/; // በማንኛውም ቦታ 16 ተከታታይ ቁጥር መፈለግ
-        const matched = cleanTextOnlyDigits.match(faydaRegex);
-        if (matched) {
-          foundFayda = matched[0];
-          setScanStatus("🟢 የፋይዳ ቁጥር ከጽሑፉ ላይ በ AI ተገኝቷል!");
+        // 2️⃣ [ሁለተኛ ሙከራ] ከ Tesseract OCR ላይ ለማንበብ መሞከር
+        if (!foundFayda && window.Tesseract) {
+          const result = await window.Tesseract.recognize(base64Image, "eng");
+          const cleanText = result.data.text.replace(/[\s-]/g, ""); // ክፍተቶችን ማጽዳት
+          const matched = cleanText.match(/\d{16}/);
+          if (matched) foundFayda = matched[0];
         }
-      }
 
-      // 3️⃣ [ደረጃ 3] ውጤቱን ወደ ስቴት መላክ
-      if (foundFayda) {
-        setFaydaNumber(foundFayda); // 🔥 እዚህ ጋር ነው ቁጥሩን በራስ-ሰር የሚሞላው!
-      } else {
-        setScanStatus("⚠️ ቁጥሩን በራስ-ሰር ማግኘት አልተቻለም። እባክዎ በእጅዎ ይሙሉ ወይም በደህና ብርሃን ድጋሚ ያንሱ።");
-      }
+        // 🎯 [የመጨረሻ ውጤት ማረጋገጫ]
+        if (foundFayda) {
+          setFaydaNumber(foundFayda);
+          setScanStatus("🟢 መረጃው በተሳካ ሁኔታ በራስ-ሰር ተሞልቷል!");
+        } else {
+          // 💡 ቁጥሩ በራስ-ሰር ካልተገኘ፣ ተጠቃሚው መታወቂያውን እያየ በእጁ እንዲሞላው ምቹ መመሪያ መስጠት
+          setScanStatus("⚠️ ቁጥሩን በራስ-ሰር ማንበብ አልተቻለም። እባክዎ ከመታወቂያው ላይ አይተው ባለ 16 ዲጂት ቁጥሩን ከታች በደህና ይሙሉ፡");
+        }
 
-    } catch (error) {
-      console.error("Scanning Error:", error);
-      setScanStatus("❌ መታወቂያውን ማቀነባበር አልተቻለም።");
-    } finally {
-      setScanning(false);
-    }
+      } catch (error) {
+        console.error("Scanning Error:", error);
+        setScanStatus("⚠️ ማሳሰቢያ፦ እባክዎ የፋይዳ ቁጥሩን ከታች በእጅዎ ይሙሉ::");
+      } finally {
+        setScanning(false);
+      }
+    }, 500);
   };
 
   const handleSubmit = (e) => {
@@ -130,7 +124,7 @@ function CaptureIDCard({ onSuccess }) {
 
         {/* የካሜራ ቁልፎች */}
         {!cameraActive ? (
-          <button type="button" onClick={startCamera} disabled={scanning} style={{ background: "#475569", color: "#fff", padding: "10px", border: "none", borderRadius: "8px", cursor: scanning ? "not-allowed" : "pointer" }}>
+          <button type="button" onClick={startCamera} disabled={scanning} style={{ background: "#475569", color: "#fff", padding: "10px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
             {image ? "🔄 እንደገና አንሳ" : "📸 ካሜራ ክፈት"}
           </button>
         ) : (
@@ -141,7 +135,7 @@ function CaptureIDCard({ onSuccess }) {
 
         {/* የማንበብ ሁኔታ መልዕክት */}
         {scanStatus && (
-          <p style={{ fontSize: "13px", fontWeight: "500", color: faydaNumber ? "#16a34a" : "#dc2626", margin: "5px 0" }}>
+          <p style={{ fontSize: "13px", fontWeight: "500", color: faydaNumber ? "#16a34a" : "#b45309", margin: "5px 0", backgroundColor: faydaNumber ? "#f0fdf4" : "#fff8e6", padding: "8px", borderRadius: "6px" }}>
             {scanStatus}
           </p>
         )}
@@ -152,7 +146,7 @@ function CaptureIDCard({ onSuccess }) {
           <input 
             type="text" 
             maxLength="16"
-            value={faydaNumber} // 🔥 ቁጥሩ ሲገኝ እዚህ ጋር ይቀመጣል
+            value={faydaNumber} 
             onChange={(e) => setFaydaNumber(e.target.value.replace(/\D/g, ""))}
             placeholder="ለምሳሌ፡ 1234567887654321" 
             required
@@ -161,9 +155,10 @@ function CaptureIDCard({ onSuccess }) {
               padding: "12px", 
               marginTop: "5px", 
               borderRadius: "8px", 
-              border: faydaNumber.length === 16 ? "2px solid #22c55e" : "1px solid #cbd5e1", 
+              border: faydaNumber.length === 16 ? "2px solid #22c55e" : "2px solid #162447", 
               backgroundColor: faydaNumber.length === 16 ? "#f0fdf4" : "#fff",
               fontWeight: "bold", 
+              fontSize: "17px",
               letterSpacing: "1px", 
               textAlign: "center", 
               boxSizing: "border-box" 
@@ -171,7 +166,7 @@ function CaptureIDCard({ onSuccess }) {
           />
         </div>
 
-        <button type="submit" disabled={scanning} style={{ background: scanning ? "#cbd5e1" : "#162447", color: "#fff", padding: "14px", border: "none", borderRadius: "8px", cursor: scanning ? "not-allowed" : "pointer", fontWeight: "bold", marginTop: "10px" }}>
+        <button type="submit" disabled={scanning} style={{ background: scanning ? "#cbd5e1" : "#162447", color: "#fff", padding: "14px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", marginTop: "10px" }}>
           ቀጥል (ከዳታቤዝ ጋር አመሳስል) →
         </button>
       </form>
