@@ -18,41 +18,54 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
         const faceapi = window.faceapi;
         setStatusMessage("⏳ የፊቱን ነጥቦች መለያ ሞዴሎች በማውረድ ላይ...");
         
-        // 1. ለሞባይል እና ለተቆረጡ ፊቶች ፈጣን የሆኑ ሞዴሎችን መጫን
+        // 1. ሞዴሎችን መጫን
         const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL); 
         await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
 
-        setStatusMessage("⏳ ሁለቱንም ፎቶዎች በማነፃፀር ላይ...");
+        setStatusMessage("⏳ ፎቶዎቹን ደህንነቱ በተጠበቀ መንገድ በማንበብ ላይ...");
 
-        // 2. የCORS እና የCache ችግር እንዳይፈጠር የተስተካከለ ምስል ጫኝ
+        // 2. 🔥 [አዲስ ማስተካከያ] - የውጭ ፕሮክሲ ሳይጠቀሙ የ CORS ገደብን በ Base64 የመስበሪያ ዘዴ
+        const fetchImageAsBase64 = async (url) => {
+          try {
+            const res = await fetch(url, { mode: 'cors' });
+            const blob = await res.blob();
+            return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          } catch (e) {
+            // የባህሪው ፌች ካልሰራ እንደ አማራጭ በ AllOrigins ይሞክራል
+            return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+          }
+        };
+
         const loadImg = (src) => {
           return new Promise((resolve, reject) => {
             const img = new Image();
-            img.crossOrigin = "anonymous"; // CORS ፈቃድ መጠየቂያ
-            
-            // ብሮውዘሩ የድሮውን ስህተት ካሽ እንዳያደርግ የሰዓት ማሳያ (Timestamp) መጨመሪያ
-            const bypassCacheUrl = src.includes("?") ? `${src}&_ts=${Date.now()}` : `${src}?_ts=${Date.now()}`;
-            img.src = bypassCacheUrl;
-            
+            img.crossOrigin = "anonymous";
+            img.src = src;
             img.onload = () => resolve(img);
             img.onerror = (err) => reject(err);
           });
         };
 
-        // 🚨 [ዋና ማስተካከያ] ImgBB የCORS ፈቃድ ስለማይሰጥ በ AllOrigins ፕሮክሲ እናሳልፈዋለን
-        const proxyIdPhoto = `https://api.allorigins.win/raw?url=${encodeURIComponent(idPhoto)}`;
+        // የዳታቤዝ ፎቶውን ወደ አስተማማኝ Base64 መቀየር
+        const safeIdPhotoUrl = await fetchImageAsBase64(idPhoto);
 
-        const img1 = await loadImg(proxyIdPhoto); // የዳታቤዝ ፎቶ (በፕሮክሲ ያልፋል)
-        const img2 = await loadImg(selfiePhoto);  // የአሁኑ ሴልፊ (ከስልኩ ስለሚነሳ ቀጥታ ይጫናል)
+        const img1 = await loadImg(safeIdPhotoUrl); 
+        const img2 = await loadImg(selfiePhoto); 
 
-        // 3. መጀመሪያ በ TinyFaceDetector መፈለግ (ለተቆረጡና ደካማ ብርሃን ላላቸው ፊቶች እጅግ ምርጥ ነው)
+        setStatusMessage("⏳ ሁለቱንም ፎቶዎች በማነፃፀር ላይ...");
+
+        // 3. ፊትን በሁለቱም ሞዴሎች መፈለግ
         let detection1 = await faceapi.detectSingleFace(img1, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
         let detection2 = await faceapi.detectSingleFace(img2, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
 
-        // 4. በቲኒ ሞዴል ካልተገኘ፣ እንደ አማራጭ በ SSD ሞዴል ድጋሚ መሞከር
         if (!detection1) {
           detection1 = await faceapi.detectSingleFace(img1).withFaceLandmarks().withFaceDescriptor();
         }
@@ -60,22 +73,18 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
           detection2 = await faceapi.detectSingleFace(img2).withFaceLandmarks().withFaceDescriptor();
         }
 
-        // ሁለቱም ሞዴሎች ፊቱን ማግኘት ካልቻሉ ስህተት ማሳየት
         if (!detection1 || !detection2) {
           setStatusMessage("❌ በፎቶዎቹ ላይ የሰውን ፊት በትክክል ማግኘት አልተቻለም! እባክዎ ካሜራውን ትንሽ አርቀው ሙሉ ፊትዎ እንዲታይ ሆነው በግልጽ ይነሱ።");
           setLoading(false);
           return;
         }
 
-        // 5. በሁለቱ የፊት አሻራዎች መካከል ያለውን ርቀት ማስላት
+        // 4. ማነፃፀር
         const distance = faceapi.euclideanDistance(detection1.descriptor, detection2.descriptor);
-        
-        // ርቀቱን ወደ መቶኛ መቀየር
         const similarity = Math.max(0, Math.min(100, Math.round((1 - distance) * 100)));
         setMatchPercentage(similarity);
 
-        // 6. የማመሳከሪያ ወሰን (Threshold)
-        if (similarity >= 55) { // ለሞባይል ካሜራዎች ይበልጥ ተለዋዋጭ እንዲሆን ወደ 55% ዝቅ ተደርጓል
+        if (similarity >= 50) { // 🟢 ለሞባይል ይበልጥ እንዲቀልል ወደ 50% ዝቅ ተደርጓል
           setIsMatched(true);
           setStatusMessage(`🎉 ማመሳሰሉ ተሳክቷል! የፊት መመሳሰል መጠን፦ ${similarity}%`);
         } else {
