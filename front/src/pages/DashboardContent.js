@@ -33,7 +33,7 @@ const DashboardContent = () => {
           <p>Liveness Proof</p>
           <button 
   className="video-btn" 
-  onClick={() => navigate('/')}
+  onClick={() => navigate('/verification')}
 >
   Action now
 </button>
