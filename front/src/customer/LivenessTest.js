@@ -25,13 +25,17 @@ function LivenessTest({ faydaNumber, onSuccess }) {
           return;
         }
 
-        // 1. የፊት ገጽታ መለያ ሞዴል መጫኑን ማረጋገጥ
+        setStatusMessage("⏳ የAI ሞዴሎችን ወደ ብሮውዘር በመጫን ላይ...");
         const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
+        
+        // 🛑 [ዋና ማስተካከያ 1] ፊትን ራሱ ለመለየት የሚያስፈልጉት ቤዝ ሞዴሎች መጫን ስላለባቸው ተካተዋል
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
         await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
 
         // 2. የፊት ለፊት (Selfie) ካሜራን መክፈት
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user", width: 400, height: 400 }
+          video: { facingMode: "user", width: { ideal: 400 }, height: { ideal: 400 } }
         });
         
         if (videoRef.current) {
@@ -42,13 +46,17 @@ function LivenessTest({ faydaNumber, onSuccess }) {
         setStatusMessage("🟢 የህያውነት ፈተናው ተጀምሯል!");
         setCurrentInstruction("😊 እባክዎ ለካሜራው በግልጽ ፈገግ ይበሉ...");
 
-        // 3. በየ 400 ሚሊሰከንድ ተጠቃሚው የሚሰጠውን ምላሽ በቪዲዮው ላይ መመርመር
+        // 3. በየ 400 ሚሊሰከንድ ተጠቃሚውን መመርመር
         intervalId = setInterval(async () => {
           if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return;
 
-          const detection = await faceapi.detectSingleFace(videoRef.current)
-            .withFaceLandmarks()
-            .withFaceExpressions();
+          // 🛑 [ዋና ማስተካከያ 2] ለሞባይል ፈጣን በሆነው TinyFaceDetector እንዲፈልግ ተቀይሯል
+          const detection = await faceapi.detectSingleFace(
+            videoRef.current, 
+            new faceapi.TinyFaceDetectorOptions()
+          )
+          .withFaceLandmarks()
+          .withFaceExpressions();
 
           if (!detection) return;
 
@@ -56,7 +64,8 @@ function LivenessTest({ faydaNumber, onSuccess }) {
           const smileValue = detection.expressions.happy;
           let currentSmileStatus = checks.smilePassed;
 
-          if (!currentSmileStatus && smileValue > 0.75) { // 75% በላይ ፈገግታ ከተገኘ
+          // 🛑 [ዋና ማስተካከያ 3] የፈገግታ ማለፊያ ነጥብ ለሞባይል እንዲቀል ከ 0.75 ወደ 0.45 ዝቅ ተደርጓል
+          if (!currentSmileStatus && smileValue > 0.45) { 
             currentSmileStatus = true;
             setChecks(prev => ({ ...prev, smilePassed: true }));
             setCurrentInstruction("👋 አሁን ደግሞ ራስዎን ቀስ አድርገው ወደ ግራና ቀኝ ያወዛውዙ...");
@@ -64,22 +73,20 @@ function LivenessTest({ faydaNumber, onSuccess }) {
 
           // ለ. የራስ ማወዛወዝ ማረጋገጫ (Movement/Nod Detection)
           if (currentSmileStatus && !checks.nodPassed) {
-            // የፊቱን የአፍንጫ መሃል ነጥብ እና የግራ/ቀኝ ጠርዞችን ርቀት በማየት እንቅስቃሴን መለካት
             const landmarks = detection.landmarks;
             const nose = landmarks.getNose()[0];
             const leftEye = landmarks.getLeftEye()[0];
             const rightEye = landmarks.getRightEye()[0];
 
-            // የአፍንጫው መሃል ነጥብ ከሁለቱ አይኖች ያለው ርቀት ሲቀያየር እንቅስቃሴ መኖሩ ይረጋገጣል
             const leftDist = nose.x - leftEye.x;
             const rightDist = rightEye.x - nose.x;
             const ratio = leftDist / rightDist;
 
-            if (ratio < 0.6 || ratio > 1.6) { // ራሱን ወደ ጎን ማዞሩን ያሳያል
+            // 🛑 [ዋና ማስተካከያ 4] የእንቅስቃሴው ወሰን ይበልጥ ተለዋዋጭ እንዲሆን ተደርጓል (ከ 0.65 በታች ወይም ከ 1.45 በላይ)
+            if (ratio < 0.65 || ratio > 1.45) { 
               setChecks(prev => {
                 const updated = { ...prev, nodPassed: true };
                 
-                // ሁለቱም ፈተናዎች ካለፉ ሂደቱን ያቆማል
                 clearInterval(intervalId);
                 if (stream) stream.getTracks().forEach(track => track.stop());
                 
@@ -104,12 +111,11 @@ function LivenessTest({ faydaNumber, onSuccess }) {
 
     startLiveness();
 
-    // ጽዳት (Cleanup)
     return () => {
       if (intervalId) clearInterval(intervalId);
       if (stream) stream.getTracks().forEach(track => track.stop());
     };
-  }, [onSuccess]);
+  }, [onSuccess, checks.smilePassed, checks.nodPassed]); // 🛑 Dependency Array ተስተካክሏል
 
   return (
     <div style={{ padding: "20px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
