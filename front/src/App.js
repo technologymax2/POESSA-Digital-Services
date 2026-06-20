@@ -19,7 +19,7 @@ import VerificationWizard from "./customer/VerificationWizard";
 import PensionerRegistration from "./employee/PensionerRegistration";
 import IdCardGenerationAndSearch from "./employee/IdCardGenerationAndSearch";
 import ScanVerify from "./employee/ScanVerify";
-import CheckStatus from "./customor/CheckStatus"; // Imported correctly here
+import CheckStatus from "./customer/CheckStatus"; // Imported correctly here
 import "./App.css";
 
 function App() {
