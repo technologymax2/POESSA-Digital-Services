@@ -19,7 +19,7 @@ import VerificationWizard from "./customer/VerificationWizard";
 import PensionerRegistration from "./employee/PensionerRegistration";
 import IdCardGenerationAndSearch from "./employee/IdCardGenerationAndSearch";
 import ScanVerify from "./employee/ScanVerify";
-import CheckStatus from "./employee/CheckStatus";
+import CheckStatus from "./employee/CheckStatus"; // Imported correctly here
 import "./App.css";
 
 function App() {
@@ -73,9 +73,11 @@ function App() {
             path="/liveness"
             element={<LivenessTest />}
           />
-<Route
-            path="/cheakstatus"
-            element={</CheakStatus />}
+
+          {/* Status Check (Fixed syntax and spelling) */}
+          <Route
+            path="/check-status"
+            element={<CheckStatus />}
           />
         </Routes>
       </div>
