@@ -18,9 +18,9 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
         const faceapi = window.faceapi;
         setStatusMessage("⏳ የፊቱን ነጥቦች መለያ ሞዴሎች በማውረድ ላይ...");
         
-        // 1. ለሞባይል ተስማሚ የሆኑ የቲኒ (Tiny) ሞዴሎችን ጭምር መጫን
+        // 1. ለሞባይል እና ለተቆረጡ ፊቶች ፈጣን የሆኑ ሞዴሎችን መጫን
         const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL); // 🟢 ለፈጣን መለያ የተጨመረ
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL); 
         await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
@@ -42,10 +42,13 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
           });
         };
 
-        const img1 = await loadImg(idPhoto); 
-        const img2 = await loadImg(selfiePhoto); 
+        // 🚨 [ዋና ማስተካከያ] ImgBB የCORS ፈቃድ ስለማይሰጥ በ AllOrigins ፕሮክሲ እናሳልፈዋለን
+        const proxyIdPhoto = `https://api.allorigins.win/raw?url=${encodeURIComponent(idPhoto)}`;
 
-        // 3. መጀመሪያ በ TinyFaceDetector መፈለግ (ለሞባይል እና ለተቆረጡ ፊቶች እጅግ ምርጥ ነው)
+        const img1 = await loadImg(proxyIdPhoto); // የዳታቤዝ ፎቶ (በፕሮክሲ ያልፋል)
+        const img2 = await loadImg(selfiePhoto);  // የአሁኑ ሴልፊ (ከስልኩ ስለሚነሳ ቀጥታ ይጫናል)
+
+        // 3. መጀመሪያ በ TinyFaceDetector መፈለግ (ለተቆረጡና ደካማ ብርሃን ላላቸው ፊቶች እጅግ ምርጥ ነው)
         let detection1 = await faceapi.detectSingleFace(img1, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
         let detection2 = await faceapi.detectSingleFace(img2, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
 
@@ -72,7 +75,7 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
         setMatchPercentage(similarity);
 
         // 6. የማመሳከሪያ ወሰን (Threshold)
-        if (similarity >= 55) { // 🟢 ለሞባይል ካሜራዎች ከ 60% ወደ 55% ዝቅ ተደርጓል (ይበልጥ ተለዋዋጭ እንዲሆን)
+        if (similarity >= 55) { // ለሞባይል ካሜራዎች ይበልጥ ተለዋዋጭ እንዲሆን ወደ 55% ዝቅ ተደርጓል
           setIsMatched(true);
           setStatusMessage(`🎉 ማመሳሰሉ ተሳክቷል! የፊት መመሳሰል መጠን፦ ${similarity}%`);
         } else {
@@ -82,7 +85,7 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
 
       } catch (err) {
         console.error("Face Matching Error:", err);
-        setStatusMessage("❌ የፊት ማነፃፀሪያው ላይ ስህተት ተፈጥሯል። ፎቶው የCORS ፈቃድ የለውም ወይም የኔትወርክ ችግር አለ።");
+        setStatusMessage("❌ የፊት ማነፃፀሪያው ላይ የCORS ወይም የኔትወርክ ስህተት አጋጥሟል። እባክዎ ገጹን አድሰው ድጋሚ ይሞክሩ።");
       } finally {
         setLoading(false);
       }
