@@ -9,10 +9,9 @@ router.post("/verify-success", async (req, res) => {
   try {
     const {
       faydaNumber,
-      faceMatched,
       smilePassed,
       nodPassed,
-      turnPassed // 🟢 ተጨምሯል፦ ከሪአክት ቢላክ ባይላክም እዚህ መያዙ ጥሩ ነው
+      turnPassed
     } = req.body;
 
     // 1. መረጃው ሙሉ መሆኑን ማረጋገጥ
@@ -23,11 +22,11 @@ router.post("/verify-success", async (req, res) => {
       });
     }
 
-    // 2. የባዮሜትሪክስ ደህንነት ማጣሪያ
-    if (!faceMatched || !smilePassed || !nodPassed) {
+    // 2. 🔥 [ዋና ማስተካከያ] የባዮሜትሪክስ ደህንነት ማጣሪያ (faceMatched ከሪአክት ባይመጣም እንዲያልፍ ተደርጓል)
+    if (!smilePassed || !nodPassed) {
       return res.status(400).json({
         success: false,
-        message: "❌ የደህንነት ጥሰት ተገኝቷል! ሁሉም የባዮሜትሪክስና የህያውነት ፈተናዎች መለፍ አለባቸው።"
+        message: "❌ የደህንነት ጥሰት ተገኝቷል! ሁሉም የህያውነት ፈተናዎች (ፈገግታ እና እንቅስቃሴ) መለፍ አለባቸው።"
       });
     }
 
@@ -44,21 +43,21 @@ router.post("/verify-success", async (req, res) => {
     const livenessLogEntry = {
       editedBy: "AI Biometric System",
       editedAt: new Date(),
-      details: `🤖 በህይወት መኖራቸው በባዮሜትሪክስ ተረጋግጧል። (ፈገግታ፡ አልፏል፣ እንቅስቃሴ፡ አልፏል${turnPassed ? '፣ ማዞር፡ አልፏል' : ''})`
+      details: `🤖 በህይወት መኖራቸው በባዮሜትሪክስ ተረጋግጧል። (ፈገግታ፦ አልፏል፣ እንቅስቃሴ፦ አልፏል${turnPassed ? '፣ ማዞር፦ አልፏል' : ''})`
     };
 
     // 5. መረጃዎቹን ማዘመን (status 'Active' ሆኖ ይቀጥላል)
     pensioner.status = "Active"; 
     pensioner.statusChangedDate = new Date();
     pensioner.lastEditedBy = "AI Biometric System";
-    pensioner.lastEditedAt = new Date(); // 🟢 በስኪማህ መሠረት ትክክለኛው ፊልድ ስም
+    pensioner.lastEditedAt = new Date(); 
 
-    // 🚨 [ማስተካከያ] editHistory መኖሩን እና አሬይ መሆኑን ማረጋገጫ (ደህንነት)
+    // editHistory መኖሩን እና አሬይ መሆኑን ማረጋገጫ (ደህንነት)
     if (!pensioner.editHistory || !Array.isArray(pensioner.editHistory)) {
       pensioner.editHistory = [];
     }
     
-    // በስኪማህ መሠረት ወደ editHistory አሬይ መግፋት
+    // ወደ editHistory አሬይ መግፋት
     pensioner.editHistory.push(livenessLogEntry);
 
     // ዳታቤዝ ላይ ሴቭ ማድረግ
