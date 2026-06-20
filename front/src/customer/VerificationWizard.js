@@ -1,117 +1,130 @@
 import React, { useState } from "react";
+import axios from "axios";
+import "./Verification.css";
+
+// የደረጃ ክፍሎቹን ማስገባት
+import CaptureIDCard from "./CaptureIDCard";
+import CaptureSelfie from "./CaptureSelfie";
 import FaceMatch from "./FaceMatch";
 import LivenessTest from "./LivenessTest";
 import VerificationSuccess from "./VerificationSuccess";
 
-function PensionerVerificationWizard() {
-  // 1. የደረጃ መቆጣጠሪያ ስቴት (አሁን ያለህበትን ደረጃ ይይዛል)
-  const [currentStep, setCurrentStep] = useState(3); // ከደረጃ 3 ጀምሮ የተመሰለ
+function VerificationWizard() {
+  const [step, setStep] = useState(1);
+  const [faydaNumber, setFaydaNumber] = useState("");
+  const [dbPensionerData, setDbPensionerData] = useState(null); // 🔥 አዲስ፡ ከዳታቤዝ የመጣ የጡረተኛ መረጃ
+  const [selfiePhoto, setSelfiePhoto] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // 2. ከደረጃ 1 እና 2 የተገኘ የጡረተኛው ዳታ (ናሙና)
-  // 🚨 በተግባር ይህ ዳታ ካንተ ዋና ስቴት ወይም ከኤፒአይ የመጣ መሆን አለበት
-  const [pensionerData, setPensionerData] = useState({
-    faydaNumber: "FO-987654321-AZ",
-    nameAmh: "አሰፋ በቀለ ገብሬ",
-    idPhotoUrl: "https://i.ibb.co/example/database-photo.jpg" // የዳታቤዝ ፎቶ
-  });
-
-  // 3. ከካሜራ የተነሳ አዲስ ሴልፊ ፎቶ ስቴት
-  const [selfiePhoto, setSelfiePhoto] = useState("https://i.ibb.co/example/selfie-photo.jpg");
-
-  /* ==========================================================================
-     📬 [ዋናው የኤፒአይ መላኪያ ፈንክሽን] - ከ LivenessTest ስኬት በኋላ የሚጠራ
-  ========================================================================== */
-  const handleLivenessSuccess = async (livenessData) => {
+  // 🔥 ደረጃ 1፡ የፋይዳ ቁጥሩን ከዳታቤዝ ጋር በባክኤንድ ማረጋገጫ ፈንክሽን
+  const verifyIdWithDatabase = async (scannedData) => {
+    setLoading(true);
+    setErrorMessage("");
     try {
-      console.log("ከ Liveness Component የመጣ ዳታ፦", livenessData);
-
-      // የፋይዳ ቁጥሩ መኖሩን በቅድሚያ ማረጋገጥ
-      const currentFayda = pensionerData?.faydaNumber; 
-      if (!currentFayda) {
-        alert("⚠️ ስህተት፦ የጡረተኛው የፋይዳ ቁጥር አልተገኘም! እባክዎ ገጹን አድሰው ከደረጃ 1 ይጀምሩ።");
-        return;
-      }
-
-      // ወደ ባክኤንድህ የሚደረግ የፖስት (POST) ጥሪ
-      const response = await fetch("https://poessa-digital-services.vercel.app/api/liveness/verify-success", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          faydaNumber: currentFayda,                 // የፋይዳ ቁጥር (ለባክኤንድ መፈለጊያ)
-          smilePassed: livenessData.smilePassed,     // የፈገግታ ማረጋገጫ (true)
-          nodPassed: livenessData.nodPassed,         // የእንቅስቃሴ ማረጋገጫ (true)
-          turnPassed: livenessData.turnPassed || true
-        }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        console.log("🎉 ባክኤንድ ላይ በተሳካ ሁኔታ ተቀምጧል፦", result);
-        
-        // 🟢 መረጃው ሲቀመጥ በቀጥታ ወደ ስኬት ገጽ (ደረጃ 5) ያሻግረዋል
-        setCurrentStep(5); 
+      // 1. መጀመሪያ ይህ የፋይዳ ቁጥር በሲስተሙ ላይ መኖሩን ከሰርቨር መፈለግ
+      const response = await axios.get(`https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${scannedData.faydaNumber}`);
+      
+      if (response.data && response.data.success) {
+        // 2. መረጃው ከተገኘ የዳታቤዙን መረጃ አስቀምጥና ወደ ደረጃ 2 እለፍ
+        setFaydaNumber(scannedData.faydaNumber);
+        setDbPensionerData(response.data.data); // የዳታቤዝ መረጃ (ፎቶውን ጨምሮ)
+        setStep(2);
       } else {
-        // ሰርቨሩ የመለሰውን ትክክለኛ የሰውኛ ስህተት መልዕክት ያሳያል
-        alert(`❌ ስህተት፦ ${result.message || "መረጃውን ማስቀመጥ አልተቻለም።"}`);
+        setErrorMessage("❌ ይህ የፋይዳ ቁጥር በስርዓቱ ላይ አልተመዘገበም!");
       }
-
-    } catch (error) {
-      console.error("Network or Server Error:", error);
-      alert("❌ የማረጋገጫ መረጃውን ለማስቀመጥ የኔትወርክ ወይም የሰርቨር ስህተት አጋጥሟል። እባክዎ እንደገና ይሞክሩ።");
+    } catch (err) {
+      console.error("DB Verification Error:", err);
+      setErrorMessage("❌ መረጃውን ከዳታቤዝ ጋር ማመሳሰል አልተቻለም። እባክዎ ኢንተርኔት ይፈትሹ።");
+    } finally {
+      setLoading(false);
     }
   };
 
-  /* ==========================================================================
-     🔄 የእያንዳንዱ ደረጃ ማሳያ መቆጣጠሪያ (Render Step)
-  ========================================================================== */
-  const renderStep = () => {
-    switch (currentStep) {
-      case 3:
-        return (
-          <FaceMatch
-            idPhoto={pensionerData.idPhotoUrl}
-            selfiePhoto={selfiePhoto}
-            onSuccess={() => setCurrentStep(4)} // የፊት ማመሳሰሉ ካለፈ ወደ ደረጃ 4 ይወስዳል
-          />
-        );
+  // 🔥 ደረጃ 4፡ የህያውነት ፈተናው ሲያልፍ የመጨረሻውን የደህንነት ማረጋገጫ ወደ ሰርቨር መላክ
+  const handleFinalSuccess = async (livenessResults) => {
+    setLoading(true);
+    try {
+      // ከ LivenessTest የመጡትን ትክክለኛ የፈገግታና የእንቅስቃሴ ውጤቶች ለሰርቨር መላክ
+      const response = await axios.post("https://poessa-digital-services-1.onrender.com/api/liveness/verify-success", {
+        faydaNumber,
+        dbPhotoUrl: dbPensionerData.photoUrl, // ከዳታቤዝ የነበረው ፎቶ ዩአርኤል
+        selfiePhoto,
+        faceMatched: true,
+        smilePassed: livenessResults.smilePassed || false, // በእጅ True የተደረገው ተቀይሯል
+        nodPassed: livenessResults.nodPassed || false,
+        turnPassed: livenessResults.turnPassed || false,
+        verificationStatus: "Verified",
+        verifiedAt: new Date().toISOString()
+      });
 
-      case 4:
-        return (
-          <LivenessTest
-            faydaNumber={pensionerData.faydaNumber}
-            onSuccess={handleLivenessSuccess} // 🔥 ስራውን ሲጨርስ የላይኛውን የኤፒአይ ፈንክሽን ይጠራል
-          />
-        );
-
-      case 5:
-        return (
-          <VerificationSuccess 
-            pensionerData={pensionerData} 
-          />
-        );
-
-      default:
-        return <div>ያልታወቀ ደረጃ</div>;
+      if (response.data.success) {
+        setStep(5);
+      }
+    } catch (err) {
+      console.error("Verification Save Error:", err);
+      alert("የማረጋገጫ መረጃን ለማስቀመጥ ስህተት ተፈጥሯል፤ እባክዎ እንደገና ይሞክሩ።");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f1f5f9", padding: "40px 10px" }}>
-      {/* የሲስተሙ ዋና ራስጌ ሰሌዳ */}
-      <div style={{ textAlign: "center", marginBottom: "30px", fontFamily: "sans-serif" }}>
-        <h1 style={{ color: "#162447", fontSize: "24px", margin: "0" }}>የብሔራዊ ጡረተኞች ማረጋገጫ ዊዛርድ</h1>
-        <p style={{ color: "#64748b", fontSize: "14px", marginTop: "5px" }}>POESSA Digital Biometric Verification System</p>
-      </div>
+    <div className="verification-wizard-container">
+      
+      {/* የስህተት መልእክት ማሳያ */}
+      {errorMessage && <div className="verification-error-banner">{errorMessage}</div>}
+      {loading && <div className="verification-loading-spinner">⏳ ሂደቱን በመፈጸም ላይ...</div>}
 
-      {/* የደረጃ ማሳያ ካርድ ሳጥን */}
-      <div style={{ background: "#fff", borderRadius: "16px", boxShadow: "0 10px 25px rgba(0,0,0,0.05)", padding: "10px", maxWidth: "480px", margin: "0 auto" }}>
-        {renderStep()}
-      </div>
+      {/* ደረጃ 1: መታወቂያ መቃኘት እና ወዲያውኑ ከDB ጋር ማመሳሰል */}
+      {step === 1 && (
+        <CaptureIDCard 
+          onSuccess={(data) => {
+            verifyIdWithDatabase(data); // 🔥 እዚህ ጋር ነው መጀመሪያ DB ቼክ የሚደረገው
+          }} 
+        />
+      )}
+
+      {/* ደረጃ 2: የራስ ፎቶ (Selfie) ማንሳት */}
+      {step === 2 && (
+        <CaptureSelfie 
+          onSuccess={(image) => {
+            setSelfiePhoto(image);
+            setStep(3);
+          }} 
+        />
+      )}
+
+      {/* ደረጃ 3: የፊት ማነፃፀሪያ (Face Matching) - ከዳታቤዝ ፎቶ ጋር ነው የሚነጻጸረው */}
+      {step === 3 && dbPensionerData && (
+        <FaceMatch 
+          idPhoto={dbPensionerData.photoUrl} // 🔥 ከመታወቂያው ፎቶ ይልቅ የዳታቤዙን ዋና ፎቶ አስተላልፈናል
+          selfiePhoto={selfiePhoto} 
+          onSuccess={() => setStep(4)} 
+        />
+      )}
+
+      {/* ደረጃ 4: የህያውነት ፈተና (Liveness Detection) */}
+      {step === 4 && (
+        <LivenessTest 
+          faydaNumber={faydaNumber}
+          idPhoto={dbPensionerData?.photoUrl}
+          selfiePhoto={selfiePhoto}
+          onSuccess={(results) => handleFinalSuccess(results)} // የፈተናውን ውጤት ይዞ ይሄዳል
+        />
+      )}
+
+      {/* ደረጃ 5: ስኬታማ ማረጋገጫ እና ከተረጋገጡት ጋር መመደብ */}
+      {step === 5 && <VerificationSuccess pensionerData={dbPensionerData} />}
+      
+      {/* የሂደት ማሳያ (Progress Indicator) */}
+      {step < 5 && (
+        <div className="verification-wizard-step-info">
+          ደረጃ {step} ከ 5 | እባክዎ መመሪያዎችን ይከተሉ
+        </div>
+      )}
     </div>
   );
 }
 
-export default PensionerVerificationWizard;
+export default VerificationWizard;
