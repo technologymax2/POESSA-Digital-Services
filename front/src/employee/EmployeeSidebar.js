@@ -57,7 +57,7 @@ function EmployeeSidebar() {
       <div className="sidebar-menu">
         {/* ካሉህ ሌሎች ሜኑዎች ጎን ለጎን ይህንን አዲሱን የሪፖርት ማውጫ እንጨምራለን */}
         <button 
-          className={`menu-item ${location.pathname === '/employee/report' ? 'active' : ''}`}
+          className={`menu-item ${location.pathname === '/report' ? 'active' : ''}`}
           onClick={() => navigate('/report')}
         >
           <span className="menu-icon">📊</span>
