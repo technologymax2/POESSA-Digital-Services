@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import PensionerRegistration from './PensionerRegistration';
 import IdCardGenerationAndSearch from './IdCardGenerationAndSearch';
+import VerificationReport from './VerificationReport'; // 📊 አዲሱ የሪፖርት ኮምፖነንት እዚህ ይመጣል (እንደ አወቃቀሩ ስሙን ማስተካከል ትችላለህ)
 import './EmployeeDashboard.css';
 
 function EmployeeDashboard() {
@@ -16,6 +17,8 @@ function EmployeeDashboard() {
 
   const [lang, setLang] = useState('am');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // 'registration'፣ 'report' ወይም 'search' ሊሆን ይችላል
   const [activeSubPage, setActiveSubPage] = useState('registration');
 
   // Load employee info
@@ -104,8 +107,10 @@ function EmployeeDashboard() {
 
         <hr className="sidebar-hr" />
 
-        {/* Menu */}
+        {/* Menu Items */}
         <div className="sidebar-menu-items">
+          
+          {/* 📝 ዳሽቦርድ / ምዝገባ */}
           <button
             className={`menu-btn-item ${
               activeSubPage === 'registration' ? 'active' : ''
@@ -118,6 +123,20 @@ function EmployeeDashboard() {
             📝 {lang === 'am' ? 'ዳሽቦርድ / ምዝገባ' : 'Dashboard / Register'}
           </button>
 
+          {/* 📊 የማረጋገጫ ሪፖርት */}
+          <button
+            className={`menu-btn-item ${
+              activeSubPage === 'report' ? 'active' : ''
+            }`}
+            onClick={() => {
+              setActiveSubPage('report');
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            📊 {lang === 'am' ? 'የማረጋገጫ ሪፖርት' : 'Verification Report'}
+          </button>
+
+          {/* 🔍 መረጃ መፈለጊያና መታወቂያ */}
           <button
             className={`menu-btn-item ${
               activeSubPage === 'search' ? 'active' : ''
@@ -172,11 +191,16 @@ function EmployeeDashboard() {
           )}
         </div>
 
+        {/* ዳይናሚክ በሆነ መልኩ ገጾችን መቀያየሪያ ክፍል */}
         <main className="dashboard-body">
           <div className="dynamic-content-area">
-            {activeSubPage === 'registration' ? (
+            {activeSubPage === 'registration' && (
               <PensionerRegistration currentEmployee={currentEmployee.username} />
-            ) : (
+            )}
+            {activeSubPage === 'report' && (
+              <VerificationReport /> 
+            )}
+            {activeSubPage === 'search' && (
               <IdCardGenerationAndSearch />
             )}
           </div>
