@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import PensionerRegistration from './PensionerRegistration';
 import IdCardGenerationAndSearch from './IdCardGenerationAndSearch';
-import VerificationReport from './VerificationReport'; // 📊 አዲሱ የሪፖርት ኮምፖነንት እዚህ ይመጣል (እንደ አወቃቀሩ ስሙን ማስተካከል ትችላለህ)
+import Report from './Report'; // 📊 አዲሱ የሪፖርት ኮምፖነንት እዚህ ይመጣል (እንደ አወቃቀሩ ስሙን ማስተካከል ትችላለህ)
 import './EmployeeDashboard.css';
 
 function EmployeeDashboard() {
