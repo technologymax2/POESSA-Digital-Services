@@ -1,0 +1,180 @@
+/* -------------------------------------------------------------
+   🔍 CheckStatus Page Core Styles
+------------------------------------------------------------- */
+
+/* ሙሉ ገጹን መካከለኛ ለማድረግ */
+.status-page-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  padding: 20px;
+  background-color: #f8fafc;
+  box-sizing: border-box;
+}
+
+/* ዋናው የካርድ ሳጥን */
+.status-card-container {
+  max-width: 480px;
+  width: 100%;
+  padding: 40px 30px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.status-card-icon {
+  font-size: 50px;
+  margin-bottom: 15px;
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+
+.status-card-title {
+  color: #162447;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+}
+
+.status-card-subtitle {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 30px 0;
+}
+
+/* 📥 የፎርም እና የኢንፑት ቦታ */
+.status-form {
+  width: 100%;
+  margin-bottom: 25px;
+}
+
+.status-input-field {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 10px;
+  border: 2px solid #cbd5e1;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-align: center;
+  box-sizing: border-box;
+  outline: none;
+  background-color: #f8fafc;
+  transition: all 0.2s ease-in-out;
+}
+
+.status-input-field:focus {
+  border-color: #162447;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(22, 36, 71, 0.1);
+}
+
+.status-submit-btn {
+  width: 100%;
+  background-color: #162447;
+  color: #ffffff;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  margin-top: 15px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.status-submit-btn:hover {
+  background-color: #1f366b;
+}
+
+.status-submit-btn:active {
+  transform: scale(0.98);
+}
+
+/* 📊 የውጤት ማሳያ ሰሌዳ (Result Panel) */
+.status-result-box {
+  margin-top: 25px;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  text-align: left;
+}
+
+.status-result-header {
+  margin: 0 0 15px 0;
+  color: #162447;
+  font-size: 15px;
+  font-weight: 700;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.status-result-item {
+  font-size: 14px;
+  margin: 8px 0;
+  color: #334155;
+}
+
+/* 🟢 ⏳ 🔴 የሁኔታ ባጆች (Status Badges) */
+.badge-status {
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.badge-status.pending {
+  background-color: #fef9c3;
+  color: #a16207;
+  border: 1px solid #fef08a;
+}
+
+.badge-status.verified {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.badge-status.rejected {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* ⚠️ ከባለሙያ የተላከ ማስታወሻ ሳጥን */
+.status-comment-box {
+  margin-top: 15px;
+  padding: 12px 15px;
+  border-radius: 8px;
+  background-color: #ffffff;
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+  font-size: 13.5px;
+  line-height: 1.5;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+/* ❌ ስህተት ሲኖር */
+.status-error-alert {
+  padding: 15px;
+  border-radius: 10px;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 20px;
+  border: 1px solid #fecaca;
+}
+
+/* 🔄 Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
