@@ -12,23 +12,21 @@ import VerificationSuccess from "./VerificationSuccess";
 function VerificationWizard() {
   const [step, setStep] = useState(1);
   const [faydaNumber, setFaydaNumber] = useState("");
-  const [dbPensionerData, setDbPensionerData] = useState(null); // 🔥 አዲስ፡ ከዳታቤዝ የመጣ የጡረተኛ መረጃ
+  const [dbPensionerData, setDbPensionerData] = useState(null); 
   const [selfiePhoto, setSelfiePhoto] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // 🔥 ደረጃ 1፡ የፋይዳ ቁጥሩን ከዳታቤዝ ጋር በባክኤንድ ማረጋገጫ ፈንክሽን
+  // 🔥 ደረጃ 1፡ የፋይዳ ቁጥሩን ከዳታቤዝ ጋር ማመሳሰል
   const verifyIdWithDatabase = async (scannedData) => {
     setLoading(true);
     setErrorMessage("");
     try {
-      // 1. መጀመሪያ ይህ የፋይዳ ቁጥር በሲስተሙ ላይ መኖሩን ከሰርቨር መፈለግ
       const response = await axios.get(`https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${scannedData.faydaNumber}`);
       
       if (response.data && response.data.success) {
-        // 2. መረጃው ከተገኘ የዳታቤዙን መረጃ አስቀምጥና ወደ ደረጃ 2 እለፍ
         setFaydaNumber(scannedData.faydaNumber);
-        setDbPensionerData(response.data.data); // የዳታቤዝ መረጃ (ፎቶውን ጨምሮ)
+        setDbPensionerData(response.data.data); 
         setStep(2);
       } else {
         setErrorMessage("❌ ይህ የፋይዳ ቁጥር በስርዓቱ ላይ አልተመዘገበም!");
@@ -41,29 +39,41 @@ function VerificationWizard() {
     }
   };
 
-  // 🔥 ደረጃ 4፡ የህያውነት ፈተናው ሲያልፍ የመጨረሻውን የደህንነት ማረጋገጫ ወደ ሰርቨር መላክ
+  // 🔥 ደረጃ 4፡ የመጨረሻውን የደህንነት ማረጋገጫ ወደ ሰርቨር መላክ
   const handleFinalSuccess = async (livenessResults) => {
     setLoading(true);
     try {
-      // ከ LivenessTest የመጡትን ትክክለኛ የፈገግታና የእንቅስቃሴ ውጤቶች ለሰርቨር መላክ
-      const response = await axios.post("https://poessa-digital-services-1.onrender.com/api/liveness/verify-success", {
-        faydaNumber,
-        dbPhotoUrl: dbPensionerData.photoUrl, // ከዳታቤዝ የነበረው ፎቶ ዩአርኤል
-        selfiePhoto,
+      // 💡 [ዋና ማስተካከያ 1] የፋይዳ ቁጥር ከስቴት ካልተገኘ ከ livenessResults ወይም ከ dbPensionerData መውሰድ (ባዶ እንዳይሆን)
+      const exactFayda = faydaNumber || livenessResults.faydaNumber || dbPensionerData?.fayda || dbPensionerData?.faydaNumber;
+      
+      // 💡 [ዋና ማስተካከያ 2] የዳታቤዝ ፎቶ ኪይ (photoUrl ወይም photo) ሁለቱንም አማራጭ ማካተት
+      const dbPhotoUrl = dbPensionerData?.photoUrl || dbPensionerData?.photo || "";
+
+      const payload = {
+        faydaNumber: exactFayda,
+        dbPhotoUrl: dbPhotoUrl, 
+        selfiePhoto: selfiePhoto,
         faceMatched: true,
-        smilePassed: livenessResults.smilePassed || false, // በእጅ True የተደረገው ተቀይሯል
+        smilePassed: livenessResults.smilePassed || false, 
         nodPassed: livenessResults.nodPassed || false,
         turnPassed: livenessResults.turnPassed || false,
         verificationStatus: "Verified",
         verifiedAt: new Date().toISOString()
-      });
+      };
 
-      if (response.data.success) {
+      console.log("🚀 ወደ ሰርቨር የሚላከው ዳታ (Payload)፦", payload);
+
+      const response = await axios.post("https://poessa-digital-services-1.onrender.com/api/liveness/verify-success", payload);
+
+      if (response.data && response.data.success) {
         setStep(5);
+      } else {
+        // ሰርቨሩ ምላሽ ሰጥቶ ግን success ካልሆነ የመጣውን መልዕክት ማሳየት
+        alert(`⚠️ ሰርቨር ምላሽ አልሰጠም፦ ${response.data?.message || "ያልታወቀ ስህተት"}`);
       }
     } catch (err) {
-      console.error("Verification Save Error:", err);
-      alert("የማረጋገጫ መረጃን ለማስቀመጥ ስህተት ተፈጥሯል፤ እባክዎ እንደገና ይሞክሩ።");
+      console.error("Verification Save Error Details:", err.response?.data || err.message);
+      alert(`የማረጋገጫ መረጃን ለማስቀመጥ ስህተት ተፈጥሯል፦ ${err.response?.data?.message || err.message}`);
     } finally {
       setLoading(false);
     }
@@ -72,20 +82,19 @@ function VerificationWizard() {
   return (
     <div className="verification-wizard-container">
       
-      {/* የስህተት መልእክት ማሳያ */}
       {errorMessage && <div className="verification-error-banner">{errorMessage}</div>}
       {loading && <div className="verification-loading-spinner">⏳ ሂደቱን በመፈጸም ላይ...</div>}
 
-      {/* ደረጃ 1: መታወቂያ መቃኘት እና ወዲያውኑ ከDB ጋር ማመሳሰል */}
+      {/* ደረጃ 1 */}
       {step === 1 && (
         <CaptureIDCard 
           onSuccess={(data) => {
-            verifyIdWithDatabase(data); // 🔥 እዚህ ጋር ነው መጀመሪያ DB ቼክ የሚደረገው
+            verifyIdWithDatabase(data); 
           }} 
         />
       )}
 
-      {/* ደረጃ 2: የራስ ፎቶ (Selfie) ማንሳት */}
+      {/* ደረጃ 2 */}
       {step === 2 && (
         <CaptureSelfie 
           onSuccess={(image) => {
@@ -95,29 +104,28 @@ function VerificationWizard() {
         />
       )}
 
-      {/* ደረጃ 3: የፊት ማነፃፀሪያ (Face Matching) - ከዳታቤዝ ፎቶ ጋር ነው የሚነጻጸረው */}
+      {/* ደረጃ 3 */}
       {step === 3 && dbPensionerData && (
         <FaceMatch 
-          idPhoto={dbPensionerData.photoUrl} // 🔥 ከመታወቂያው ፎቶ ይልቅ የዳታቤዙን ዋና ፎቶ አስተላልፈናል
+          idPhoto={dbPensionerData.photoUrl || dbPensionerData.photo} 
           selfiePhoto={selfiePhoto} 
           onSuccess={() => setStep(4)} 
         />
       )}
 
-      {/* ደረጃ 4: የህያውነት ፈተና (Liveness Detection) */}
+      {/* ደረጃ 4 */}
       {step === 4 && (
         <LivenessTest 
           faydaNumber={faydaNumber}
-          idPhoto={dbPensionerData?.photoUrl}
+          idPhoto={dbPensionerData?.photoUrl || dbPensionerData?.photo}
           selfiePhoto={selfiePhoto}
-          onSuccess={(results) => handleFinalSuccess(results)} // የፈተናውን ውጤት ይዞ ይሄዳል
+          onSuccess={(results) => handleFinalSuccess(results)} 
         />
       )}
 
-      {/* ደረጃ 5: ስኬታማ ማረጋገጫ እና ከተረጋገጡት ጋር መመደብ */}
+      {/* ደረጃ 5 */}
       {step === 5 && <VerificationSuccess pensionerData={dbPensionerData} />}
       
-      {/* የሂደት ማሳያ (Progress Indicator) */}
       {step < 5 && (
         <div className="verification-wizard-step-info">
           ደረጃ {step} ከ 5 | እባክዎ መመሪያዎችን ይከተሉ
