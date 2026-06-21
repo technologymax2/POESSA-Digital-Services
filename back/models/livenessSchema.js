@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const livenessSchema = new mongoose.Schema(
   {
-    faydaNumber: { type: String, required: true, unique: true }, // unique: true መጨመር ይመከራል
+    faydaNumber: { type: String, required: true, unique: true },
     idPhoto: { type: String, default: "" },
     selfiePhoto: { type: String, default: "" },
     faceMatched: { type: Boolean, default: false },
@@ -14,12 +14,11 @@ const livenessSchema = new mongoose.Schema(
       enum: ["Pending", "Verified", "Failed"],
       default: "Pending",
     },
+    comment: { type: String, default: "" }, // 👈 አዲስ የተጨመረ ማሳሰቢያ ማስቀመጫ
     lastVerificationDate: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
 
-// ይህ አሰራር "OverWriteModelError" እንዳይፈጠር ይከላከላል
 const LivenessVerification = mongoose.models.LivenessVerification || mongoose.model("LivenessVerification", livenessSchema);
-
 module.exports = LivenessVerification;
