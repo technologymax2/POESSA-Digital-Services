@@ -9,7 +9,7 @@ import FaceMatch from "./FaceMatch";
 import LivenessTest from "./LivenessTest";
 import VerificationSuccess from "./VerificationSuccess";
 
-// የምስል መጠን አሳንሶ የሚልክ ፈንክሽን
+// 📸 ምስሎችን አሳንሶ ጥራት ሳይቀንስ የሚልክ ፈንክሽን
 const compressImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
   return new Promise((resolve, reject) => {
     if (!base64Str || typeof base64Str !== "string") {
@@ -42,7 +42,7 @@ const compressImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
 
-      // በ 0.60 ጥራት (Quality) ይበልጥ ቀለል እንዲል ተደርጓል
+      // በ 0.60 ጥራት (Quality) ወደ JPEG መቀየር
       resolve(canvas.toDataURL("image/jpeg", 0.60));
     };
     img.onerror = (e) => reject(e);
@@ -53,7 +53,7 @@ function VerificationWizard() {
   const [step, setStep] = useState(1);
   const [faydaNumber, setFaydaNumber] = useState("");
   const [dbPensionerData, setDbPensionerData] = useState(null); 
-  const [selfiePhoto, setSelfiePhoto] = useState(null); // 📸 ይህ ደረጃ 2 ላይ የተነሳው መደበኛ ንጹህ ሴልፊ ነው
+  const [selfiePhoto, setSelfiePhoto] = useState(null); // 📸 ደረጃ 2 ላይ የተነሳው መደበኛ ንጹህ ሴልፊ ማከማቻ
   const [matchPercentage, setMatchPercentage] = useState(0); // 📊 የፊት መመሳሰል መጠን ማከማቻ
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -80,7 +80,7 @@ function VerificationWizard() {
     }
   };
 
-  // 🚀 የመጨረሻ ማስተካከያ፡ መደበኛውን ሴልፊ እና የ AI ውጤቶችን ወደ ሰርቨር መላክ
+  // 🚀 የመጨረሻ ማስተካከያ፡ ደረጃ 2 ላይ የተነሳውን መደበኛ ሴልፊ እና የ AI ውጤቶችን ወደ ሰርቨር መላክ
   const handleFinalSuccess = async (livenessResults) => {
     setLoading(true);
     try {
@@ -91,23 +91,19 @@ function VerificationWizard() {
       
       const payload = {
         faydaNumber: exactFayda,
-        name: dbPensionerData?.name || "ስም አልተጠቀሰም",
-        phone: dbPensionerData?.phone || "የሌለ",
         idPhotoUrl: dbPensionerData?.photoUrl || dbPensionerData?.photo || "", 
-        selfiePhotoUrl: compressedSelfie, // 📸 ቪዲዮው ሳይሆን መደበኛው ንጹህ ሴልፊ ብቻ ለዳታቤዝ ይላካል!
+        selfiePhotoUrl: compressedSelfie, // 📸 የLiveness እንቅስቃሴው ሳይሆን መደበኛው ንጹህ ሴልፊ ብቻ ይላካል!
         faceMatched: true,
-        matchPercentage: matchPercentage, // 📊 የፊት ማች ፐርሰንት
+        matchPercentage: matchPercentage,   // 📊 የፊት ማች ፐርሰንት ቁጥር
         smilePassed: livenessResults.smilePassed || false, 
         nodPassed: livenessResults.nodPassed || false,
-        turnPassed: livenessResults.turnPassed || false,
-        verificationStatus: "Pending", // 🟢 ሰራተኛው ሪፖርት ገጽ ላይ አይቶ እንዲያጸድቀው Pending ሆኖ ይላካል
-        comment: ""
+        turnPassed: livenessResults.turnPassed || false
       };
 
       console.log(`🚀 ወደ ሰርቨር የሚላከው Payload መጠን: ${Math.round(JSON.stringify(payload).length / 1024)} KB`);
 
-      // ወደ backend የተስተካከለው ራውት መላክ
-      const response = await axios.post("https://poessa-digital-services-1.onrender.com/api/pensioners", payload);
+      // 🌟 [ዋና ማስተካከያ] ወደ ትክክለኛው የባዮሜትሪክስ ማስቀመጫ ማስተላለፊያ ራውት መላክ
+      const response = await axios.post("https://poessa-digital-services-1.onrender.com/api/liveness/verify-success", payload);
 
       if (response.data && response.data.success) {
         setStep(5);
@@ -116,11 +112,7 @@ function VerificationWizard() {
       }
     } catch (err) {
       console.error("Verification Save Error:", err.response?.data || err.message);
-      if (err.response?.status === 413) {
-        alert("⚠️ ስህተት 413 (Payload Too Large): ምስሉ በጣም ትልቅ ነው።");
-      } else {
-        alert(`የማረጋገጫ መረጃን ለማስቀመጥ ስህተት ተፈጥሯል፦ ${err.response?.data?.message || err.message}`);
-      }
+      alert(`የማረጋገጫ መረጃን ለማስቀመጥ ስህተት ተፈጥሯል፦ ${err.response?.data?.message || err.message}`);
     } finally {
       setLoading(false);
     }
@@ -145,7 +137,7 @@ function VerificationWizard() {
       {step === 2 && (
         <CaptureSelfie 
           onSuccess={(image) => {
-            setSelfiePhoto(image); // 📸 መደበኛው ሴልፊ እዚህ ላይ ተቀምጧል
+            setSelfiePhoto(image); // 📸 መደበኛው ንጹህ ሴልፊ እዚህ ላይ ይቀመጣል
             setStep(3);
           }} 
         />
@@ -167,7 +159,7 @@ function VerificationWizard() {
       {step === 4 && (
         <LivenessTest 
           faydaNumber={faydaNumber}
-          matchPercentage={matchPercentage} // 🌟 ፐርሰንቱን ወደ ውስት ያሳልፋል
+          matchPercentage={matchPercentage} // 🌟 ፐርሰንቱን ወደ ውስጥ ያሳልፋል
           onSuccess={(results) => handleFinalSuccess(results)} // 🛑 እዚህ ምንም አዲስ ፎቶ አይነሳም
         />
       )}
