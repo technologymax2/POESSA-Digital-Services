@@ -19,10 +19,7 @@ function Report() {
   const fetchReportData = async () => {
     setLoading(true);
     try {
-      // ማሳሰቢያ፡ ሰርቨርህ ላይ የ UserPensioner ዝርዝርን የሚያመጣውን endpoint እዚህ ጥራ
       const res = await axios.get(`${API_URL}/api/pensioners`);
-      
-      // ከቤክኤንድ የሚመጣው ዳታ { success: true, data: [...] } ከሆነ ወይም ቀጥታ አሬይ ከሆነ ለመቀበል
       const data = res.data.data || res.data;
       if (Array.isArray(data)) {
         setPensioners(data);
@@ -34,11 +31,11 @@ function Report() {
     }
   };
 
-  // 🟢 🔴 የማረጋገጫ ሁኔታን ማሻሻያ (Verify / Failed) ፈንክሽን 
-  // (ከ LivenessVerification Schema የ "verificationStatus" enum ጋር የተጣጣመ)
+  // 🟢 🔴 የማረጋገጫ ሁኔታን ማሻሻያ ፈንክሽን 
   const handleStatusUpdate = async (faydaNumber, newStatus) => {
+    if (!faydaNumber) return alert("የፋይዳ ቁጥር አልተገኘም!");
+    
     try {
-      // በፋይዳ ቁጥር አማካኝነት የባዮሜትሪክስ ሁኔታን ለማዘመን ወደ ቤክኤንድ PUT ማድረግ
       await axios.put(`${API_URL}/api/pensioners/verify-status/${faydaNumber}`, {
         verificationStatus: newStatus,
         comment: comment
@@ -54,15 +51,14 @@ function Report() {
     }
   };
 
-  // 📊 የማጣሪያ (Filter) ሎጂክ - ከ LivenessVerification የ "verificationStatus" ጋር ይገናኛል
+  // 📊 የማጣሪያ (Filter) ሎጂክ - አንድ ወጥ የሆነ የ 'Pending' አያያዝ
+  const getStatus = (p) => p.verificationStatus || "Pending";
+
   const filteredData = pensioners.filter((p) => {
-    // በስኬማው መሠረት ከሌለ ወደ "Pending" ይቀየራል
-    const status = p.verificationStatus || "Pending"; 
     if (filter === "All") return true;
-    return status === filter;
+    return getStatus(p) === filter;
   });
 
-  // 🖨️ የሪፖርት ማተሚያ / PDF ማውጫ
   const handlePrintReport = () => {
     window.print();
   };
@@ -73,22 +69,22 @@ function Report() {
         📊 POESSA የጡረተኞች ማረጋገጫ ሪፖርት ማውጫ
       </h2>
       
-      {/* 📊 የሪፖርት ማጠቃለያ ካርዶች (ልክ እንደ ምስሉ ዲዛይን) */}
+      {/* 📊 የሪፖርት ማጠቃለያ ካርዶች (አስተማማኝ መቁጠሪያ ሎጂክ) */}
       <div className="admin-summary-grid">
         <div className="summary-card total">
           <h3>{pensioners.length}</h3> 
           <p>ጠቅላላ የገቡ</p>
         </div>
         <div className="summary-card pending">
-          <h3>{pensioners.filter(p => !p.verificationStatus || p.verificationStatus === "Pending").length}</h3> 
+          <h3>{pensioners.filter(p => getStatus(p) === "Pending").length}</h3> 
           <p>በሂደት ላይ ያሉ</p>
         </div>
         <div className="summary-card verified">
-          <h3>{pensioners.filter(p => p.verificationStatus === "Verified").length}</h3> 
+          <h3>{pensioners.filter(p => getStatus(p) === "Verified").length}</h3> 
           <p>የተረጋገጡ</p>
         </div>
         <div className="summary-card rejected">
-          <h3>{pensioners.filter(p => p.verificationStatus === "Failed").length}</h3> 
+          <h3>{pensioners.filter(p => getStatus(p) === "Failed").length}</h3> 
           <p>ውድቅ የተደረጉ</p>
         </div>
       </div>
@@ -109,7 +105,7 @@ function Report() {
         </button>
       </div>
 
-      {/* 📝 የጡረተኞች መረጃ ሰንጠረዥ (UserPensioner ፊልዶችን ይጠቀማል) */}
+      {/* 📝 የጡረተኞች መረጃ ሰንጠረዥ */}
       <div className="admin-table-container">
         <table className="admin-data-table">
           <thead>
@@ -127,9 +123,8 @@ function Report() {
               <tr><td colSpan="4" style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>ምንም የተመዘገበ መረጃ አልተገኘም።</td></tr>
             ) : (
               filteredData.map((p) => (
-                <tr key={p._id}>
+                <tr key={p._id || p.faydaNumber}>
                   <td style={{ fontWeight: "bold" }}>{p.faydaNumber}</td>
-                  {/* በአወቃቀሩ መሠረት የአማርኛ ስም ካለ እሱን ካልሆነ የእንግሊዝኛውን ስም ያሳያል */}
                   <td>{p.nameAmh || p.nameEng || "ስም አልተጠቀሰም"}</td>
                   <td>
                     <span style={{ 
@@ -137,10 +132,10 @@ function Report() {
                       borderRadius: "20px", 
                       fontSize: "12px", 
                       fontWeight: "bold", 
-                      background: (p.verificationStatus === "Verified") ? "#dcfce7" : (p.verificationStatus === "Failed") ? "#fee2e2" : "#fef9c3", 
-                      color: (p.verificationStatus === "Verified") ? "#16a34a" : (p.verificationStatus === "Failed") ? "#dc2626" : "#ca8a04" 
+                      background: (getStatus(p) === "Verified") ? "#dcfce7" : (getStatus(p) === "Failed") ? "#fee2e2" : "#fef9c3", 
+                      color: (getStatus(p) === "Verified") ? "#16a34a" : (getStatus(p) === "Failed") ? "#dc2626" : "#ca8a04" 
                     }}>
-                      {p.verificationStatus || "Pending"}
+                      {getStatus(p)}
                     </span>
                   </td>
                   <td style={{ textAlign: "center" }} className="no-print">
@@ -161,11 +156,11 @@ function Report() {
           <div className="admin-modal-content">
             <h3 style={{ margin: "0 0 20px 0", color: "#162447", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px" }}>🔎 ዝርዝር የባዮሜትሪክስ ማነጻጸሪያ</h3>
             
-            <p style={{ margin: "5px 0" }}><strong>የጡረተኛው ስም፦</strong> {selectedPensioner.nameAmh || selectedPensioner.nameEng}</p>
+            <p style={{ margin: "5px 0" }}><strong>የጡረተኛው ስም፦</strong> {selectedPensioner.nameAmh || selectedPensioner.nameEng || "ያልታወቀ"}</p>
             <p style={{ margin: "5px 0" }}><strong>ፋይዳ ቁጥር፦</strong> {selectedPensioner.faydaNumber}</p>
-            <p style={{ margin: "5px 0" }}><strong>ስልክ ቁጥር፦</strong> {selectedPensioner.phone}</p>
+            <p style={{ margin: "5px 0" }}><strong>ስልክ ቁጥር፦</strong> {selectedPensioner.phone || "የሌለ"}</p>
             
-            {/* 📸 የፎቶዎች ጎን ለጎን ማነጻጸሪያ (የምዝገባ photoUrl እና የባዮሜትሪክስ selfiePhoto) */}
+            {/* 📸 የፎቶዎች ጎን ለጎን ማነጻጸሪያ */}
             <div style={{ display: "flex", gap: "20px", margin: "20px 0", justifyContent: "center" }}>
               <div style={{ textAlign: "center" }}>
                 <p style={{ fontSize: "12px", fontWeight: "bold", color: "#64748b", marginBottom: "5px" }}>የሲስተም/DB ፎቶ</p>
@@ -177,7 +172,7 @@ function Report() {
               </div>
             </div>
 
-            {/* የባዮሜትሪክስ ቼኮች ዝርዝር ሁኔታ */}
+            {/* የባዮሜትሪክስ ቼኮች ዝርዝር ሁኔታ (Optional Chaining መከላከያ የተደረገበት) */}
             <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "6px", marginBottom: "15px", fontSize: "13px" }}>
               <div>👤 ፊቱ ተገጣጥሟል? <strong>{selectedPensioner.faceMatched ? "✅ አዎ" : "❌ የለም"}</strong></div>
               <div>😊 ፈገግታ አልፏል? <strong>{selectedPensioner.smilePassed ? "✅ አዎ" : "❌ የለም"}</strong></div>
