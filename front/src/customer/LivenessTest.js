@@ -7,6 +7,7 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
   
   const smilePassedRef = useRef(false);
   const nodPassedRef = useRef(false);
+  const isFinishedRef = useRef(false); // 🌟 እጅግ ወሳኝ መቆጣጠሪያ፡ ሁለተኛ እንዳይደገም
 
   const [checks, setChecks] = useState({
     smilePassed: false,
@@ -27,11 +28,10 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
           return;
         }
 
-        // 🌟 [ማሻሻያ] ሞዴሎቹ ቀድመው ስለተጫኑ በቀጥታ ካሜራውን ብቻ እናስነሳለን (ፍጥነትን ይጨምራል)
         setStatusMessage("⏳ ካሜራውን በማስነሳት ላይ...");
         
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user", width: 320, height: 320 } // መጠኑ ቀለል እንዲል ተደርጓል
+          video: { facingMode: "user", width: 320, height: 320 }
         });
         
         if (videoRef.current) {
@@ -43,6 +43,7 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
         setCurrentInstruction("😊 እባክዎ ለካሜራው በግልጽ ፈገግ ይበሉ...");
 
         intervalId = setInterval(async () => {
+          if (isFinishedRef.current) return; // ፈተናው ካለቀ ሉፑን ወዲያው ያግዳል
           if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return;
 
           const detection = await faceapi.detectSingleFace(
@@ -57,7 +58,7 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
           // 1️⃣ የፈገግታ ማረጋገጫ (Smile Detection)
           const smileValue = detection.expressions.happy;
 
-          if (!smilePassedRef.current && smileValue > 0.40) { // ወሰኑ ትንሽ ቀለል ተደርጓል
+          if (!smilePassedRef.current && smileValue > 0.40) {
             smilePassedRef.current = true;
             setChecks(prev => ({ ...prev, smilePassed: true }));
             setCurrentInstruction("👋 አሁን ደግሞ ራስዎን ቀስ አድርገው ወደ ግራና ቀኝ ያንቀሳቅሱ...");
@@ -76,29 +77,35 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
 
             if (ratio < 0.70 || ratio > 1.35) { 
               nodPassedRef.current = true;
+              isFinishedRef.current = true; // 🌟 ሂደቱ ማለቁን ምልክት ማድረግ
+              
               setChecks(prev => ({ ...prev, nodPassed: true }));
-              
-              // 🛑 ሉፑን እና ካሜራውን ወዲያው ማቆም (ይህ ፍሪዝ እንዳይሆን ይከላከላል)
-              clearInterval(intervalId);
-              if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-              }
-              
               setStatusMessage("🎉 ፈተናውን አጠናቀዋል! መረጃው እየተቀመጠ ነው...");
+              setCurrentInstruction("✅ ፈተናው በስኬት አልፏል!");
 
-              // 🎯 ከ FaceMatch የመጣውን matchPercentage ጭምር አብሮ ወደ ላይ ያስተላልፋል
-              if (onSuccess) {
-                onSuccess({
-                  faydaNumber: faydaNumber,
-                  matchPercentage: matchPercentage, // 👈 ፐርሰንቱ እዚህ ጋር ተያይዟል
-                  smilePassed: true,
-                  nodPassed: true,
-                  faceMatched: true
-                });
-              }
+              // 🌟 [ዋና ማሻሻያ]፡ ሉፑን እና ካሜራውን ከማቆማችን በፊት ለስቴቱ (State) መተንፈሻ ጊዜ መስጠት
+              clearInterval(intervalId);
+
+              setTimeout(() => {
+                // ካሜራውን በጥንቃቄ ማቆም
+                if (stream) {
+                  stream.getTracks().forEach(track => track.stop());
+                }
+
+                // ወደ ቀጣዩ ደረጃ 5 ማስተላለፍ
+                if (onSuccess) {
+                  onSuccess({
+                    faydaNumber: faydaNumber,
+                    matchPercentage: matchPercentage,
+                    smilePassed: true,
+                    nodPassed: true,
+                    faceMatched: true
+                  });
+                }
+              }, 600); // 600ms መዘግየት ፍሪዝ መሆንን ሙሉ በሙሉ ይከላከላል
             }
           }
-        }, 350); // ፍጥነቱ መጠነኛ ተደርጓል
+        }, 350);
 
       } catch (err) {
         console.error("Liveness Error:", err);
@@ -108,7 +115,6 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
 
     startLiveness();
 
-    // ገጹ ሲዘጋ ወይም ሲቀየር ካሜራውን እና ሉፑን የመዝጊያ (Clean-up) ማረጋገጫ
     return () => {
       if (intervalId) clearInterval(intervalId);
       if (stream) {
