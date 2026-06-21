@@ -53,12 +53,13 @@ function VerificationWizard() {
   const [step, setStep] = useState(1);
   const [faydaNumber, setFaydaNumber] = useState("");
   const [dbPensionerData, setDbPensionerData] = useState(null); 
+  const [idCardPhoto, setIdCardPhoto] = useState(null); // 🪪 ደረጃ 1 ላይ አሁን የተነሳው መታወቂያ ፎቶ ማከማቻ
   const [selfiePhoto, setSelfiePhoto] = useState(null); // 📸 ደረጃ 2 ላይ የተነሳው መደበኛ ንጹህ ሴልፊ ማከማቻ
   const [matchPercentage, setMatchPercentage] = useState(0); // 📊 የፊት መመሳሰል መጠን ማከማቻ
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // ደረጃ 1፡ የፋይዳ ቁጥሩን ከዳታቤዝ ጋር ማመሳሰል
+  // ደረጃ 1፡ የፋይዳ ቁጥሩን ከዳታቤዝ ጋር ማመሳሰል (አሁን የተነሳውን የ ID ፎቶ ጭምር ይይዛል)
   const verifyIdWithDatabase = async (scannedData) => {
     setLoading(true);
     setErrorMessage("");
@@ -67,6 +68,7 @@ function VerificationWizard() {
       
       if (response.data && response.data.success) {
         setFaydaNumber(scannedData.faydaNumber);
+        setIdCardPhoto(scannedData.idPhotoUrl); // 🌟 ወሳኝ ማስተካከያ፡ አሁን የተነሳውን የመታወቂያ ፎቶ እዚህ ጋር እናስቀምጠዋለን!
         setDbPensionerData(response.data.data); 
         setStep(2);
       } else {
@@ -80,19 +82,22 @@ function VerificationWizard() {
     }
   };
 
-  // 🚀 የመጨረሻ ማስተካከያ፡ ደረጃ 2 ላይ የተነሳውን መደበኛ ሴልፊ እና የ AI ውጤቶችን ወደ ሰርቨር መላክ
+  // 🚀 የመጨረሻ ማስተካከያ፡ ደረጃ 1 ላይ የተነሳውን ID እና ደረጃ 2 ላይ የተነሳውን መደበኛ ሴልፊ ወደ ሰርቨር መላክ
   const handleFinalSuccess = async (livenessResults) => {
     setLoading(true);
     try {
       const exactFayda = faydaNumber || livenessResults.faydaNumber || dbPensionerData?.fayda || dbPensionerData?.faydaNumber;
       
-      // 🌟 ደረጃ 2 ላይ የተነሳውን መደበኛ ንጹህ ሴልፊ (selfiePhoto) እዚህ ጋር እናሳንሰዋለን
+      // ደረጃ 2 ላይ የተነሳውን መደበኛ ንጹህ ሴልፊ (selfiePhoto) እዚህ ጋር እናሳንሰዋለን
       const compressedSelfie = selfiePhoto ? await compressImage(selfiePhoto) : "";
       
+      // 🌟 [ታላቅ ማሻሻያ]፡ በሲስተሙ ውስጥ የነበረው የድሮ ፎቶ ሳይሆን፣ አሁን ደረጃ 1 ላይ የተነሳው መታወቂያ (idCardPhoto) እንዲላክ ተደርጓል
+      const finalIdPhoto = idCardPhoto || dbPensionerData?.photoUrl || dbPensionerData?.photo || "";
+
       const payload = {
         faydaNumber: exactFayda,
-        idPhotoUrl: dbPensionerData?.photoUrl || dbPensionerData?.photo || "", 
-        selfiePhotoUrl: compressedSelfie, // 📸 የLiveness እንቅስቃሴው ሳይሆን መደበኛው ንጹህ ሴልፊ ብቻ ይላካል!
+        idPhotoUrl: finalIdPhoto,        // 🪪 አሁን ደረጃ 1 ላይ የተነሳው አዲሱ መታወቂያ ፎቶ ነው!
+        selfiePhotoUrl: compressedSelfie, // 📸 ደረጃ 2 ላይ የተነሳው መደበኛው ንጹህ ሴልፊ ብቻ!
         faceMatched: true,
         matchPercentage: matchPercentage,   // 📊 የፊት ማች ፐርሰንት ቁጥር
         smilePassed: livenessResults.smilePassed || false, 
@@ -102,7 +107,7 @@ function VerificationWizard() {
 
       console.log(`🚀 ወደ ሰርቨር የሚላከው Payload መጠን: ${Math.round(JSON.stringify(payload).length / 1024)} KB`);
 
-      // 🌟 [ዋና ማስተካከያ] ወደ ትክክለኛው የባዮሜትሪክስ ማስቀመጫ ማስተላለፊያ ራውት መላክ
+      // ወደ ትክክለኛው የባዮሜትሪክስ ማስቀመጫ ማስተላለፊያ ራውት መላክ
       const response = await axios.post("https://poessa-digital-services-1.onrender.com/api/liveness/verify-success", payload);
 
       if (response.data && response.data.success) {
@@ -128,7 +133,7 @@ function VerificationWizard() {
       {step === 1 && (
         <CaptureIDCard 
           onSuccess={(data) => {
-            verifyIdWithDatabase(data); 
+            verifyIdWithDatabase(data); // 🌟 የ ፋይዳ ቁጥር እና የ ID ፎቶ ሊንክ እዚህ ጋር ያልፋል
           }} 
         />
       )}
@@ -146,10 +151,10 @@ function VerificationWizard() {
       {/* ደረጃ 3፡ የፊት ባዮሜትሪክስ ማነፃፀሪያ (Face Match) */}
       {step === 3 && dbPensionerData && (
         <FaceMatch 
-          idPhoto={dbPensionerData.photoUrl || dbPensionerData.photo} 
+          idPhoto={idCardPhoto || dbPensionerData.photoUrl || dbPensionerData.photo} // 🌟 አዲሱን መታወቂያ ያወዳድራል
           selfiePhoto={selfiePhoto} 
           onSuccess={(percentage) => {
-            setMatchPercentage(percentage); // 🌟 የፐርሰንት ውጤቱን ይቀበላል
+            setMatchPercentage(percentage); // 📊 የፐርሰንት ውጤቱን ይቀበላል
             setStep(4);
           }} 
         />
@@ -159,7 +164,7 @@ function VerificationWizard() {
       {step === 4 && (
         <LivenessTest 
           faydaNumber={faydaNumber}
-          matchPercentage={matchPercentage} // 🌟 ፐርሰንቱን ወደ ውስጥ ያሳልፋል
+          matchPercentage={matchPercentage} 
           onSuccess={(results) => handleFinalSuccess(results)} // 🛑 እዚህ ምንም አዲስ ፎቶ አይነሳም
         />
       )}
