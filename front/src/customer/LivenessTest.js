@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 
 function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
   const videoRef = useRef(null);
-  const [statusMessage, setStatusMessage] = useState("⏳ የህያውነት ፈተናን በማዘጋጀት ላይ...");
+  const [statusMessage, setStatusMessage] = useState("⏳ ፈተናውን በማዘጋጀት ላይ...");
   const [loading, setLoading] = useState(true);
   
+  // የፈተና ሁኔታዎችን መቆጣጠሪያ
   const smilePassedRef = useRef(false);
   const nodPassedRef = useRef(false);
   const isFinishedRef = useRef(false);
-
   const [checks, setChecks] = useState({ smilePassed: false, nodPassed: false });
   const [currentInstruction, setCurrentInstruction] = useState("እባክዎ ካሜራውን ቀጥ ብለው ይመልከቱ");
 
@@ -24,6 +24,7 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
           return;
         }
 
+        // 1. ሞዴሎችን መጫን
         setStatusMessage("⏳ ሞዴሎችን በመጫን ላይ...");
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
@@ -31,6 +32,7 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
           faceapi.nets.faceExpressionNet.loadFromUri("/models"),
         ]);
 
+        // 2. ካሜራ መክፈት
         setStatusMessage("⏳ ካሜራውን በመክፈት ላይ...");
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user", width: { ideal: 320 }, height: { ideal: 320 } }
@@ -46,6 +48,7 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
           };
         }
 
+        // 3. የትንተና ዑደት (Detection Loop)
         intervalId = setInterval(async () => {
           if (isFinishedRef.current || !videoRef.current || videoRef.current.paused) return;
 
@@ -58,19 +61,18 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
 
           if (!detection) return;
 
-          // 1. ፈገግታ ማረጋገጫ
+          // ፈገግታ ማረጋገጫ
           if (!smilePassedRef.current && detection.expressions.happy > 0.35) {
             smilePassedRef.current = true;
             setChecks(prev => ({ ...prev, smilePassed: true }));
             setCurrentInstruction("👋 አሁን ደግሞ ራስዎን ወደ ጎን ቀስ ብለው ያንቀሳቅሱ...");
           }
 
-          // 2. የእንቅስቃሴ ማረጋገጫ (Nod/Turn)
+          // የእንቅስቃሴ ማረጋገጫ (Nod/Turn)
           if (smilePassedRef.current && !nodPassedRef.current) {
-            const landmarks = detection.landmarks;
-            const nose = landmarks.getNose()[0];
-            const leftEye = landmarks.getLeftEye()[0];
-            const rightEye = landmarks.getRightEye()[0];
+            const nose = detection.landmarks.getNose()[0];
+            const leftEye = detection.landmarks.getLeftEye()[0];
+            const rightEye = detection.landmarks.getRightEye()[0];
             const ratio = (nose.x - leftEye.x) / (rightEye.x - nose.x);
 
             if (ratio < 0.75 || ratio > 1.30) {
@@ -109,7 +111,12 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
         <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </div>
       <div style={{ margin: "15px", fontWeight: "bold" }}>{currentInstruction}</div>
-      <div style={{ color: "blue" }}>{statusMessage}</div>
+      <div style={{ color: "blue", fontSize: "14px" }}>{statusMessage}</div>
+      
+      <div style={{ marginTop: "20px", textAlign: "left", display: "inline-block" }}>
+        <div style={{ color: checks.smilePassed ? "green" : "gray" }}>{checks.smilePassed ? "✅" : "⭕"} ፈገግታ</div>
+        <div style={{ color: checks.nodPassed ? "green" : "gray" }}>{checks.nodPassed ? "✅" : "⭕"} እንቅስቃሴ</div>
+      </div>
     </div>
   );
 }
