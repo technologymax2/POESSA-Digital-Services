@@ -68,7 +68,7 @@ function VerificationWizard() {
       
       if (response.data && response.data.success) {
         setFaydaNumber(scannedData.faydaNumber);
-        setIdCardPhoto(scannedData.idPhotoUrl); // 🌟 ወሳኝ ማስተካከያ፡ አሁን የተነሳውን የመታወቂያ ፎቶ እዚህ ጋር እናስቀምጠዋለን!
+        setIdCardPhoto(scannedData.idPhotoUrl); // አሁን የተነሳውን የመታወቂያ ፎቶ እዚህ ጋር እናስቀምጠዋለን
         setDbPensionerData(response.data.data); 
         setStep(2);
       } else {
@@ -82,7 +82,7 @@ function VerificationWizard() {
     }
   };
 
-  // 🚀 የመጨረሻ ማስተካከያ፡ ደረጃ 1 ላይ የተነሳውን ID እና ደረጃ 2 ላይ የተነሳውን መደበኛ ሴልፊ ወደ ሰርቨር መላክ
+  // 🚀 የመጨረሻ ማስተካከያ፡ የተነሱትን ምስሎች አሳንሶ ወደ Render ሰርቨር መላክ
   const handleFinalSuccess = async (livenessResults) => {
     setLoading(true);
     try {
@@ -91,13 +91,13 @@ function VerificationWizard() {
       // ደረጃ 2 ላይ የተነሳውን መደበኛ ንጹህ ሴልፊ (selfiePhoto) እዚህ ጋር እናሳንሰዋለን
       const compressedSelfie = selfiePhoto ? await compressImage(selfiePhoto) : "";
       
-      // 🌟 [ታላቅ ማሻሻያ]፡ በሲስተሙ ውስጥ የነበረው የድሮ ፎቶ ሳይሆን፣ አሁን ደረጃ 1 ላይ የተነሳው መታወቂያ (idCardPhoto) እንዲላክ ተደርጓል
+      // በሲስተሙ ውስጥ የነበረው ሳይሆን፣ አሁን ካሜራው ያነሳው አዲሱ መታወቂያ እንዲላክ
       const finalIdPhoto = idCardPhoto || dbPensionerData?.photoUrl || dbPensionerData?.photo || "";
 
       const payload = {
         faydaNumber: exactFayda,
-        idPhotoUrl: finalIdPhoto,        // 🪪 አሁን ደረጃ 1 ላይ የተነሳው አዲሱ መታወቂያ ፎቶ ነው!
-        selfiePhotoUrl: compressedSelfie, // 📸 ደረጃ 2 ላይ የተነሳው መደበኛው ንጹህ ሴልፊ ብቻ!
+        idPhotoUrl: finalIdPhoto,        // 🪪 አሁን ደረጃ 1 ላይ የተነሳው አዲሱ መታወቂያ ፎቶ
+        selfiePhotoUrl: compressedSelfie, // 📸 ደረጃ 2 ላይ የተነሳው መደበኛው ንጹህ ሴልፊ ብቻ
         faceMatched: true,
         matchPercentage: matchPercentage,   // 📊 የፊት ማች ፐርሰንት ቁጥር
         smilePassed: livenessResults.smilePassed || false, 
@@ -133,7 +133,7 @@ function VerificationWizard() {
       {step === 1 && (
         <CaptureIDCard 
           onSuccess={(data) => {
-            verifyIdWithDatabase(data); // 🌟 የ ፋይዳ ቁጥር እና የ ID ፎቶ ሊንክ እዚህ ጋር ያልፋል
+            verifyIdWithDatabase(data); 
           }} 
         />
       )}
@@ -142,19 +142,20 @@ function VerificationWizard() {
       {step === 2 && (
         <CaptureSelfie 
           onSuccess={(image) => {
-            setSelfiePhoto(image); // 📸 መደበኛው ንጹህ ሴልፊ እዚህ ላይ ይቀመጣል
+            setSelfiePhoto(image); 
             setStep(3);
           }} 
         />
       )}
 
-      {/* ደረጃ 3፡ የፊት ባዮሜትሪክስ ማነፃፀሪያ (Face Match) */}
+      {/* ደረጃ 3፡ የፊት ባዮሜትሪክስ ማነፃፀሪያ (የሲስተም ፎቶ 🆚 ሴልፊ) */}
       {step === 3 && dbPensionerData && (
         <FaceMatch 
-          idPhoto={idCardPhoto || dbPensionerData.photoUrl || dbPensionerData.photo} // 🌟 አዲሱን መታወቂያ ያወዳድራል
+          idPhoto={dbPensionerData.photoUrl || dbPensionerData.photo} // ለጥንቃቄ እንደ ፎልባክ ይቀመጣል
           selfiePhoto={selfiePhoto} 
+          dbPensionerData={dbPensionerData} // 🌟 የሲስተሙን ፎቶ ከውስጥ ሆኖ እንዲያነብ ሙሉውን ዳታ አሳልፈነዋል
           onSuccess={(percentage) => {
-            setMatchPercentage(percentage); // 📊 የፐርሰንት ውጤቱን ይቀበላል
+            setMatchPercentage(percentage); 
             setStep(4);
           }} 
         />
@@ -165,7 +166,7 @@ function VerificationWizard() {
         <LivenessTest 
           faydaNumber={faydaNumber}
           matchPercentage={matchPercentage} 
-          onSuccess={(results) => handleFinalSuccess(results)} // 🛑 እዚህ ምንም አዲስ ፎቶ አይነሳም
+          onSuccess={(results) => handleFinalSuccess(results)} 
         />
       )}
 
