@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const livenessSchema = new mongoose.Schema(
   {
     faydaNumber: { type: String, required: true, unique: true },
+    name: { type: String, default: "ስም አልተጠቀሰም" }, // 👈 ሪፖርት ገጹ ላይ ስም እንዲታይ አዲስ የተጨመረ
+    phone: { type: String, default: "የሌለ" },          // 👈 ሪፖርት ገጹ ላይ ስልክ እንዲታይ አዲስ የተጨመረ
     idPhoto: { type: String, default: "" },
     selfiePhoto: { type: String, default: "" },
     faceMatched: { type: Boolean, default: false },
@@ -14,7 +16,7 @@ const livenessSchema = new mongoose.Schema(
       enum: ["Pending", "Verified", "Failed"],
       default: "Pending",
     },
-    comment: { type: String, default: "" }, // 👈 አዲስ የተጨመረ ማሳሰቢያ ማስቀመጫ
+    comment: { type: String, default: "" }, 
     lastVerificationDate: { type: Date, default: Date.now },
   },
   { timestamps: true }
