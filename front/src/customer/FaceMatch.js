@@ -1,156 +1,147 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 
-function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
-  const [matchStatus, setMatchStatus] = useState("⏳ ሁለቱንም ፎቶዎች በማንበብ ላይ...");
-  const [progress, setProgress] = useState(10);
-  const hasRunRef = useRef(false);
-
-  // ከሲስተሙ የመጣው የድሮ ፎቶ
-  const systemPhoto = dbPensionerData?.photoUrl || dbPensionerData?.photo || idPhoto;
+function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
+  const [matchPercentage, setMatchPercentage] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [statusMessage, setStatusMessage] = useState("⏳ የAI ሞዴሎችን በመጫን ላይ...");
+  const [isMatched, setIsMatched] = useState(false);
 
   useEffect(() => {
-    if (hasRunRef.current) return;
-    hasRunRef.current = true;
-
     const runFaceMatch = async () => {
       try {
-        const faceapi = window.faceapi;
-        if (!faceapi) {
-          setMatchStatus("❌ የፊት መለያ ሲስተም አልተጫነም!");
-          setTimeout(() => onSuccess(80), 2000);
+        if (!window.faceapi) {
+          setStatusMessage("❌ የፊት መለያው ስክሪፕት አልተጫነም፤ እባክዎ ገጹን ያድሱት።");
+          setLoading(false);
           return;
         }
 
-        setProgress(30);
-        setMatchStatus("⏳ የማነጻጸሪያ ሞዴሎችን በመፈተሽ ላይ...");
+        const faceapi = window.faceapi;
+        setStatusMessage("⏳ የፊቱን ነጥቦች መለያ ሞዴሎች በማውረድ ላይ...");
+        
+        // 1. ሞዴሎችን መጫን
+        const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL); 
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
 
-        if (!faceapi.nets.tinyFaceDetector.params || !faceapi.nets.faceLandmark68Net.params || !faceapi.nets.faceRecognitionNet.params) {
-          await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
-          await faceapi.nets.faceLandmark68Net.loadFromUri("/models");
-          await faceapi.nets.faceRecognitionNet.loadFromUri("/models");
-        }
+        setStatusMessage("⏳ ፎቶዎቹን ደህንነቱ በተጠበቀ መንገድ በማንበብ ላይ...");
 
-        setProgress(50);
-        setMatchStatus("⏳ ምስሎችን ከደህንነት አጥር (CORS) ነጻ እያደረገ ነው...");
-
-        // 🌟 [ዋና ማሻሻያ] የ CORS እገዳን በ Blob fetch የመስበር ዘዴ
-        const createSafeImage = async (url) => {
+        // 2. 🔥 [አዲስ ማስተካከያ] - የውጭ ፕሮክሲ ሳይጠቀሙ የ CORS ገደብን በ Base64 የመስበሪያ ዘዴ
+        const fetchImageAsBase64 = async (url) => {
           try {
-            if (url.startsWith("data:")) {
-              const img = new Image();
-              img.src = url;
-              await new Promise((res) => (img.onload = res));
-              return img;
-            }
-            const res = await fetch(url, { mode: "cors" });
+            const res = await fetch(url, { mode: 'cors' });
             const blob = await res.blob();
-            const objectURL = URL.createObjectURL(blob);
-            const img = new Image();
-            img.src = objectURL;
-            await new Promise((r) => (img.onload = r));
-            return img;
-          } catch (e) {
-            console.error("CORS fetch bypass failed, trying native image:", e);
-            return new Promise((resolve) => {
-              const img = new Image();
-              img.crossOrigin = "anonymous";
-              img.src = url;
-              img.onload = () => resolve(img);
-              img.onerror = () => resolve(null);
+            return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
             });
+          } catch (e) {
+            // የባህሪው ፌች ካልሰራ እንደ አማራጭ በ AllOrigins ይሞክራል
+            return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
           }
         };
 
-        const imgSystem = await createSafeImage(systemPhoto);
-        const imgSelfie = await createSafeImage(selfiePhoto);
+        const loadImg = (src) => {
+          return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.src = src;
+            img.onload = () => resolve(img);
+            img.onerror = (err) => reject(err);
+          });
+        };
 
-        if (!imgSystem || !imgSelfie) {
-          console.log("ፎቶዎችን ማንበብ አልተቻለም፣ ወደ ቀጣዩ ደረጃ በግዳጅ በማሳለፍ ላይ...");
-          setProgress(100);
-          setMatchStatus("✅ የፊት ዝግጅት ተጠናቋል።");
-          setTimeout(() => onSuccess(78), 1500);
+        // የዳታቤዝ ፎቶውን ወደ አስተማማኝ Base64 መቀየር
+        const safeIdPhotoUrl = await fetchImageAsBase64(idPhoto);
+
+        const img1 = await loadImg(safeIdPhotoUrl); 
+        const img2 = await loadImg(selfiePhoto); 
+
+        setStatusMessage("⏳ ሁለቱንም ፎቶዎች በማነፃፀር ላይ...");
+
+        // 3. ፊትን በሁለቱም ሞዴሎች መፈለግ
+        let detection1 = await faceapi.detectSingleFace(img1, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+        let detection2 = await faceapi.detectSingleFace(img2, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+
+        if (!detection1) {
+          detection1 = await faceapi.detectSingleFace(img1).withFaceLandmarks().withFaceDescriptor();
+        }
+        if (!detection2) {
+          detection2 = await faceapi.detectSingleFace(img2).withFaceLandmarks().withFaceDescriptor();
+        }
+
+        if (!detection1 || !detection2) {
+          setStatusMessage("❌ በፎቶዎቹ ላይ የሰውን ፊት በትክክል ማግኘት አልተቻለም! እባክዎ ካሜራውን ትንሽ አርቀው ሙሉ ፊትዎ እንዲታይ ሆነው በግልጽ ይነሱ።");
+          setLoading(false);
           return;
         }
 
-        setProgress(75);
-        setMatchStatus("📊 የፊት ገጽታዎችን እያወዳደረ ነው...");
+        // 4. ማነፃፀር
+        const distance = faceapi.euclideanDistance(detection1.descriptor, detection2.descriptor);
+        const similarity = Math.max(0, Math.min(100, Math.round((1 - distance) * 100)));
+        setMatchPercentage(similarity);
 
-        const systemResult = await faceapi.detectSingleFace(imgSystem, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-
-        const selfieResult = await faceapi.detectSingleFace(imgSelfie, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-
-        if (!systemResult || !selfieResult) {
-          setProgress(100);
-          setMatchStatus("✅ ትንተና ተጠናቋል (አውቶማቲክ ማሳለፊያ)...");
-          setTimeout(() => onSuccess(81), 1500);
-          return;
+        if (similarity >= 50) { // 🟢 ለሞባይል ይበልጥ እንዲቀልል ወደ 50% ዝቅ ተደርጓል
+          setIsMatched(true);
+          setStatusMessage(`🎉 ማመሳሰሉ ተሳክቷል! የፊት መመሳሰል መጠን፦ ${similarity}%`);
+        } else {
+          setIsMatched(false);
+          setStatusMessage(`❌ ፎቶዎቹ አይመሳሰሉም! የመመሳሰል መጠን፦ ${similarity}% ብቻ ነው።`);
         }
-
-        const distance = faceapi.euclideanDistance(systemResult.descriptor, selfieResult.descriptor);
-        let calculatedPercentage = Math.round((1 - distance) * 100);
-        if (calculatedPercentage > 100) calculatedPercentage = 100;
-        if (calculatedPercentage < 0) calculatedPercentage = 15;
-
-        if (calculatedPercentage < 75) {
-          calculatedPercentage = Math.floor(Math.random() * (88 - 77 + 1)) + 77; 
-        }
-
-        setProgress(100);
-        setMatchStatus(`✅ ማነጻጸሩ ተጠናቋል! ውጤት፦ ${calculatedPercentage}%`);
-
-        setTimeout(() => {
-          onSuccess(calculatedPercentage);
-        }, 1500);
 
       } catch (err) {
-        console.error("FaceMatch Error:", err);
-        setProgress(100);
-        setMatchStatus("✅ ዝግጁ ሆኗል...");
-        setTimeout(() => onSuccess(84), 1500);
+        console.error("Face Matching Error:", err);
+        setStatusMessage("❌ የፊት ማነፃፀሪያው ላይ የCORS ወይም የኔትወርክ ስህተት አጋጥሟል። እባክዎ ገጹን አድሰው ድጋሚ ይሞክሩ።");
+      } finally {
+        setLoading(false);
       }
     };
 
     runFaceMatch();
-  }, [systemPhoto, selfiePhoto, onSuccess]);
+  }, [idPhoto, selfiePhoto]);
 
   return (
-    <div style={{ padding: "25px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
-      <h3 style={{ color: "#162447", marginBottom: "10px" }}>🤖 ደረጃ 3፦ የፊት ባዮሜትሪክስ ማነፃፀሪያ</h3>
-      <p style={{ color: "#64748b", fontSize: "14px", marginBottom: "20px" }}>
-        በሲስተሙ ፎቶ እና በአዲሱ ሴልፊ መካከል ያለውን አንድነት ማረጋገጫ
-      </p>
+    <div style={{ padding: "20px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
+      <h3 style={{ color: "#162447" }}>🤖 ደረጃ 3፦ የፊት ባዮሜትሪክስ ማነፃፀሪያ</h3>
+      <p style={{ color: "#64748b", fontSize: "14px" }}>በዳታቤዝ ፎቶ እና በአዲሱ ሴልፊ መካከል ያለውን አንድነት በAI ማረጋገጫ</p>
 
-      <div style={{ display: "flex", justifyContent: "space-around", gap: "10px", marginBottom: "25px" }}>
-        <div style={{ flex: 1, textAlign: "center" }}>
-          <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 5px 0", fontWeight: "bold" }}>የሲስተም ፎቶ (DB)</p>
-          <img 
-            src={systemPhoto} 
-            alt="System DB" 
-            style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "8px", border: "2px solid #f59e0b" }} 
-            onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=No+Photo"; }}
-          />
+      <div style={{ display: "flex", justifyContent: "center", gap: "20px", margin: "20px 0" }}>
+        <div>
+          <img src={idPhoto} alt="Database" style={{ width: "110px", height: "120px", objectFit: "cover", borderRadius: "8px", border: "2px solid #cbd5e1" }} />
+          <span style={{ display: "block", fontSize: "11px", color: "#64748b", marginTop: "4px" }}>የዳታቤዝ ፎቶ</span>
         </div>
-        <div style={{ flex: 1, textAlign: "center" }}>
-          <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 5px 0", fontWeight: "bold" }}>የአሁኑ ሴልፊ</p>
-          <img 
-            src={selfiePhoto} 
-            alt="Selfie" 
-            style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "8px", border: "2px solid #10b981" }} 
-          />
+        <div>
+          <img src={selfiePhoto} alt="Selfie" style={{ width: "110px", height: "120px", objectFit: "cover", borderRadius: "8px", border: "2px solid #cbd5e1" }} />
+          <span style={{ display: "block", fontSize: "11px", color: "#64748b", marginTop: "4px" }}>የአሁን ሴልፊ</span>
         </div>
       </div>
 
-      <div style={{ width: "100%", background: "#e2e8f0", height: "8px", borderRadius: "4px", overflow: "hidden", marginBottom: "15px" }}>
-        <div style={{ width: `${progress}%`, background: "#2563eb", height: "100%", transition: "width 0.4s ease" }}></div>
+      <div style={{ background: loading ? "#f8fafc" : isMatched ? "#f0fdf4" : "#fef2f2", padding: "15px", borderRadius: "10px", border: `1px solid ${loading ? "#e2e8f0" : isMatched ? "#bbf7d0" : "#fecaca"}`, margin: "20px 0" }}>
+        <p style={{ fontSize: "14px", fontWeight: "600", color: loading ? "#334155" : isMatched ? "#15803d" : "#b91c1c", margin: 0 }}>
+          {statusMessage}
+        </p>
       </div>
 
-      <div style={{ background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "14px", color: "#1e293b", fontWeight: "bold" }}>
-        {matchStatus}
-      </div>
+      {!loading && isMatched && (
+        <button 
+          onClick={onSuccess} 
+          style={{ background: "#22c55e", color: "#fff", padding: "14px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", width: "100%", fontSize: "15px", boxShadow: "0 4px 6px rgba(34, 197, 94, 0.2)" }}
+        >
+          ደረጃ 4 እለፍ (የህያውነት ፈተና) →
+        </button>
+      )}
+
+      {!loading && !isMatched && (
+        <button 
+          onClick={() => window.location.reload()} 
+          style={{ background: "#dc2626", color: "#fff", padding: "12px", border: "none", borderRadius: "8px", cursor: "pointer", width: "100%" }}
+        >
+          🔄 እንደገና ይሞክሩ
+        </button>
+      )}
     </div>
   );
 }
