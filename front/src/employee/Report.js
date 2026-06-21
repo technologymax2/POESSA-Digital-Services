@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "./Report.css"; // የ CSS ስታይሉን እንዲጠቀም
+import "./Report.css";
 
 function Report() {
   const [pensioners, setPensioners] = useState([]);
@@ -16,7 +16,6 @@ function Report() {
   const fetchPensioners = async () => {
     setLoading(true);
     try {
-      // ሁሉንም የተመዘገቡ ጡረተኞች ዝርዝር የሚያመጣ API
       const res = await axios.get("https://poessa-digital-services-1.onrender.com/api/pensioners");
       if (res.data) setPensioners(res.data);
     } catch (err) {
@@ -26,7 +25,6 @@ function Report() {
     }
   };
 
-  // ሁኔታን የማሻሻያ (Verify / Reject) ፈንክሽን
   const handleStatusUpdate = async (id, newStatus) => {
     try {
       await axios.put(`https://poessa-digital-services-1.onrender.com/api/pensioners/${id}`, {
@@ -36,20 +34,18 @@ function Report() {
       alert(`የማረጋገጫ ሁኔታው በተሳካ ሁኔታ ወደ ${newStatus} ተቀይሯል!`);
       setSelectedPensioner(null);
       setComment("");
-      fetchPensioners(); // ሰንጠረዡን በቅጽበት ማደስ
+      fetchPensioners(); 
     } catch (err) {
       alert("ሁኔታውን ማዘመን አልተቻለም።");
     }
   };
 
-  // 📊 የማጣሪያ (Filter) ሎጂክ
   const filteredData = pensioners.filter(p => {
     const status = p.verificationStatus || "Pending";
     if (filter === "All") return true;
     return status === filter;
   });
 
-  // 🖨️ የሪፖርት ማተሚያ / PDF ማውጫ
   const handlePrintReport = () => {
     window.print();
   };
@@ -57,10 +53,10 @@ function Report() {
   return (
     <div className="admin-dashboard-wrapper">
       <h2 style={{ color: "#162447", borderBottom: "2px solid #e2e8f0", paddingBottom: "10px" }}>
-        📊 POESSA የጡረተኞች ማረጋገጫ ሪፖርት እና መቆጣጠሪያ
+        📊 POESSA የጡረተኞች ማረጋገጫ ሪፖርት ማውጫ
       </h2>
       
-      {/* 📊 የሪፖርት ማጠቃለያ ካርዶች */}
+      {/* የሪፖርት ማጠቃለያ ካርዶች */}
       <div className="admin-summary-grid">
         <div className="summary-card total">
           <h3>{pensioners.length}</h3> 
@@ -68,19 +64,19 @@ function Report() {
         </div>
         <div className="summary-card pending">
           <h3>{pensioners.filter(p => !p.verificationStatus || p.verificationStatus === "Pending").length}</h3> 
-          <p>በሂደት ላይ ያሉ (Pending)</p>
+          <p>በሂደት ላይ ያሉ</p>
         </div>
         <div className="summary-card verified">
           <h3>{pensioners.filter(p => p.verificationStatus === "Verified").length}</h3> 
-          <p>የጸደቁ (Verified)</p>
+          <p>የተረጋገጡ</p>
         </div>
         <div className="summary-card rejected">
           <h3>{pensioners.filter(p => p.verificationStatus === "Rejected").length}</h3> 
-          <p>ውድቅ የተደረጉ (Rejected)</p>
+          <p>ውድቅ የተደረጉ</p>
         </div>
       </div>
 
-      {/* ⚙️ ማጣሪያ እና ሪፖርት ማውጫ */}
+      {/* ማጣሪያ እና ሪፖርት ማውጫ */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <div>
           <label style={{ fontWeight: "bold", marginRight: "10px", color: "#334155" }}>መረጃዎችን ለይቶ ማሳያ፦ </label>
@@ -96,7 +92,7 @@ function Report() {
         </button>
       </div>
 
-      {/* 📝 የጡረተኞች መረጃ ሰንጠረዥ */}
+      {/* የጡረተኞች መረጃ ሰንጠረዥ */}
       <div className="admin-table-container">
         <table className="admin-data-table">
           <thead>
@@ -135,7 +131,7 @@ function Report() {
         </table>
       </div>
 
-      {/* 🔍 የፎቶዎች ማነጻጸሪያ እና ውሳኔ መስጫ መስኮት (Modal Pop-up) */}
+      {/* የፎቶዎች ማነጻጸሪያ ሞዳል */}
       {selectedPensioner && (
         <div className="admin-modal-overlay">
           <div className="admin-modal-content">
@@ -144,7 +140,6 @@ function Report() {
             <p style={{ margin: "5px 0" }}><strong>የጡረተኛው ስም፦</strong> {selectedPensioner.name || "Mamaru Anmaw"}</p>
             <p style={{ margin: "5px 0" }}><strong>ፋይዳ ቁጥር፦</strong> {selectedPensioner.faydaNumber || selectedPensioner.fayda}</p>
             
-            {/* 📸 የፎቶዎች ጎን ለጎን ማነጻጸሪያ ክፍል */}
             <div style={{ display: "flex", gap: "20px", margin: "20px 0", justifyContent: "center" }}>
               <div style={{ textAlign: "center" }}>
                 <p style={{ fontSize: "12px", fontWeight: "bold", color: "#64748b", marginBottom: "5px" }}>የሲስተም/DB ፎቶ</p>
@@ -156,8 +151,7 @@ function Report() {
               </div>
             </div>
 
-            {/* 📝 የማሳሰቢያ ጽሑፍ ሳጥን */}
-            <label style={{ fontWeight: "bold", display: "block", marginBottom: "8px", color: "#334155", fontSize: "14px" }}>ውድቅ የሚያደርጉ ከሆነ ለጡረተኛው የሚላክ ማሳሰቢያ፦</label>
+            <label style={{ fontWeight: "bold", display: "block", marginBottom: "8px", color: "#334155", fontSize: "14px" }}>ውድቅ የሚያደርጉ ከሆነ የሚጻፍ ማሳሰቢያ፦</label>
             <textarea 
               value={comment} 
               onChange={(e) => setComment(e.target.value)} 
@@ -165,7 +159,6 @@ function Report() {
               style={{ width: "100%", height: "80px", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", boxSizing: "border-box", fontSize: "14px", outline: "none", resize: "none" }}
             />
 
-            {/* 🟢 🔴 የውሳኔ በተኖች */}
             <div style={{ display: "flex", gap: "12px", marginTop: "25px" }}>
               <button onClick={() => handleStatusUpdate(selectedPensioner._id, "Verified")} style={{ flex: 1, background: "#22c55e", color: "#fff", padding: "12px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", fontSize: "14px" }}>🟢 አጽድቅ (Verify)</button>
               <button onClick={() => handleStatusUpdate(selectedPensioner._id, "Rejected")} style={{ flex: 1, background: "#dc2626", color: "#fff", padding: "12px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", fontSize: "14px" }}>🔴 ውድቅ አድርግ (Reject)</button>
