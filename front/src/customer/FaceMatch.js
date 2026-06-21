@@ -27,18 +27,17 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
 
         setStatusMessage("⏳ ሁለቱንም ፎቶዎች ከ ImgBB በማንበብ ላይ...");
 
-        // 2. ፎቶዎቹን በ HTML Image አማካኝነት በደህንነት (CORS) መጫኛ አስናጅ
+        // 2. ፎቶዎቹን በ HTML Image አማካኝነት በደህንነት (CORS) መጫኛ
         const loadImg = (src) => {
           return new Promise((resolve, reject) => {
             const img = new Image();
-            img.crossOrigin = "anonymous"; // 🌟 ይህ የ ImgBB ፎቶዎችን ያለ CORS ችግር በቀጥታ እንዲያነብ ያደርገዋል
+            img.crossOrigin = "anonymous"; 
             img.src = src;
             img.onload = () => resolve(img);
             img.onerror = (err) => reject(new Error(`ፎቶውን መጫን አልተቻለም፦ ${src}`));
           });
         };
 
-        // ፎቶዎቹን በቀጥታ ከሊንካቸው መጫን (ያለ Base64 ማዞሪያ)
         const img1 = await loadImg(idPhoto); 
         const img2 = await loadImg(selfiePhoto); 
 
@@ -48,7 +47,6 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
         let detection1 = await faceapi.detectSingleFace(img1, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
         let detection2 = await faceapi.detectSingleFace(img2, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
 
-        // የ Tiny ካልሰራ ይበልጥ ጥራት ባለው የ SSD ሞዴል ድጋሚ መሞከር
         if (!detection1) {
           detection1 = await faceapi.detectSingleFace(img1).withFaceLandmarks().withFaceDescriptor();
         }
@@ -57,19 +55,19 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
         }
 
         if (!detection1 || !detection2) {
-          setStatusMessage("❌ በፎቶዎቹ ላይ የሰውን ፊት በትክክል ማግኘት አልተቻለም! እባክዎ ካሜራውን ትንሽ አርቀው ሙሉ ፊትዎ እንዲታይ ሆነው በግልጽ ይነሱ።");
+          setStatusMessage("❌ በፎቶዎቹ ላይ የሰውን ፊት በትክክል ማግኘት አልተቻለም! እባክዎ ሙሉ ፊትዎ እንዲታይ ሆነው በግልጽ ይነሱ።");
           setLoading(false);
           return;
         }
 
-        // 4. በሁለቱ ፊቶች መካከል ያለውን የቦታ ርቀት (Euclidean Distance) ማነፃፀር
+        // 4. በሁለቱ ፊቶች መካከል ያለውን የቦታ ርቀት ማነፃፀር
         const distance = faceapi.euclideanDistance(detection1.descriptor, detection2.descriptor);
         // የርቀቱን ውጤት ወደ መቶኛ (%) መቀየር
         const similarity = Math.max(0, Math.min(100, Math.round((1 - distance) * 100)));
         setMatchPercentage(similarity);
 
         // 5. የመመሳሰል ወሰን ማረጋገጫ (Threshold)
-        if (similarity >= 50) { // 🟢 ለሞባይል አጠቃቀም 50% እና ከዚያ በላይ አስተማማኝ ነው
+        if (similarity >= 50) { 
           setIsMatched(true);
           setStatusMessage(`🎉 ማመሳሰሉ ተሳክቷል! የፊት መመሳሰል መጠን፦ ${similarity}%`);
         } else {
@@ -79,7 +77,7 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
 
       } catch (err) {
         console.error("Face Matching Error:", err);
-        setStatusMessage("❌ የፊት ማነፃፃሪያው ላይ የቴክኒክ ስህተት አጋጥሟል። እባክዎ ገጹን አድሰው ድጋሚ ይሞክሩ።");
+        setStatusMessage("❌ የፊት ማነፃፃሪያው ላይ የቴክኒክ ስህተት አጋጥሟል።");
       } finally {
         setLoading(false);
       }
@@ -107,7 +105,7 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
 
       {/* 📊 የሁኔታ ማሳያ መልዕክት ሳጥን */}
       <div style={{ background: loading ? "#f8fafc" : isMatched ? "#f0fdf4" : "#fef2f2", padding: "15px", borderRadius: "10px", border: `1px solid ${loading ? "#e2e8f0" : isMatched ? "#bbf7d0" : "#fecaca"}`, margin: "20px 0" }}>
-        <p style={{ fontSize: "14px", fontWeight: "600", color: loading ? "#334155" : isMatched ? "#15803d" : "#b91c1c", margin: 0, lineHeight: "1.5" }}>
+        <p style={{ fontSize: "14px", fontWeight: "600", color: loading ? "#334155" : isMatched ? "#15803d" : "#b91c1c", margin: 0 }}>
           {statusMessage}
         </p>
       </div>
@@ -115,7 +113,7 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
       {/* 🔘 የድርጊት ቁልፎች */}
       {!loading && isMatched && (
         <button 
-          onClick={onSuccess} 
+          onClick={() => onSuccess(matchPercentage)} // 🌟 የፐርሰንት ውጤቱን ይዞ ወደ ቀጣዩ (Liveness) ገጽ ይሄዳል
           style={{ background: "#22c55e", color: "#fff", padding: "14px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", width: "100%", fontSize: "15px", boxShadow: "0 4px 6px rgba(34, 197, 94, 0.2)" }}
         >
           ደረጃ 4 እለፍ (የህያውነት ፈተና) →
