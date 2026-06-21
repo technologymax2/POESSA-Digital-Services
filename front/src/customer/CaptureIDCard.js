@@ -32,30 +32,48 @@ function CaptureIDCard({ onSuccess }) {
   /* ==========================================================================
      📸 ፎቶን ወደ ImgBB ሰቅሎ እውነተኛ ሊንክ (URL) ማምጫ ተግባር
   ========================================================================== */
-  const uploadIdToImgBB = async (base64Image) => {
-    try {
-      let cleanBase64 = base64Image;
-      if (base64Image.includes("base64,")) {
-        cleanBase64 = base64Image.split("base64,")[1];
-      }
+  // 1. የ uploadIdToImgBB ፈንክሽንን በዚህ አስተካክል
+const uploadIdToImgBB = async (base64Image) => {
+  try {
+    const cleanBase64 = base64Image.split(",")[1];
+    const formData = new FormData(); // FormData መጠቀማችንን እናረጋግጥ
+    formData.append("image", cleanBase64);
 
-      const formData = new URLSearchParams();
-      formData.append("image", cleanBase64);
+    const response = await axios.post(
+      `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+      formData
+    );
 
-      const response = await axios.post(
-        `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
-        formData
-      );
+    return response.data?.data?.url || null;
+  } catch (error) {
+    console.error("❌ ImgBB Upload Error:", error);
+    return null;
+  }
+};
 
-      if (response.data && response.data.data && response.data.data.url) {
-        return response.data.data.url; // 🔗 የተፈጠረው የፎቶ ሊንክ
-      }
-      return null;
-    } catch (error) {
-      console.error("❌ ImgBB Upload Error:", error);
-      return null;
-    }
-  };
+// 2. capturePhoto ውስጥ ምስሉን ከመላክህ በፊት አሳንሰው
+const capturePhoto = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const canvas = document.createElement("canvas");
+    // ጥራቱን በመቀነስ ምስሉን ያሳንሱት (ይህ ፎቶው በፍጥነት እንዲሰቀል ያደርጋል)
+    canvas.width = 600; 
+    canvas.height = 400;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // በ 0.6 ጥራት JPEG አድርገን እንላከው
+    const base64Image = canvas.toDataURL("image/jpeg", 0.6);
+
+    // ... ቀሪው ኮድህ እዚህ ይቀጥላል ...
+    setScanning(true);
+    setScanStatus("⏳ ምስሉ በመጫን ላይ ነው...");
+    
+    const uploadedUrl = await uploadIdToImgBB(base64Image);
+    // ...
+};
+
 
   const capturePhoto = async () => {
     const video = videoRef.current;
