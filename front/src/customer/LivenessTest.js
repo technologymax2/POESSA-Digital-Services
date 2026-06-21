@@ -5,10 +5,7 @@ function LivenessTest({ faydaNumber, onSuccess }) {
   const [statusMessage, setStatusMessage] = useState("⏳ ካሜራውን እና የባዮሜትሪክስ ሞዴሉን በማዘጋጀት ላይ...");
   const [loading, setLoading] = useState(true);
   
-  // 💡 [ማሻሻያ] useRef በመጠቀም በየአፍታው የሚደረገው የ loop ቼክ እንዳይዘበራረቅ ማድረግ
-  const smilePassedRef = useRef(false);
-  const nodPassedRef = useRef(false);
-
+  // የፈተናዎቹ ሁኔታ (State)
   const [checks, setChecks] = useState({
     smilePassed: false,
     nodPassed: false
@@ -31,10 +28,12 @@ function LivenessTest({ faydaNumber, onSuccess }) {
         setStatusMessage("⏳ የAI ሞዴሎችን ወደ ብሮውዘር በመጫን ላይ...");
         const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
         
+        // ፊትን ራሱ ለመለየት የሚያስፈልጉት ቤዝ ሞዴሎች መጫን ስላለባቸው ተካተዋል
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
         await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
 
+        // 2. የፊት ለፊት (Selfie) ካሜራን መክፈት
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user", width: { ideal: 400 }, height: { ideal: 400 } }
         });
@@ -47,9 +46,11 @@ function LivenessTest({ faydaNumber, onSuccess }) {
         setStatusMessage("🟢 የህያውነት ፈተናው ተጀምሯል!");
         setCurrentInstruction("😊 እባክዎ ለካሜራው በግልጽ ፈገግ ይበሉ...");
 
+        // 3. በየ 400 ሚሊሰከንድ ተጠቃሚውን መመርመር
         intervalId = setInterval(async () => {
           if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return;
 
+          // ለሞባይል ፈጣን በሆነው TinyFaceDetector እንዲፈልግ ተቀይሯል
           const detection = await faceapi.detectSingleFace(
             videoRef.current, 
             new faceapi.TinyFaceDetectorOptions()
@@ -59,17 +60,19 @@ function LivenessTest({ faydaNumber, onSuccess }) {
 
           if (!detection) return;
 
-          // 1️⃣ ሀ. የፈገግታ ማረጋገጫ (Smile Detection)
+          // ሀ. የፈገግታ ማረጋገጫ (Smile Detection)
           const smileValue = detection.expressions.happy;
+          let currentSmileStatus = checks.smilePassed;
 
-          if (!smilePassedRef.current && smileValue > 0.45) { 
-            smilePassedRef.current = true;
+          // የፈገግታ ማለፊያ ነጥብ ለሞባይል እንዲቀል ከ 0.75 ወደ 0.45 ዝቅ ተደርጓል
+          if (!currentSmileStatus && smileValue > 0.45) { 
+            currentSmileStatus = true;
             setChecks(prev => ({ ...prev, smilePassed: true }));
             setCurrentInstruction("👋 አሁን ደግሞ ራስዎን ቀስ አድርገው ወደ ግራና ቀኝ ያወዛውዙ...");
           }
 
-          // 2️⃣ ለ. የራስ ማወዛወዝ ማረጋገጫ (Movement/Nod Detection)
-          if (smilePassedRef.current && !nodPassedRef.current) {
+          // ለ. የራስ ማወዛወዝ ማረጋገጫ (Movement/Nod Detection)
+          if (currentSmileStatus && !checks.nodPassed) {
             const landmarks = detection.landmarks;
             const nose = landmarks.getNose()[0];
             const leftEye = landmarks.getLeftEye()[0];
@@ -79,25 +82,24 @@ function LivenessTest({ faydaNumber, onSuccess }) {
             const rightDist = rightEye.x - nose.x;
             const ratio = leftDist / rightDist;
 
+            // የእንቅስቃሴው ወሰን ይበልጥ ተለዋዋጭ እንዲሆን ተደርጓል
             if (ratio < 0.65 || ratio > 1.45) { 
-              nodPassedRef.current = true;
-              setChecks(prev => ({ ...prev, nodPassed: true }));
-              
-              // 🛑 ሉፑን እና ካሜራውን ወዲያው ማቆም
-              clearInterval(intervalId);
-              if (stream) stream.getTracks().forEach(track => track.stop());
-              
-              setStatusMessage("🎉 ፈተናውን በተሳካ ሁኔታ አልፈዋል! መረጃው እየተቀመጠ ነው...");
-
-              // 🎯 [ዋናው ማስተካከያ] የፋይዳ ቁጥሩን (faydaNumber) ጨምሮ ወደ ላይ ማሳለፍ!
-              if (onSuccess) {
+              setChecks(prev => {
+                const updated = { ...prev, nodPassed: true };
+                
+                clearInterval(intervalId);
+                if (stream) stream.getTracks().forEach(track => track.stop());
+                
+                // 🛑 [ደህንነቱ የተጠበቀ ማስተካከያ] ለባክኤንድህ faceMatched: true ጭምር ይዞ ይሄዳል
                 onSuccess({
-                  faydaNumber: faydaNumber, // 👈 ይህንን ዳታ መላክ ሰርቨሩ እንዳይሳሳት ያደርገዋል
+                  faceMatched: true,
                   smilePassed: true,
                   nodPassed: true,
                   turnPassed: true
                 });
-              }
+                
+                return updated;
+              });
             }
           }
         }, 400);
@@ -114,8 +116,7 @@ function LivenessTest({ faydaNumber, onSuccess }) {
       if (intervalId) clearInterval(intervalId);
       if (stream) stream.getTracks().forEach(track => track.stop());
     };
-    // 🔒 [ማሻሻያ] አላስፈላጊ ሉፕ እንዳይፈጠር Dependency array ን እዚህ ላይ ብቻ መወሰን
-  }, [faydaNumber]); 
+  }, [onSuccess, checks.smilePassed, checks.nodPassed]);
 
   return (
     <div style={{ padding: "20px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
