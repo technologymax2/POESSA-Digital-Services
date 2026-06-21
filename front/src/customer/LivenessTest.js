@@ -7,7 +7,7 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
   
   const smilePassedRef = useRef(false);
   const nodPassedRef = useRef(false);
-  const isFinishedRef = useRef(false); // 🌟 እጅግ ወሳኝ መቆጣጠሪያ፡ ሁለተኛ እንዳይደገም
+  const isFinishedRef = useRef(false);
 
   const [checks, setChecks] = useState({
     smilePassed: false,
@@ -30,32 +30,34 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
 
         setStatusMessage("⏳ ካሜራውን በማስነሳት ላይ...");
         
+        // ካሜራውን ንጹህ በሆነ መንገድ ማስነሳት
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user", width: 320, height: 320 }
+          video: { facingMode: "user", width: { ideal: 320 }, height: { ideal: 320 } }
         });
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          // ካሜራው መከፈቱን እርግጠኛ ለመሆን ክስተት ማዳመጥ
+          videoRef.current.onloadedmetadata = () => {
+            setLoading(false);
+            setStatusMessage("🟢 የህያውነት ፈተናው ተጀምሯል!");
+            setCurrentInstruction("😊 እባክዎ ለካሜራው በግልጽ ፈገግ ይበሉ...");
+          };
         }
 
-        setLoading(false);
-        setStatusMessage("🟢 የህያውነት ፈተናው ተጀምሯል!");
-        setCurrentInstruction("😊 እባክዎ ለካሜራው በግልጽ ፈገግ ይበሉ...");
-
         intervalId = setInterval(async () => {
-          if (isFinishedRef.current) return; // ፈተናው ካለቀ ሉፑን ወዲያው ያግዳል
+          if (isFinishedRef.current) return;
           if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return;
 
           const detection = await faceapi.detectSingleFace(
             videoRef.current, 
-            new faceapi.TinyFaceDetectorOptions()
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 })
           )
           .withFaceLandmarks()
           .withFaceExpressions();
 
           if (!detection) return;
 
-          // 1️⃣ የፈገግታ ማረጋገጫ (Smile Detection)
           const smileValue = detection.expressions.happy;
 
           if (!smilePassedRef.current && smileValue > 0.40) {
@@ -64,7 +66,6 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
             setCurrentInstruction("👋 አሁን ደግሞ ራስዎን ቀስ አድርገው ወደ ግራና ቀኝ ያንቀሳቅሱ...");
           }
 
-          // 2️⃣ የራስ ማወዛወዝ ማረጋገጫ (Motion Detection)
           if (smilePassedRef.current && !nodPassedRef.current) {
             const landmarks = detection.landmarks;
             const nose = landmarks.getNose()[0];
@@ -75,24 +76,21 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
             const rightDist = rightEye.x - nose.x;
             const ratio = leftDist / rightDist;
 
-            if (ratio < 0.70 || ratio > 1.35) { 
+            if (ratio < 0.75 || ratio > 1.30) { 
               nodPassedRef.current = true;
-              isFinishedRef.current = true; // 🌟 ሂደቱ ማለቁን ምልክት ማድረግ
+              isFinishedRef.current = true;
               
               setChecks(prev => ({ ...prev, nodPassed: true }));
               setStatusMessage("🎉 ፈተናውን አጠናቀዋል! መረጃው እየተቀመጠ ነው...");
               setCurrentInstruction("✅ ፈተናው በስኬት አልፏል!");
 
-              // 🌟 [ዋና ማሻሻያ]፡ ሉፑን እና ካሜራውን ከማቆማችን በፊት ለስቴቱ (State) መተንፈሻ ጊዜ መስጠት
               clearInterval(intervalId);
 
+              // 🌟 ካሜራውን ከማጥፋታችን በፊት የ 800ms እረፍት መስጠት (ፍሪዝን ሙሉ በሙሉ ይከላከላል)
               setTimeout(() => {
-                // ካሜራውን በጥንቃቄ ማቆም
                 if (stream) {
                   stream.getTracks().forEach(track => track.stop());
                 }
-
-                // ወደ ቀጣዩ ደረጃ 5 ማስተላለፍ
                 if (onSuccess) {
                   onSuccess({
                     faydaNumber: faydaNumber,
@@ -102,14 +100,15 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
                     faceMatched: true
                   });
                 }
-              }, 600); // 600ms መዘግየት ፍሪዝ መሆንን ሙሉ በሙሉ ይከላከላል
+              }, 800);
             }
           }
-        }, 350);
+        }, 400);
 
       } catch (err) {
         console.error("Liveness Error:", err);
-        setStatusMessage("❌ የካሜራ ፈቃድ መክፈት አልተቻለም። እባክዎ ፈቃድ መስጠትዎን ያረጋግጡ።");
+        setStatusMessage("❌ የካሜራ ፈቃድ መክፈት አልተቻለም።");
+        setLoading(false);
       }
     };
 
@@ -121,7 +120,7 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [faydaNumber, matchPercentage]); 
+  }, [faydaNumber, matchPercentage, onSuccess]); 
 
   return (
     <div style={{ padding: "20px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
