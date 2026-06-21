@@ -9,7 +9,7 @@ import FaceMatch from "./FaceMatch";
 import LivenessTest from "./LivenessTest";
 import VerificationSuccess from "./VerificationSuccess";
 
-// 🔥 🔥 [አዲስ እና ዋና ማስተካከያ] ምስሎችን አሳንሶ የሚልክ ፈንክሽን
+// የምስል መጠን አሳንሶ የሚልክ ፈንክሽን
 const compressImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
   return new Promise((resolve, reject) => {
     if (!base64Str || typeof base64Str !== "string") {
@@ -17,8 +17,7 @@ const compressImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
       return;
     }
     
-    // በ Vercel ላይ ያለውን የ 413 ስህተት ለመከላከል ከመጠን በላይ ትላልቅ ዳታዎችን አስቀድሞ መለየት
-    if (base64Str.length > 5 * 1024 * 1024) { // 5MB በላይ ከሆነ
+    if (base64Str.length > 5 * 1024 * 1024) { 
        maxWidth = 300; maxHeight = 300; 
     }
 
@@ -28,7 +27,6 @@ const compressImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
       let width = img.width;
       let height = img.height;
 
-      // ተስማሚ መጠንን ማስላት
       if (width > maxWidth) {
         height = Math.round((height * maxWidth) / width);
         width = maxWidth;
@@ -44,8 +42,8 @@ const compressImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
 
-      // በ 0.65 ጥራት (Quality) ወደ JPEG መቀየር
-      resolve(canvas.toDataURL("image/jpeg", 0.65));
+      // በ 0.60 ጥራት (Quality) ይበልጥ ቀለል እንዲል ተደርጓል
+      resolve(canvas.toDataURL("image/jpeg", 0.60));
     };
     img.onerror = (e) => reject(e);
   });
@@ -55,7 +53,8 @@ function VerificationWizard() {
   const [step, setStep] = useState(1);
   const [faydaNumber, setFaydaNumber] = useState("");
   const [dbPensionerData, setDbPensionerData] = useState(null); 
-  const [selfiePhoto, setSelfiePhoto] = useState(null);
+  const [selfiePhoto, setSelfiePhoto] = useState(null); // 📸 ይህ ደረጃ 2 ላይ የተነሳው መደበኛ ንጹህ ሴልፊ ነው
+  const [matchPercentage, setMatchPercentage] = useState(0); // 📊 የፊት መመሳሰል መጠን ማከማቻ
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -81,31 +80,34 @@ function VerificationWizard() {
     }
   };
 
-  // 🔥 🔥 [የመጨረሻ ማስተካከያ] የመጨረሻውን የደህንነት ማረጋገጫ ምስሎችን አሳንሶ ወደ ሰርቨር መላክ
+  // 🚀 የመጨረሻ ማስተካከያ፡ መደበኛውን ሴልፊ እና የ AI ውጤቶችን ወደ ሰርቨር መላክ
   const handleFinalSuccess = async (livenessResults) => {
     setLoading(true);
     try {
       const exactFayda = faydaNumber || livenessResults.faydaNumber || dbPensionerData?.fayda || dbPensionerData?.faydaNumber;
       
-      // 💡 [ዋና ማስተካከያ] ምስሎቹን ለሰርቨር ከመላክ በፊት አሳንሶ ማዘጋጀት
+      // 🌟 ደረጃ 2 ላይ የተነሳውን መደበኛ ንጹህ ሴልፊ (selfiePhoto) እዚህ ጋር እናሳንሰዋለን
       const compressedSelfie = selfiePhoto ? await compressImage(selfiePhoto) : "";
       
       const payload = {
         faydaNumber: exactFayda,
-        dbPhotoUrl: dbPensionerData?.photoUrl || dbPensionerData?.photo || "", 
-        selfiePhoto: compressedSelfie, // 🔥 አሁን ያነሰው ምስል ነው የሚላከው
+        name: dbPensionerData?.name || "ስም አልተጠቀሰም",
+        phone: dbPensionerData?.phone || "የሌለ",
+        idPhotoUrl: dbPensionerData?.photoUrl || dbPensionerData?.photo || "", 
+        selfiePhotoUrl: compressedSelfie, // 📸 ቪዲዮው ሳይሆን መደበኛው ንጹህ ሴልፊ ብቻ ለዳታቤዝ ይላካል!
         faceMatched: true,
+        matchPercentage: matchPercentage, // 📊 የፊት ማች ፐርሰንት
         smilePassed: livenessResults.smilePassed || false, 
         nodPassed: livenessResults.nodPassed || false,
         turnPassed: livenessResults.turnPassed || false,
-        verificationStatus: "Verified",
-        verifiedAt: new Date().toISOString()
+        verificationStatus: "Pending", // 🟢 ሰራተኛው ሪፖርት ገጽ ላይ አይቶ እንዲያጸድቀው Pending ሆኖ ይላካል
+        comment: ""
       };
 
-      // ዳታው ምን ያህል እንደቀነሰ ለመፈተሽ
-      console.log(`🚀 ምስሉ ከቀነሰ በኋላ Payload መጠን: ${Math.round(JSON.stringify(payload).length / 1024)} KB`);
+      console.log(`🚀 ወደ ሰርቨር የሚላከው Payload መጠን: ${Math.round(JSON.stringify(payload).length / 1024)} KB`);
 
-      const response = await axios.post("https://poessa-digital-services-1.onrender.com/api/liveness/verify-success", payload);
+      // ወደ backend የተስተካከለው ራውት መላክ
+      const response = await axios.post("https://poessa-digital-services-1.onrender.com/api/pensioners", payload);
 
       if (response.data && response.data.success) {
         setStep(5);
@@ -113,11 +115,9 @@ function VerificationWizard() {
         alert(`⚠️ ሰርቨር ምላሽ አልሰጠም፦ ${response.data?.message || "ያልታወቀ ስህተት"}`);
       }
     } catch (err) {
-      console.error("Verification Save Error Details:", err.response?.data || err.message);
-      
-      // የ 413 ስህተትን በተለየ መልኩ ማሳየት
+      console.error("Verification Save Error:", err.response?.data || err.message);
       if (err.response?.status === 413) {
-        alert("⚠️ ስህተት 413 (Payload Too Large): ምስሎቹን ማሳነስ አልተቻለም። እባክዎ ካሜራውን አርቀው እንደገና ሞክሩ።");
+        alert("⚠️ ስህተት 413 (Payload Too Large): ምስሉ በጣም ትልቅ ነው።");
       } else {
         alert(`የማረጋገጫ መረጃን ለማስቀመጥ ስህተት ተፈጥሯል፦ ${err.response?.data?.message || err.message}`);
       }
@@ -132,7 +132,7 @@ function VerificationWizard() {
       {errorMessage && <div className="verification-error-banner">{errorMessage}</div>}
       {loading && <div className="verification-loading-spinner">⏳ ሂደቱን በመፈጸም ላይ...</div>}
 
-      {/* ደረጃ 1 */}
+      {/* ደረጃ 1፡ መታወቂያ ማንበቢያ */}
       {step === 1 && (
         <CaptureIDCard 
           onSuccess={(data) => {
@@ -141,36 +141,38 @@ function VerificationWizard() {
         />
       )}
 
-      {/* ደረጃ 2 */}
+      {/* ደረጃ 2፡ መደበኛ ንጹህ የራስ ፎቶ (Selfie) ማንሻ */}
       {step === 2 && (
         <CaptureSelfie 
           onSuccess={(image) => {
-            setSelfiePhoto(image);
+            setSelfiePhoto(image); // 📸 መደበኛው ሴልፊ እዚህ ላይ ተቀምጧል
             setStep(3);
           }} 
         />
       )}
 
-      {/* ደረጃ 3 */}
+      {/* ደረጃ 3፡ የፊት ባዮሜትሪክስ ማነፃፀሪያ (Face Match) */}
       {step === 3 && dbPensionerData && (
         <FaceMatch 
           idPhoto={dbPensionerData.photoUrl || dbPensionerData.photo} 
           selfiePhoto={selfiePhoto} 
-          onSuccess={() => setStep(4)} 
+          onSuccess={(percentage) => {
+            setMatchPercentage(percentage); // 🌟 የፐርሰንት ውጤቱን ይቀበላል
+            setStep(4);
+          }} 
         />
       )}
 
-      {/* ደረጃ 4 */}
+      {/* ደረጃ 4፡ የህያውነት ፈተና (Liveness Test) */}
       {step === 4 && (
         <LivenessTest 
           faydaNumber={faydaNumber}
-          idPhoto={dbPensionerData?.photoUrl || dbPensionerData?.photo}
-          selfiePhoto={selfiePhoto}
-          onSuccess={(results) => handleFinalSuccess(results)} 
+          matchPercentage={matchPercentage} // 🌟 ፐርሰንቱን ወደ ውስት ያሳልፋል
+          onSuccess={(results) => handleFinalSuccess(results)} // 🛑 እዚህ ምንም አዲስ ፎቶ አይነሳም
         />
       )}
 
-      {/* ደረጃ 5 */}
+      {/* ደረጃ 5፡ ስኬት ማሳያ ገጽ */}
       {step === 5 && <VerificationSuccess pensionerData={dbPensionerData} />}
       
       {step < 5 && (
