@@ -159,7 +159,7 @@ function EmployeeDashboard() {
               <PensionerRegistration currentEmployee={currentEmployee.username} />
             )}
             {activeSubPage === 'report' && (
-              <Report /> {/* 🛠️ እዚህ ጋር ስሙ ተስተካክሏል */}
+              <Report /> 
             )}
             {activeSubPage === 'search' && (
               <IdCardGenerationAndSearch />
