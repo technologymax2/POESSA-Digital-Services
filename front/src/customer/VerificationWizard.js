@@ -9,7 +9,7 @@ import FaceMatch from "./FaceMatch";
 import LivenessTest from "./LivenessTest";
 import VerificationSuccess from "./VerificationSuccess";
 
-// 🔥 🔥 [አዲስ እና ዋና ማስተካከያ] ምስሎችን አሳንሶ የሚልክ ፈንክሽን
+// 🔥 ምስሎችን አሳንሶ የሚልክ ፈንክሽን
 const compressImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
   return new Promise((resolve, reject) => {
     if (!base64Str || typeof base64Str !== "string") {
@@ -17,8 +17,7 @@ const compressImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
       return;
     }
     
-    // በ Vercel ላይ ያለውን የ 413 ስህተት ለመከላከል ከመጠን በላይ ትላልቅ ዳታዎችን አስቀድሞ መለየት
-    if (base64Str.length > 5 * 1024 * 1024) { // 5MB በላይ ከሆነ
+    if (base64Str.length > 5 * 1024 * 1024) { 
        maxWidth = 300; maxHeight = 300; 
     }
 
@@ -28,7 +27,6 @@ const compressImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
       let width = img.width;
       let height = img.height;
 
-      // ተስማሚ መጠንን ማስላት
       if (width > maxWidth) {
         height = Math.round((height * maxWidth) / width);
         width = maxWidth;
@@ -44,7 +42,6 @@ const compressImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
 
-      // በ 0.65 ጥራት (Quality) ወደ JPEG መቀየር
       resolve(canvas.toDataURL("image/jpeg", 0.65));
     };
     img.onerror = (e) => reject(e);
@@ -64,6 +61,7 @@ function VerificationWizard() {
     setLoading(true);
     setErrorMessage("");
     try {
+      // እዚህ ጋር የራስህን ትክክለኛ የቤክኤንድ ሊንክ አስገባ
       const response = await axios.get(`https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${scannedData.faydaNumber}`);
       
       if (response.data && response.data.success) {
@@ -75,25 +73,23 @@ function VerificationWizard() {
       }
     } catch (err) {
       console.error("DB Verification Error:", err);
-      setErrorMessage("❌ መረጃውን ከዳታቤዝ ጋር ማመሳሰል አልተቻለም። እባክዎ ኢንተርኔት ይፈትሹ።");
+      setErrorMessage("❌ መረጃውን ከዳታቤዝ ጋር ማመሳሰል አልተቻለም።");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔥 🔥 [የመጨረሻ ማስተካከያ] የመጨረሻውን የደህንነት ማረጋገጫ ምስሎችን አሳንሶ ወደ ሰርቨር መላክ
+  // 🔥 የመጨረሻ ማረጋገጫ እና ወደ ሰርቨር መላክ
   const handleFinalSuccess = async (livenessResults) => {
     setLoading(true);
     try {
-      const exactFayda = faydaNumber || livenessResults.faydaNumber || dbPensionerData?.fayda || dbPensionerData?.faydaNumber;
-      
-      // 💡 [ዋና ማስተካከያ] ምስሎቹን ለሰርቨር ከመላክ በፊት አሳንሶ ማዘጋጀት
+      const exactFayda = faydaNumber || livenessResults.faydaNumber || dbPensionerData?.faydaNumber;
       const compressedSelfie = selfiePhoto ? await compressImage(selfiePhoto) : "";
       
       const payload = {
         faydaNumber: exactFayda,
         dbPhotoUrl: dbPensionerData?.photoUrl || dbPensionerData?.photo || "", 
-        selfiePhoto: compressedSelfie, // 🔥 አሁን ያነሰው ምስል ነው የሚላከው
+        selfiePhoto: compressedSelfie,
         faceMatched: true,
         smilePassed: livenessResults.smilePassed || false, 
         nodPassed: livenessResults.nodPassed || false,
@@ -101,9 +97,6 @@ function VerificationWizard() {
         verificationStatus: "Verified",
         verifiedAt: new Date().toISOString()
       };
-
-      // ዳታው ምን ያህል እንደቀነሰ ለመፈተሽ
-      console.log(`🚀 ምስሉ ከቀነሰ በኋላ Payload መጠን: ${Math.round(JSON.stringify(payload).length / 1024)} KB`);
 
       const response = await axios.post("https://poessa-digital-services-1.onrender.com/api/liveness/verify-success", payload);
 
@@ -113,13 +106,11 @@ function VerificationWizard() {
         alert(`⚠️ ሰርቨር ምላሽ አልሰጠም፦ ${response.data?.message || "ያልታወቀ ስህተት"}`);
       }
     } catch (err) {
-      console.error("Verification Save Error Details:", err.response?.data || err.message);
-      
-      // የ 413 ስህተትን በተለየ መልኩ ማሳየት
+      console.error("Verification Save Error:", err);
       if (err.response?.status === 413) {
-        alert("⚠️ ስህተት 413 (Payload Too Large): ምስሎቹን ማሳነስ አልተቻለም። እባክዎ ካሜራውን አርቀው እንደገና ሞክሩ።");
+        alert("⚠️ ምስሉ በጣም ትልቅ ነው፣ ካሜራውን አርቀው እንደገና ይሞክሩ።");
       } else {
-        alert(`የማረጋገጫ መረጃን ለማስቀመጥ ስህተት ተፈጥሯል፦ ${err.response?.data?.message || err.message}`);
+        alert(`የማረጋገጫ መረጃን ለማስቀመጥ ስህተት ተፈጥሯል`);
       }
     } finally {
       setLoading(false);
@@ -128,30 +119,13 @@ function VerificationWizard() {
 
   return (
     <div className="verification-wizard-container">
-      
       {errorMessage && <div className="verification-error-banner">{errorMessage}</div>}
       {loading && <div className="verification-loading-spinner">⏳ ሂደቱን በመፈጸም ላይ...</div>}
 
-      {/* ደረጃ 1 */}
-      {step === 1 && (
-        <CaptureIDCard 
-          onSuccess={(data) => {
-            verifyIdWithDatabase(data); 
-          }} 
-        />
-      )}
-
-      {/* ደረጃ 2 */}
-      {step === 2 && (
-        <CaptureSelfie 
-          onSuccess={(image) => {
-            setSelfiePhoto(image);
-            setStep(3);
-          }} 
-        />
-      )}
-
-      {/* ደረጃ 3 */}
+      {step === 1 && <CaptureIDCard onSuccess={(data) => verifyIdWithDatabase(data)} />}
+      
+      {step === 2 && <CaptureSelfie onSuccess={(image) => { setSelfiePhoto(image); setStep(3); }} />}
+      
       {step === 3 && dbPensionerData && (
         <FaceMatch 
           idPhoto={dbPensionerData.photoUrl || dbPensionerData.photo} 
@@ -160,23 +134,17 @@ function VerificationWizard() {
         />
       )}
 
-      {/* ደረጃ 4 */}
       {step === 4 && (
         <LivenessTest 
           faydaNumber={faydaNumber}
-          idPhoto={dbPensionerData?.photoUrl || dbPensionerData?.photo}
-          selfiePhoto={selfiePhoto}
           onSuccess={(results) => handleFinalSuccess(results)} 
         />
       )}
 
-      {/* ደረጃ 5 */}
       {step === 5 && <VerificationSuccess pensionerData={dbPensionerData} />}
       
       {step < 5 && (
-        <div className="verification-wizard-step-info">
-          ደረጃ {step} ከ 5 | እባክዎ መመሪያዎችን ይከተሉ
-        </div>
+        <div className="verification-wizard-step-info">ደረጃ {step} ከ 5 | እባክዎ መመሪያዎችን ይከተሉ</div>
       )}
     </div>
   );
