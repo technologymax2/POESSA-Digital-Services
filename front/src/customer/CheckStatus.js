@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import "./CheckStatus.css"; // ካስፈለገ ስታይል ለመጨመር
+import "./CheckStatus.css"; 
 
 function CheckStatus() {
   const [faydaNumber, setFaydaNumber] = useState("");
@@ -10,32 +10,42 @@ function CheckStatus() {
 
   const handleCheckStatus = async (e) => {
     e.preventDefault();
-    if (!faydaNumber.trim()) return;
+    // 🔒 ጥብቅ መቆለፊያ - ቁጥሩ ልክ 16 አሃዝ ካልሆነ ፍለጋ አይጀምርም
+    if (faydaNumber.trim().length !== 16) {
+      alert("⚠️ እባክዎ መጀመሪያ ባለ 16 ዲጂት የፋይዳ ቁጥርዎን በትክክል ያስገቡ!");
+      return;
+    }
 
     setLoading(true);
     setSearched(true);
     setPensioner(null);
 
     try {
-      // ከዚህ ቀደም የፋይዳ ቁጥር የምንፈልግበትን API መጠቀም
-      const response = await axios.get(`https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${faydaNumber}`);
+      // 🔗 ከቤክኤንድህ የጡረተኞችን ዝርዝር መረጃ ፍለጋ ማምጫ
+      const response = await axios.get(`https://poessa-digital-services-1.onrender.com/api/pensioners`);
       
       if (response.data && response.data.success) {
-        setPensioner(response.data.data);
+        // ከሚመጡት ዝርዝር መረጃዎች ውስጥ ተጠቃሚው የጻፈውን ፋይዳ ቁጥር ፈልጎ ማውጣት
+        const found = response.data.data.find(p => p.faydaNumber === faydaNumber.trim());
+        if (found) {
+          setPensioner(found);
+        } else {
+          setPensioner(null);
+        }
       } else {
         setPensioner(null);
       }
     } catch (err) {
       console.error("Status Check Error:", err);
-      alert("የመረጡትን ሁኔታ መፈተሽ አልተቻለም። እባክዎ ኢንተርኔትዎን ያረጋግጡ።");
+      alert("የመረጡትን ሁኔታ መፈተሽ አልተቻለም። እባክዎ ኢንተርኔትዎን ወይም የሰርቨር መስመርዎን ያረጋግጡ።");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: "40px 20px", maxWidth: "500px", margin: "50px auto", textAlign: "center", fontFamily: "sans-serif", background: "#fff", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-      <h2 style={{ color: "#162447", marginBottom: "10px" }}>🔍 የጡረታ ማረጋገጫ ሁኔታ መከታተያ</h2>
+    <div style={{ padding: "40px 20px", maxWidth: "500px", margin: "50px auto", textAlign: "center", fontFamily: "sans-serif", background: "#fff", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", boxSizing: "border-box" }}>
+      <h2 style={{ color: "#162447", marginBottom: "10px", fontWeight: "700" }}>🔍 የጡረታ ማረጋገጫ ሁኔታ መከታተያ</h2>
       <p style={{ color: "#64748b", fontSize: "14px", marginBottom: "30px" }}>የፋይዳ ቁጥርዎን በማስገባት የማረጋገጫ ሂደትዎ የት ደረጃ ላይ እንደደረሰ ይከታተሉ</p>
 
       <form onSubmit={handleCheckStatus} style={{ marginBottom: "30px" }}>
@@ -43,41 +53,43 @@ function CheckStatus() {
           type="text" 
           placeholder="ባለ 16 ዲጂት የፋይዳ ቁጥርዎን ያስገቡ..." 
           value={faydaNumber}
-          onChange={(e) => setFaydaNumber(e.target.value)}
+          onChange={(e) => setFaydaNumber(e.target.value.replace(/\D/g, ""))} // ቁጥር ብቻ እንዲቀበል ማድረጊያ
           maxLength={16}
-          style={{ width: "100%", padding: "14px", borderRadius: "8px", border: "2px solid #cbd5e1", fontSize: "16px", textAlign: "center", boxSizing: "border-box", outline: "none" }}
+          style={{ width: "100%", padding: "14px", borderRadius: "8px", border: "2px solid #cbd5e1", fontSize: "18px", fontWeight: "bold", letterSpacing: "1px", textAlign: "center", boxSizing: "border-box", outline: "none" }}
         />
-        <button type="submit" style={{ width: "100%", background: "#162447", color: "#fff", padding: "14px", border: "none", borderRadius: "8px", marginTop: "15px", fontSize: "16px", fontWeight: "bold", cursor: "pointer", transition: "0.3s" }}>
+        <button type="submit" disabled={loading} style={{ width: "100%", background: "#162447", color: "#fff", padding: "14px", border: "none", borderRadius: "8px", marginTop: "15px", fontSize: "16px", fontWeight: "bold", cursor: "pointer", transition: "0.3s" }}>
           {loading ? "በመፈለግ ላይ... ⏳" : "የማረጋገጫ ሁኔታዬን አሳይ"}
         </button>
       </form>
 
       {/* 📊 የውጤት ማሳያ ሰሌዳ */}
-      {loading && <p style={{ color: "#64748b" }}>መረጃው ከሰርቨር እየተጫነ ነው...</p>}
+      {loading && <p style={{ color: "#64748b" }}>⏳ መረጃው ከሰርቨር እየተጫነ ነው... እባክዎ ይጠብቁ...</p>}
 
       {!loading && searched && !pensioner && (
-        <div style={{ padding: "20px", borderRadius: "8px", background: "#fee2e2", color: "#b91c1c", fontWeight: "bold" }}>
-          ❌ ይህ የፋይዳ ቁጥር በስርዓቱ ላይ አልተገኘም! እባክዎ ቁጥሩን አስተካክለው ይሞክሩ።
+        <div style={{ padding: "20px", borderRadius: "8px", background: "#fee2e2", color: "#b91c1c", fontWeight: "bold", fontSize: "14px" }}>
+          ❌ ይህ የፋይዳ ቁጥር በስርዓቱ ላይ አልተገኘም! እባክዎ ቁጥሩን በትክክል መጻፍዎን ያረጋግጡ።
         </div>
       )}
 
       {!loading && pensioner && (
         <div style={{ marginTop: "20px", padding: "20px", borderRadius: "10px", border: "1px solid #e2e8f0", textAlign: "left", background: "#f8fafc" }}>
-          <h4 style={{ margin: "0 0 15px 0", color: "#162447", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px" }}>📋 የባለቤት መረጃ</h4>
-          <p><strong>ስም፦</strong> {pensioner.name || "Mamaru Anmaw"}</p>
-          <p><strong>የፋይዳ ቁጥር፦</strong> {pensioner.faydaNumber || pensioner.fayda}</p>
+          <h4 style={{ margin: "0 0 15px 0", color: "#162447", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px", fontWeight: "700" }}>📋 የባለቤት መረጃ</h4>
+          <p style={{ margin: "8px 0" }}><strong>ስም፦</strong> {pensioner.name}</p>
+          <p style={{ margin: "8px 0" }}><strong>የፋይዳ ቁጥር፦</strong> {pensioner.faydaNumber}</p>
+          <p style={{ margin: "8px 0" }}><strong>ስልክ ቁጥር፦</strong> {pensioner.phone || "የለም"}</p>
           
-          <div style={{ marginTop: "20px", padding: "15px", borderRadius: "8px", textAlign: "center", fontWeight: "bold", 
-            background: pensioner.verificationStatus === "Verified" ? "#dcfce7" : pensioner.verificationStatus === "Rejected" ? "#fee2e2" : "#fef9c3",
-            color: pensioner.verificationStatus === "Verified" ? "#15803d" : pensioner.verificationStatus === "Rejected" ? "#b91c1c" : "#a16207"
+          {/* 🌟 እዚህ ጋር በሪፖርት ገጽ ላይ ካለው 'Verified' እና 'Failed' ሁኔታ ጋር ተጣጥሟል */}
+          <div style={{ marginTop: "20px", padding: "15px", borderRadius: "8px", textAlign: "center", fontWeight: "bold", fontSize: "15px",
+            background: pensioner.verificationStatus === "Verified" ? "#dcfce7" : pensioner.verificationStatus === "Failed" ? "#fee2e2" : "#fef9c3",
+            color: pensioner.verificationStatus === "Verified" ? "#15803d" : pensioner.verificationStatus === "Failed" ? "#b91c1c" : "#a16207"
           }}>
-            የአሁኑ የሂደት ሁኔታ፦ {pensioner.verificationStatus === "Verified" ? "✅ ተረጋግጧል (Verified)" : pensioner.verificationStatus === "Rejected" ? "❌ ውድቅ ተደርጓል (Rejected)" : "⏳ በሂደት ላይ (Pending)"}
+            የአሁኑ የሂደት ሁኔታ፦ {pensioner.verificationStatus === "Verified" ? "✅ ተረጋግጧል (Verified)" : pensioner.verificationStatus === "Failed" ? "❌ ውድቅ ተደርጓል (Failed)" : "⏳ በሂደት ላይ (Pending)"}
           </div>
 
-          {/* ⚠️ ከባለሙያ የተላከ መልዕክት ካለ */}
-          {pensioner.verificationStatus === "Rejected" && pensioner.comment && (
+          {/* ⚠️ ከባለሙያ የተላከ ማሳሰቢያ ምክንያት ካለ እዚህ ይወጣል */}
+          {pensioner.verificationStatus === "Failed" && pensioner.comment && (
             <div style={{ marginTop: "15px", padding: "12px", borderRadius: "6px", background: "#fff5f5", borderLeft: "4px solid #ef4444", color: "#991b1b", fontSize: "14px" }}>
-              <strong>⚠️ ከባለሙያ የተላከ ማሳሰቢያ፦</strong> "{pensioner.comment}"
+              <strong>⚠️ ውድቅ የተደረገበት ምክንያት፦</strong> "{pensioner.comment}"
             </div>
           )}
         </div>
