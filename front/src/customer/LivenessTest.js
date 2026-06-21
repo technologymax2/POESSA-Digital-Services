@@ -28,16 +28,21 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
           return;
         }
 
+        setStatusMessage("⏳ የፊት ገጽታ መለኪያ ሞዴሎችን በመጫን ላይ...");
+        
+        // 🌟 [ዋና ማሻሻያ] የፊት ስሜት (Expression) መለኪያ ሞዴል መጫኑን ማረጋገጥ (እንዳይሽከረከር የሚያደርገው ቁልፍ ይሄ ነው)
+        if (!faceapi.nets.faceExpressionNet.params) {
+          await faceapi.nets.faceExpressionNet.loadFromUri("/models");
+        }
+
         setStatusMessage("⏳ ካሜራውን በማስነሳት ላይ...");
         
-        // ካሜራውን ንጹህ በሆነ መንገድ ማስነሳት
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user", width: { ideal: 320 }, height: { ideal: 320 } }
         });
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          // ካሜራው መከፈቱን እርግጠኛ ለመሆን ክስተት ማዳመጥ
           videoRef.current.onloadedmetadata = () => {
             setLoading(false);
             setStatusMessage("🟢 የህያውነት ፈተናው ተጀምሯል!");
@@ -49,59 +54,66 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
           if (isFinishedRef.current) return;
           if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return;
 
-          const detection = await faceapi.detectSingleFace(
-            videoRef.current, 
-            new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 })
-          )
-          .withFaceLandmarks()
-          .withFaceExpressions();
+          try {
+            // ሞዴሉ አሁን ስለተጫነ ይህ ትንተና ያለምንም ስህተት በፍጥነት ይሰራል
+            const detection = await faceapi.detectSingleFace(
+              videoRef.current, 
+              new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 })
+            )
+            .withFaceLandmarks()
+            .withFaceExpressions();
 
-          if (!detection) return;
+            if (!detection) return;
 
-          const smileValue = detection.expressions.happy;
+            // 1️⃣ የፈገግታ ማረጋገጫ (Smile Detection)
+            const smileValue = detection.expressions?.happy || 0;
 
-          if (!smilePassedRef.current && smileValue > 0.40) {
-            smilePassedRef.current = true;
-            setChecks(prev => ({ ...prev, smilePassed: true }));
-            setCurrentInstruction("👋 አሁን ደግሞ ራስዎን ቀስ አድርገው ወደ ግራና ቀኝ ያንቀሳቅሱ...");
-          }
-
-          if (smilePassedRef.current && !nodPassedRef.current) {
-            const landmarks = detection.landmarks;
-            const nose = landmarks.getNose()[0];
-            const leftEye = landmarks.getLeftEye()[0];
-            const rightEye = landmarks.getRightEye()[0];
-
-            const leftDist = nose.x - leftEye.x;
-            const rightDist = rightEye.x - nose.x;
-            const ratio = leftDist / rightDist;
-
-            if (ratio < 0.75 || ratio > 1.30) { 
-              nodPassedRef.current = true;
-              isFinishedRef.current = true;
-              
-              setChecks(prev => ({ ...prev, nodPassed: true }));
-              setStatusMessage("🎉 ፈተናውን አጠናቀዋል! መረጃው እየተቀመጠ ነው...");
-              setCurrentInstruction("✅ ፈተናው በስኬት አልፏል!");
-
-              clearInterval(intervalId);
-
-              // 🌟 ካሜራውን ከማጥፋታችን በፊት የ 800ms እረፍት መስጠት (ፍሪዝን ሙሉ በሙሉ ይከላከላል)
-              setTimeout(() => {
-                if (stream) {
-                  stream.getTracks().forEach(track => track.stop());
-                }
-                if (onSuccess) {
-                  onSuccess({
-                    faydaNumber: faydaNumber,
-                    matchPercentage: matchPercentage,
-                    smilePassed: true,
-                    nodPassed: true,
-                    faceMatched: true
-                  });
-                }
-              }, 800);
+            if (!smilePassedRef.current && smileValue > 0.35) { // ፈገግታው በፍጥነት እንዲያነበው ወሰኑ ዝቅ ተደርጓል
+              smilePassedRef.current = true;
+              setChecks(prev => ({ ...prev, smilePassed: true }));
+              setCurrentInstruction("👋 አሁን ደግሞ ራስዎን ቀስ አድርገው ወደ ግራና ቀኝ ያንቀሳቅሱ...");
             }
+
+            // 2️⃣ የእንቅስቃሴ ማረጋገጫ (Motion Detection)
+            if (smilePassedRef.current && !nodPassedRef.current) {
+              const landmarks = detection.landmarks;
+              const nose = landmarks.getNose()[0];
+              const leftEye = landmarks.getLeftEye()[0];
+              const rightEye = landmarks.getRightEye()[0];
+
+              const leftDist = nose.x - leftEye.x;
+              const rightDist = rightEye.x - nose.x;
+              const ratio = leftDist / rightDist;
+
+              if (ratio < 0.75 || ratio > 1.30) { 
+                nodPassedRef.current = true;
+                isFinishedRef.current = true;
+                
+                setChecks(prev => ({ ...prev, nodPassed: true }));
+                setStatusMessage("🎉 ፈተናውን አጠናቀዋል! መረጃው እየተቀመጠ ነው...");
+                setCurrentInstruction("✅ ፈተናው በስኬት አልፏል!");
+
+                clearInterval(intervalId);
+
+                // ካሜራውን ከማጥፋት በፊት የ 800ms ዕረፍት
+                setTimeout(() => {
+                  if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                  }
+                  if (onSuccess) {
+                    onSuccess({
+                      faydaNumber: faydaNumber,
+                      matchPercentage: matchPercentage,
+                      smilePassed: true,
+                      nodPassed: true,
+                      faceMatched: true
+                    });
+                  }
+                }, 800);
+              }
+            }
+          } catch (loopErr) {
+            console.error("Loop detection error:", loopErr);
           }
         }, 400);
 
