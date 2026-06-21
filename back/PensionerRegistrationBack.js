@@ -27,6 +27,18 @@ router.get("/search", async (req, res) => {
   }
 });
 
+
+// ሁሉንም ጡረተኞች ለሪፖርት ማምጫ መስመር (በ Express ሰርቨርህ ላይ የሚጨመር)
+router.get("/", async (req, res) => {
+  try {
+    const pensioners = await UserPensioner.find().sort({ createdAt: -1 });
+    res.status(200).json(pensioners);
+  } catch (error) {
+    res.status(500).json({ success: false, message: "ማምጣት አልተቻለም" });
+  }
+});
+
+
 // ==========================================================================
 // 🔍 1.5️⃣ በሪል-ታይም መደጋገም ማረጋገጫ (GET) - በፍሮንት-ኤንድ ለቀረበው ቼከር
 // ==========================================================================
