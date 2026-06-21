@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const UserPensioner = require("./models/UserPensioner"); // ያንተ ሞዴል
+const UserPensioner = require("./models/UserPensioner"); 
+const LivenessVerification = require("./models/LivenessVerification"); // 📊 ለሪፖርቱ የሚያስፈልገው ሞዴል እዚህ ገብቷል
 
 /* ==========================================================================
    📬 POST: /api/liveness/verify-success
@@ -11,7 +12,9 @@ router.post("/verify-success", async (req, res) => {
       faydaNumber,
       smilePassed,
       nodPassed,
-      turnPassed
+      turnPassed,
+      selfiePhoto, // 📸 ከቅጽበታዊ ካሜራ የተነሳው ሴልፊ ፎቶ (ካለ)
+      idPhoto      // 🪪 የመታወቂያ ፎቶ (ካለ)
     } = req.body;
 
     // 1. መረጃው ሙሉ መሆኑን ማረጋገጥ
@@ -22,11 +25,11 @@ router.post("/verify-success", async (req, res) => {
       });
     }
 
-    // 2. 🔥 [ዋና ማስተካከያ] የባዮሜትሪክስ ደህንነት ማጣሪያ (faceMatched ከሪአክት ባይመጣም እንዲያልፍ ተደርጓል)
+    // 2. የባዮሜትሪክስ ደህንነት ማጣሪያ (ፈገግታ እና እንቅስቃሴ መኖራቸውን ማረጋገጥ)
     if (!smilePassed || !nodPassed) {
       return res.status(400).json({
         success: false,
-        message: "❌ የደህንነት ጥሰት ተገኝቷል! ሁሉም የህያውነት ፈተናዎች (ፈገግታ እና እንቅስቃሴ) መለፍ አለባቸው።"
+        message: "❌ የደህንነት ጥሰት ተገኝቷል! ሁሉም የህያውነት ፈተናዎች (ፈገግታ እና እንቅስቃሴ) ማለፍ አለባቸው።"
       });
     }
 
@@ -39,33 +42,48 @@ router.post("/verify-success", async (req, res) => {
       });
     }
 
-    // 4. ያንተን ስኪማ መዋቅር የጠበቀ የታሪክ መዝገብ (editHistory) ማዘጋጀት
+    // ==========================================================================
+    // 📊 ማስተካከያ ሀ፦ ለ Report.js ገጽ የ LivenessVerification ዳታቤዝን ማዘመን/መፍጠር
+    // ==========================================================================
+    await LivenessVerification.findOneAndUpdate(
+      { faydaNumber: faydaNumber },
+      {
+        idPhoto: idPhoto || pensioner.photoUrl || "", // የመታወቂያ ፎቶ ከሌለ ዋናውን የምዝገባ ፎቶ ይጠቀማል
+        selfiePhoto: selfiePhoto || "",
+        faceMatched: true, // ፈተናዎቹን ካለፈ ፊቱ ገጥሟል ተብሎ ይወሰዳል
+        smilePassed: !!smilePassed,
+        nodPassed: !!nodPassed,
+        turnPassed: !!turnPassed,
+        verificationStatus: "Verified", // 🟢 ሁኔታውን ወደ የተረጋገጠ (Verified) ይቀይረዋል
+        lastVerificationDate: new Date()
+      },
+      { upsert: true, new: true } // ዳታው ከሌለ አዲስ ይፈጥራል፣ ካለ ያሻሽላል (Duplicate አይፈጥርም)
+    );
+
+    // ==========================================================================
+    // 📝 ማስተካከያ ለ፦ በ UserPensioner ላይ የታሪክ መዝገብ (editHistory) ማዘጋጀት
+    // ==========================================================================
     const livenessLogEntry = {
       editedBy: "AI Biometric System",
       editedAt: new Date(),
       details: `🤖 በህይወት መኖራቸው በባዮሜትሪክስ ተረጋግጧል። (ፈገግታ፦ አልፏል፣ እንቅስቃሴ፦ አልፏል${turnPassed ? '፣ ማዞር፦ አልፏል' : ''})`
     };
 
-    // 5. መረጃዎቹን ማዘመን (status 'Active' ሆኖ ይቀጥላል)
+    // መረጃዎቹን ማዘመን (status 'Active' ሆኖ ይቀጥላል)
     pensioner.status = "Active"; 
     pensioner.statusChangedDate = new Date();
     pensioner.lastEditedBy = "AI Biometric System";
     pensioner.lastEditedAt = new Date(); 
 
-    // editHistory መኖሩን እና አሬይ መሆኑን ማረጋገጫ (ደህንነት)
     if (!pensioner.editHistory || !Array.isArray(pensioner.editHistory)) {
       pensioner.editHistory = [];
     }
     
-    // ወደ editHistory አሬይ መግፋት
     pensioner.editHistory.push(livenessLogEntry);
-
-    // ዳታቤዝ ላይ ሴቭ ማድረግ
     await pensioner.save();
 
     console.log(`🟢 ጡረተኛው [${pensioner.nameAmh}] በAI በተሳካ ሁኔታ ተረጋግጧል!`);
 
-    // 6. ለሪአክት ስኬታማ ምላሽ መላክ
     return res.status(200).json({
       success: true,
       message: `🎉 የጡረተኛው (${pensioner.nameAmh}) በህይወት መኖር በባዮሜትሪክስ ተረጋግጧል!`,
