@@ -18,32 +18,31 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
         const faceapi = window.faceapi;
         setStatusMessage("⏳ የፊቱን ነጥቦች መለያ ሞዴሎች በማውረድ ላይ...");
         
-        // 1. የ Face-API ሞዴሎችን ከ CDN መጫን
         const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
+        // ለሁለቱም ገጽ የሚጠቅሙ ሞዴሎችን እዚህ ላይ በአንድ ላይ እንጭናቸዋለን
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL); 
         await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL); // ለ Liveness የሚሆነው እዚህ ተጭኗል
 
-        setStatusMessage("⏳ ሁለቱንም ፎቶዎች ከ ImgBB በማንበብ ላይ...");
+        setStatusMessage("⏳ ሁለቱንም ፎቶዎች በማንበብ ላይ...");
 
-        // 2. ፎቶዎቹን በ HTML Image አማካኝነት በደህንነት (CORS) መጫኛ
         const loadImg = (src) => {
           return new Promise((resolve, reject) => {
             const img = new Image();
             img.crossOrigin = "anonymous"; 
             img.src = src;
             img.onload = () => resolve(img);
-            img.onerror = (err) => reject(new Error(`ፎቶውን መጫን አልተቻለም፦ ${src}`));
+            img.onerror = (err) => reject(new Error("ፎቶውን መጫን አልተቻለም።"));
           });
         };
 
         const img1 = await loadImg(idPhoto); 
         const img2 = await loadImg(selfiePhoto); 
 
-        setStatusMessage("⏳ ሁለቱንም ፎቶዎች በማነፃፀር ላይ...");
+        setStatusMessage("⏳ የፊት ባዮሜትሪክስ ማነፃፀር ስራ ላይ ነው...");
 
-        // 3. ፊትን በሁለቱም ሞዴሎች (Tiny እና SSD) መፈለግ
         let detection1 = await faceapi.detectSingleFace(img1, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
         let detection2 = await faceapi.detectSingleFace(img2, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
 
@@ -55,18 +54,15 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
         }
 
         if (!detection1 || !detection2) {
-          setStatusMessage("❌ በፎቶዎቹ ላይ የሰውን ፊት በትክክል ማግኘት አልተቻለም! እባክዎ ሙሉ ፊትዎ እንዲታይ ሆነው በግልጽ ይነሱ።");
+          setStatusMessage("❌ በፎቶዎቹ ላይ የሰውን ፊት ማግኘት አልተቻለም! እባክዎ ፊትዎ በግልጽ የሚታይበት ሴልፊ ይነሱ።");
           setLoading(false);
           return;
         }
 
-        // 4. በሁለቱ ፊቶች መካከል ያለውን የቦታ ርቀት ማነፃፀር
         const distance = faceapi.euclideanDistance(detection1.descriptor, detection2.descriptor);
-        // የርቀቱን ውጤት ወደ መቶኛ (%) መቀየር
         const similarity = Math.max(0, Math.min(100, Math.round((1 - distance) * 100)));
         setMatchPercentage(similarity);
 
-        // 5. የመመሳሰል ወሰን ማረጋገጫ (Threshold)
         if (similarity >= 50) { 
           setIsMatched(true);
           setStatusMessage(`🎉 ማመሳሰሉ ተሳክቷል! የፊት መመሳሰል መጠን፦ ${similarity}%`);
@@ -89,9 +85,8 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
   return (
     <div style={{ padding: "20px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
       <h3 style={{ color: "#162447", fontWeight: "700" }}>🤖 ደረጃ 3፦ የፊት ባዮሜትሪክስ ማነፃፀሪያ</h3>
-      <p style={{ color: "#64748b", fontSize: "14px" }}>በመታወቂያ ፎቶ እና በአዲሱ ሴልፊ መካከል ያለውን አንድነት በAI ማረጋገጫ</p>
+      <p style={{ color: "#64748b", fontSize: "14px" }}>በመታወቂያ ፎቶ እና በአዲሱ ሴልፊ መካከል ያለውን አንድነት ማረጋገጫ</p>
 
-      {/* 📸 የፎቶዎች ጎን ለጎን ማሳያ ሰሌዳ */}
       <div style={{ display: "flex", justifyContent: "center", gap: "20px", margin: "20px 0" }}>
         <div>
           <img src={idPhoto} alt="Database" style={{ width: "110px", height: "120px", objectFit: "cover", borderRadius: "8px", border: "2px solid #cbd5e1" }} />
@@ -103,18 +98,16 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
         </div>
       </div>
 
-      {/* 📊 የሁኔታ ማሳያ መልዕክት ሳጥን */}
       <div style={{ background: loading ? "#f8fafc" : isMatched ? "#f0fdf4" : "#fef2f2", padding: "15px", borderRadius: "10px", border: `1px solid ${loading ? "#e2e8f0" : isMatched ? "#bbf7d0" : "#fecaca"}`, margin: "20px 0" }}>
         <p style={{ fontSize: "14px", fontWeight: "600", color: loading ? "#334155" : isMatched ? "#15803d" : "#b91c1c", margin: 0 }}>
           {statusMessage}
         </p>
       </div>
 
-      {/* 🔘 የድርጊት ቁልፎች */}
       {!loading && isMatched && (
         <button 
-          onClick={() => onSuccess(matchPercentage)} // 🌟 የፐርሰንት ውጤቱን ይዞ ወደ ቀጣዩ (Liveness) ገጽ ይሄዳል
-          style={{ background: "#22c55e", color: "#fff", padding: "14px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", width: "100%", fontSize: "15px", boxShadow: "0 4px 6px rgba(34, 197, 94, 0.2)" }}
+          onClick={() => onSuccess(matchPercentage)} // 🌟 የፐርሰንት ውጤቱን ይዞ ይተላለፋል
+          style={{ background: "#22c55e", color: "#fff", padding: "14px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", width: "100%", fontSize: "15px" }}
         >
           ደረጃ 4 እለፍ (የህያውነት ፈተና) →
         </button>
