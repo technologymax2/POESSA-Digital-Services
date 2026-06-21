@@ -28,7 +28,7 @@ function LivenessTest({ faydaNumber, onSuccess }) {
         setStatusMessage("⏳ የAI ሞዴሎችን ወደ ብሮውዘር በመጫን ላይ...");
         const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
         
-        // ፊትን ራሱ ለመለየት የሚያስፈልጉት ቤዝ ሞዴሎች መጫን ስላለባቸው ተካተዋል
+        // ፊትን ራሱ ለመለየት የሚያስፈልጉት ቤዝ ሞዴሎች
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
         await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
@@ -50,7 +50,6 @@ function LivenessTest({ faydaNumber, onSuccess }) {
         intervalId = setInterval(async () => {
           if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return;
 
-          // ለሞባይል ፈጣን በሆነው TinyFaceDetector እንዲፈልግ ተቀይሯል
           const detection = await faceapi.detectSingleFace(
             videoRef.current, 
             new faceapi.TinyFaceDetectorOptions()
@@ -62,17 +61,14 @@ function LivenessTest({ faydaNumber, onSuccess }) {
 
           // ሀ. የፈገግታ ማረጋገጫ (Smile Detection)
           const smileValue = detection.expressions.happy;
-          let currentSmileStatus = checks.smilePassed;
-
-          // የፈገግታ ማለፊያ ነጥብ ለሞባይል እንዲቀል ከ 0.75 ወደ 0.45 ዝቅ ተደርጓል
-          if (!currentSmileStatus && smileValue > 0.45) { 
-            currentSmileStatus = true;
+          
+          if (!checks.smilePassed && smileValue > 0.45) { 
             setChecks(prev => ({ ...prev, smilePassed: true }));
             setCurrentInstruction("👋 አሁን ደግሞ ራስዎን ቀስ አድርገው ወደ ግራና ቀኝ ያወዛውዙ...");
           }
 
           // ለ. የራስ ማወዛወዝ ማረጋገጫ (Movement/Nod Detection)
-          if (currentSmileStatus && !checks.nodPassed) {
+          if (checks.smilePassed && !checks.nodPassed) {
             const landmarks = detection.landmarks;
             const nose = landmarks.getNose()[0];
             const leftEye = landmarks.getLeftEye()[0];
@@ -82,15 +78,15 @@ function LivenessTest({ faydaNumber, onSuccess }) {
             const rightDist = rightEye.x - nose.x;
             const ratio = leftDist / rightDist;
 
-            // የእንቅስቃሴው ወሰን ይበልጥ ተለዋዋጭ እንዲሆን ተደርጓል
+            // የእንቅስቃሴው ወሰን
             if (ratio < 0.65 || ratio > 1.45) { 
               setChecks(prev => {
                 const updated = { ...prev, nodPassed: true };
                 
+                // ፈተናው ሲያልቅ ካሜራውን በግዳጅ ይዝጋው
                 clearInterval(intervalId);
                 if (stream) stream.getTracks().forEach(track => track.stop());
                 
-                // 🛑 [ደህንነቱ የተጠበቀ ማስተካከያ] ለባክኤንድህ faceMatched: true ጭምር ይዞ ይሄዳል
                 onSuccess({
                   faceMatched: true,
                   smilePassed: true,
@@ -112,6 +108,7 @@ function LivenessTest({ faydaNumber, onSuccess }) {
 
     startLiveness();
 
+    // Cleanup function
     return () => {
       if (intervalId) clearInterval(intervalId);
       if (stream) stream.getTracks().forEach(track => track.stop());
