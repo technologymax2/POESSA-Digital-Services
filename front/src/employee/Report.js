@@ -1,261 +1,189 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import "./Report.css"; // 👈 ያዘጋጀኸውን External CSS እዚህ ጋር አገናኝተነዋል
 
-// 💡 ያንተን የቤክኤንድ URL እዚህ ጋር አስተካክል
-const API_BASE_URL = "https://your-backend-service.onrender.com/api"; 
-
-const Report = () => {
+function Report() {
   const [pensioners, setPensioners] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  
-  // ለፖፕ-አፕ (Modal) መቆጣጠሪያ
-  const [selectedPensioner, setSelectedPensioner] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [selectedPensioner, setSelectedPensioner] = useState(null); // ለፖፕ-አፕ (Modal)
   const [comment, setComment] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // 🔄 1. የሪፖርት መረጃዎችን ከቤክኤንድ ማምጫ (Fetch Data)
-  const fetchReportData = async () => {
+  useEffect(() => {
+    fetchPensioners();
+  }, []);
+
+  const fetchPensioners = async () => {
     try {
-      setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/pensioners`);
-      if (response.data.success) {
-        setPensioners(response.data.data);
-        setError("");
-      } else {
-        setError("መረጃውን ማምጣት አልተቻለም።");
+      const res = await axios.get("https://poessa-digital-services-1.onrender.com/api/pensioners");
+      if (res.data && res.data.success) {
+        setPensioners(res.data.data);
       }
     } catch (err) {
-      console.error("Fetch Error:", err);
-      setError("ከሰርቨር ጋር መገናኘት አልተቻለም። እባክዎ የኔትወርክ መስመርዎን ያረጋግጡ!");
+      console.error("Error fetching data:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchReportData();
-  }, []);
+  // ✅ የጡረተኛውን ሁኔታ ማጽደቂያ ወይም ውድቅ ማድረጊያ
+  const handleUpdateStatus = async (id, status) => {
+    if (status === "Failed" && !comment.trim()) {
+      alert("⚠️ እባክዎ መጀመሪያ ውድቅ የተደረገበትን ምክንያት በኮሜንት ሳጥኑ ውስጥ ይጻፉ!");
+      return;
+    }
 
-  // 👁️ 2. የአንዱን ጡረተኛ ዝርዝር መረጃ በፖፕ-አፕ ለመክፈት
-  const handleOpenDetails = (pensioner) => {
-    setSelectedPensioner(pensioner);
-    setComment(pensioner.comment || "");
-    setShowModal(true);
-  };
-
-  // 🟢 🔴 3. የጡረተኛውን ሁኔታ ማጽደቂያ ወይም ውድቅ ማድረጊያ (Verify / Fail)
-  const handleUpdateStatus = async (status) => {
-    if (!selectedPensioner) return;
-
+    setSubmitting(true);
     try {
-      setActionLoading(true);
-      const response = await axios.put(
-        `${API_BASE_URL}/pensioners/verify-status/${selectedPensioner.faydaNumber}`,
-        {
-          verificationStatus: status,
-          comment: comment
-        }
-      );
+      const res = await axios.put(`https://poessa-digital-services-1.onrender.com/api/pensioners/${id}`, {
+        verificationStatus: status,
+        comment: status === "Failed" ? comment : "የተሟላ ባዮሜትሪክስ ማረጋገጫ አልፏል።"
+      });
 
-      if (response.data.success) {
-        alert(`የማረጋገጫ ሁኔታው በተሳካ ሁኔታ ወደ ${status} ተቀይሯል!`);
-        setShowModal(false);
-        fetchReportData(); // ሰንጠረዡን በቅጽበት በጀርባ ለማደስ
-      } else {
-        alert("⚠️ ሁኔታውን ማዘመን አልተቻለም፦ " + response.data.message);
+      if (res.data && res.data.success) {
+        alert(`Status updated to ${status} successfully!`);
+        setSelectedPensioner(null);
+        setComment("");
+        fetchPensioners(); // ዝርዝሩን ማደስ
       }
     } catch (err) {
-      console.error("Update Error:", err);
-      alert("❌ ስህተት አጋጥሟል! እባክዎ የቤክኤንድ መስመርዎን ያረጋግጡ።");
+      console.error(err);
+      alert("ስህተት አጋጥሟል፤ መረጃውን ማስተካከል አልተቻለም።");
     } finally {
-      setActionLoading(false);
+      setSubmitting(false);
     }
   };
 
-  // 📊 4. የማጠቃለያ ቁጥሮችን በራስ-ሰር የመቁጠሪያ ሎጂክ
-  const totalCount = pensioners.length;
-  const pendingCount = pensioners.filter(p => p.verificationStatus === "Pending").length;
-  const verifiedCount = pensioners.filter(p => p.verificationStatus === "Verified").length;
-  const failedCount = pensioners.filter(p => p.verificationStatus === "Failed").length;
-
-  if (loading) return <div className="admin-dashboard-wrapper" style={{textAlign: 'center', paddingTop: '40px'}}>⏳ መረጃ በመጫን ላይ ነው... እባክዎ ይጠብቁ...</div>;
-  if (error) return <div className="admin-dashboard-wrapper" style={{color: '#b91c1c', textAlign: 'center', fontWeight: 'bold'}}>⚠️ {error}</div>;
+  if (loading) return <div style={{ textAlign: "center", marginTop: "50px", fontFamily: "sans-serif" }}>⏳ ሙሉ የሪፖርት መረጃዎችን ከዳታቤዝ በመጫን ላይ...</div>;
 
   return (
-    <div className="admin-dashboard-wrapper">
-      <h2 style={{ textAlign: "center", color: "#1e293b", marginBottom: "25px", fontWeight: "700" }}>
-        🔍 POESSA የባዮሜትሪክስ ማረጋገጫ ሪፖርት ማውጫ
-      </h2>
-      
-      {/* 📊 የማጠቃለያ ካርዶች ሰሌዳ (Summary Grid) */}
-      <div className="admin-summary-grid">
-        <div className="summary-card total">
-          <h3>{totalCount}</h3>
-          <p>ጠቅላላ የሞከሩ</p>
-        </div>
-        <div className="summary-card pending">
-          <h3>{pendingCount}</h3>
-          <p>⏳ በመጠባበቅ ላይ (Pending)</p>
-        </div>
-        <div className="summary-card verified">
-          <h3>{verifiedCount}</h3>
-          <p>🟢 የጸደቁ (Verified)</p>
-        </div>
-        <div className="summary-card rejected">
-          <h3>{failedCount}</h3>
-          <p>🔴 ውድቅ የተደረጉ (Failed)</p>
-        </div>
-      </div>
+    <div style={{ padding: "30px", fontFamily: "sans-serif", backgroundColor: "#f8fafc", minHeight: "100vh" }}>
+      <h2 style={{ color: "#162447", marginBottom: "5px" }}>📊 የጡረተኞች የባዮሜትሪክስ ማረጋገጫ ማውጫ (Report)</h2>
+      <p style={{ color: "#64748b", marginBottom: "20px" }}>የቀረቡ የባዮሜትሪክስ መረጃዎችን በመገምገም ያጽድቁ ወይም ውድቅ ያድርጉ</p>
 
-      {/* ቁልፎችን ለማተም (Print) በማይፈለግበት ጊዜ ለመደበቅ 'no-print' ክላስ ተጨምሯል */}
-      <div className="no-print" style={{ marginBottom: "15px", textAlign: "right" }}>
-        <button 
-          onClick={() => window.print()} 
-          style={{ background: "#0f172a", color: "#fff", border: "none", padding: "10px 20px", borderRadius: "6px", cursor: "pointer", fontWeight: "600" }}
-        >
-          🖨️ ሪፖርቱን አትም (Print Report)
-        </button>
-      </div>
-
-      {/* 📝 የጡረተኞች መረጃ ሰንጠረዥ */}
-      <div className="admin-table-container">
-        <table className="admin-data-table">
+      {/* 📋 የዳታ ሰንጠረዥ */}
+      <div style={{ overflowX: "auto", background: "#fff", borderRadius: "8px", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
           <thead>
-            <tr>
-              <th>የጡረተኛው ስም</th>
-              <th>ፋይዳ ቁጥር</th>
-              <th>ስልክ ቁጥር</th>
-              <th>የእድሳት ቀን / ሰዓት</th>
-              <th>የአሁኑ ሁኔታ</th>
-              <th className="no-print">ድርጊት</th>
+            <tr style={{ background: "#162447", color: "#fff" }}>
+              <th style={{ padding: "12px" }}>የጡረተኛው ስም</th>
+              <th style={{ padding: "12px" }}>የፋይዳ ቁጥር</th>
+              <th style={{ padding: "12px" }}>የፊት ማች ፐርሰንት</th>
+              <th style={{ padding: "12px" }}>የሂደት ሁኔታ</th>
+              <th style={{ padding: "12px" }}>ድርጊት</th>
             </tr>
           </thead>
           <tbody>
-            {pensioners.length === 0 ? (
-              <tr>
-                <td colSpan="6" style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>
-                  ምንም የተመዘገበ የባዮሜትሪክስ መረጃ አልተገኘም።
+            {pensioners.map((p) => (
+              <tr key={p._id} style={{ borderBottom: "1px solid #e2e8f0", transition: "0.2s" }}>
+                <td style={{ padding: "12px", fontWeight: "bold" }}>{p.name}</td>
+                <td style={{ padding: "12px" }}>{p.faydaNumber}</td>
+                <td style={{ padding: "12px", fontWeight: "bold", color: "#2563eb" }}>
+                  {p.matchPercentage ? `${p.matchPercentage}%` : "---"}
+                </td>
+                <td style={{ padding: "12px" }}>
+                  <span style={{ 
+                    padding: "5px 10px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold",
+                    background: p.verificationStatus === "Verified" ? "#dcfce7" : p.verificationStatus === "Failed" ? "#fee2e2" : "#fef9c3",
+                    color: p.verificationStatus === "Verified" ? "#15803d" : p.verificationStatus === "Failed" ? "#b91c1c" : "#a16207"
+                  }}>
+                    {p.verificationStatus || "Pending"}
+                  </span>
+                </td>
+                <td style={{ padding: "12px" }}>
+                  <button 
+                    onClick={() => setSelectedPensioner(p)}
+                    style={{ background: "#475569", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}
+                  >
+                    🔍 ዝርዝር እይ
+                  </button>
                 </td>
               </tr>
-            ) : (
-              pensioners.map((p, index) => (
-                <tr key={p._id || index}>
-                  <td><strong>{p.name}</strong></td>
-                  <td>{p.faydaNumber}</td>
-                  <td>{p.phone}</td>
-                  <td>{new Date(p.lastVerificationDate).toLocaleString("am-ET")}</td>
-                  <td>
-                    <span style={{
-                      padding: "4px 10px",
-                      borderRadius: "20px",
-                      fontSize: "13px",
-                      fontWeight: "bold",
-                      backgroundColor: p.verificationStatus === "Verified" ? "#dcfce7" : p.verificationStatus === "Failed" ? "#fee2e2" : "#fef9c3",
-                      color: p.verificationStatus === "Verified" ? "#16a34a" : p.verificationStatus === "Failed" ? "#dc2626" : "#ca8a04"
-                    }}>
-                      {p.verificationStatus === "Verified" ? "🟢 የጸደቀ" : p.verificationStatus === "Failed" ? "🔴 ውድቅ የተደረገ" : "⏳ በሂደት ላይ"}
-                    </span>
-                  </td>
-                  <td className="no-print">
-                    <button 
-                      style={{ background: "#2563eb", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", cursor: "pointer", fontWeight: "600" }}
-                      onClick={() => handleOpenDetails(p)}
-                    >
-                      ዝርዝር መረጃ
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>
 
-      {/* 🗂️ ፖፕ-አፕ ማሳያ (Details Modal) */}
-      {showModal && selectedPensioner && (
-        <div className="admin-modal-overlay">
-          <div className="admin-modal-content">
-            <h3 style={{ margin: "0 0 15px 0", color: "#0f172a", borderBottom: "2px solid #e2e8f0", paddingBottom: "10px", fontWeight: "700" }}>
-              🔎 ዝርዝር የባዮሜትሪክስ ማመሳከሪያ
-            </h3>
-            
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "6px", marginBottom: "15px", background: "#f1f5f9", padding: "12px", borderRadius: "8px", fontSize: "14px" }}>
-              <p style={{ margin: 0 }}><strong>የጡረተኛው ስም፦</strong> {selectedPensioner.name}</p>
-              <p style={{ margin: 0 }}><strong>ፋይዳ ቁጥር፦</strong> {selectedPensioner.faydaNumber}</p>
-              <p style={{ margin: 0 }}><strong>ስልክ ቁጥር፦</strong> {selectedPensioner.phone}</p>
-            </div>
+      {/* 🗂️ ዝርዝር ማሳያ ፖፕ-አፕ (Modal) */}
+      {selectedPensioner && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: "#fff", padding: "25px", borderRadius: "12px", width: "90%", maxWidth: "500px", boxShadow: "0 10px 25px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
+            <h3 style={{ margin: "0 0 15px 0", color: "#162447" }}>📋 የጡረተኛው ዝርዝር ማረጋገጫ</h3>
 
-            {/* 📸 የፎቶዎች ማነጻጸሪያ */}
-            <div style={{ display: "flex", gap: "15px", marginBottom: "15px" }}>
-              <div style={{ flex: 1, textAlign: "center" }}>
-                <p style={{ fontSize: "12px", fontWeight: "bold", color: "#475569", marginBottom: "5px" }}>🪪 ሲስተም/DB ፎቶ</p>
-                {selectedPensioner.idPhoto ? (
-                  <img src={selectedPensioner.idPhoto} alt="ID" style={{ width: "100%", height: "150px", objectFit: "cover", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
-                ) : (
-                  <div style={{ height: "150px", display: "flex", alignItems: "center", justifyContent: "center", background: "#cbd5e1", borderRadius: "8px", color: "#64748b" }}>ፎቶ የለም</div>
-                )}
+            {/* 📸 የፎቶ ማነፃፀሪያ ክፍል */}
+            <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "15px", background: "#f1f5f9", padding: "10px", borderRadius: "8px" }}>
+              <div style={{ textAlign: "center" }}>
+                <img src={selectedPensioner.idPhotoUrl || selectedPensioner.image} alt="ID" style={{ width: "120px", height: "130px", objectFit: "cover", borderRadius: "6px", border: "2px solid #cbd5e1" }} />
+                <span style={{ display: "block", fontSize: "11px", color: "#475569", marginTop: "4px", fontWeight: "bold" }}>የመታወቂያ ፎቶ</span>
               </div>
-              <div style={{ flex: 1, textAlign: "center" }}>
-                <p style={{ fontSize: "12px", fontWeight: "bold", color: "#475569", marginBottom: "5px" }}>📸 የቀጥታ ሴልፊ (ImgBB)</p>
-                {selectedPensioner.selfiePhoto ? (
-                  <img src={selectedPensioner.selfiePhoto} alt="Selfie" style={{ width: "100%", height: "150px", objectFit: "cover", borderRadius: "8px", border: "1px solid #cbd5e1" }} />
-                ) : (
-                  <div style={{ height: "150px", display: "flex", alignItems: "center", justifyContent: "center", background: "#cbd5e1", borderRadius: "8px", color: "#64748b" }}>ሴልፊ የለም</div>
-                )}
+              <div style={{ textAlign: "center" }}>
+                <img src={selectedPensioner.selfiePhotoUrl || selectedPensioner.selfie} alt="Selfie" style={{ width: "120px", height: "130px", objectFit: "cover", borderRadius: "6px", border: "2px solid #cbd5e1" }} />
+                <span style={{ display: "block", fontSize: "11px", color: "#475569", marginTop: "4px", fontWeight: "bold" }}>የቀጥታ ሴልፊ</span>
               </div>
             </div>
 
-            {/* 🤖 የ AI ህያውነት ማረጋገጫ ውጤቶች */}
+            {/* 📊 የ AI ውጤቶች መረጃ */}
             <div style={{ background: "#f8fafc", padding: "12px", borderRadius: "8px", marginBottom: "15px", fontSize: "14px", lineHeight: "1.8", border: "1px solid #e2e8f0" }}>
-              <div>👤 ፊቱ ተገጣጥሟል? <strong>{selectedPensioner.faceMatched === true || selectedPensioner.faceMatched === "true" ? "✅ አዎ" : "❌ የለም"}</strong></div>
-              <div>😊 ፈገግታ አልፏል? <strong>{selectedPensioner.smilePassed === true || selectedPensioner.smilePassed === "true" ? "✅ አዎ" : "❌ የለም"}</strong></div>
-              <div>🔄 እንቅስቃሴ አልፏል? <strong>{selectedPensioner.nodPassed === true || selectedPensioner.turnPassed === true || selectedPensioner.nodPassed === "true" ? "✅ አዎ" : "❌ የለም"}</strong></div>
+              <p style={{ margin: "4px 0" }}><strong>ስም፦</strong> {selectedPensioner.name}</p>
+              <p style={{ margin: "4px 0" }}><strong>የፋይዳ ቁጥር፦</strong> {selectedPensioner.faydaNumber}</p>
+              <div style={{ borderTop: "1px dashed #cbd5e1", marginTop: "8px", paddingTop: "8px" }}>
+                👤 ፊቱ ተገጣጥሟል? <strong>{selectedPercentageCheck(selectedPensioner) ? "✅ አዎ" : "❌ የለም"}</strong>
+              </div>
+              
+              {/* 🌟 ሰራተኛው በደመቀ ሰማያዊ ከለር የፊት ማች ፐርሰንቱን የሚያይበት መስመር */}
+              <div>
+                📊 የፊት መመሳሰል መጠን፦ <strong style={{ color: "#2563eb", fontSize: "18px" }}>
+                  {selectedPensioner.matchPercentage ? `${selectedPensioner.matchPercentage}%` : "---"}
+                </strong>
+              </div>
+
+              <div>😊 ፈገግታ ፈተና፦ <strong>{selectedPensioner.smilePassed ? "✅ አልፏል" : "❌ አልፏል"}</strong></div>
+              <div>🔄 የእንቅስቃሴ ፈተና፦ <strong>{selectedPensioner.nodPassed ? "✅ አልፏል" : "❌ አልፏል"}</strong></div>
             </div>
 
-            {/* 📝 የማሳሰቢያ መስጫ ሳጥን */}
-            <div style={{ marginBottom: "15px" }}>
-              <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "14px" }}>ውድቅ የሚያደርጉ ከሆነ ምክንያቱን ያስቀምጡ፦</label>
-              <textarea 
-                style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1", boxSizing: "border-box", fontFamily: "inherit" }} 
-                rows="2" 
-                placeholder="ምሳሌ፦ 'የቀጥታ ሴልፊው ብዥ ያለ ነው...'"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-              />
-            </div>
+            {/* ✍️ የኮሜንት መስጫ */}
+            <label style={{ fontSize: "13px", fontWeight: "bold", color: "#162447" }}>ውድቅ ካደረጉ ምክንያቱን እዚህ ይጻፉ፦</label>
+            <textarea 
+              placeholder="ለምሳሌ፦ መታወቂያው እና ፊቱ አይመሳሰሉም..." 
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1", marginTop: "5px", height: "60px", boxSizing: "border-box", outline: "none" }}
+            />
 
             {/* 🔘 የውሳኔ ቁልፎች */}
-            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", gap: "10px", marginTop: "25px" }}>
               <button 
-                style={{ background: "#16a34a", color: "#fff", border: "none", padding: "10px 15px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
-                disabled={actionLoading} 
-                onClick={() => handleUpdateStatus("Verified")}
+                onClick={() => handleUpdateStatus(selectedPensioner._id, "Verified")}
+                disabled={submitting}
+                style={{ flex: 1, background: "#22c55e", color: "#fff", border: "none", padding: "12px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
               >
-                {actionLoading ? "እየቀየረ..." : "🟢 እቀበላለሁ"}
+                ✅ አጽድቅ (Approve)
               </button>
               <button 
-                style={{ background: "#dc2626", color: "#fff", border: "none", padding: "10px 15px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
-                disabled={actionLoading} 
-                onClick={() => handleUpdateStatus("Failed")}
+                onClick={() => handleUpdateStatus(selectedPensioner._id, "Failed")}
+                disabled={submitting}
+                style={{ flex: 1, background: "#dc2626", color: "#fff", border: "none", padding: "12px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
               >
-                {actionLoading ? "እየቀየረ..." : "🔴 ውድቅ አድርግ"}
-              </button>
-              <button 
-                style={{ background: "#475569", color: "#fff", border: "none", padding: "10px 15px", borderRadius: "6px", cursor: "pointer" }}
-                onClick={() => setShowModal(false)}
-              >
-                ዝጋ
+                ❌ ውድቅ አድርግ (Reject)
               </button>
             </div>
 
+            <button 
+              onClick={() => { setSelectedPensioner(null); setComment(""); }}
+              style={{ width: "100%", background: "#cbd5e1", color: "#334155", border: "none", padding: "10px", borderRadius: "6px", marginTop: "10px", cursor: "pointer", fontWeight: "bold" }}
+            >
+              ዝጋ
+            </button>
           </div>
         </div>
       )}
     </div>
   );
-};
+}
+
+// ፊቱ መመሳሰሉን ለመፈተሽ ረዳት ፈንክሽን
+function selectedPercentageCheck(p) {
+  if (p.matchPercentage && parseInt(p.matchPercentage) >= 50) return true;
+  return p.faceMatched === true || p.faceMatched === "true";
+}
 
 export default Report;
