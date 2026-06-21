@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const UserPensioner = require("./models/UserPensioner"); 
-const LivenessVerification = require("./models/livenessSchema"); // 💡 በ GitHubህ ላይ ካለው የፋይል ስም ጋር ተስተካክሏል
+// 💡 ማስተካከያ፦ ያንተን ትክክለኛ የሼማ ፋይል ስም እዚህ ጋር ጠርተነዋል
+const LivenessVerification = require("./models/livenessSchema"); 
 
 /* ==========================================================================
    📬 1. POST: /api/liveness/verify-success (የ AI ፈተና ሲያልፍ መረጃ ማስቀመጫ)
@@ -13,7 +14,7 @@ router.post("/verify-success", async (req, res) => {
       smilePassed,
       nodPassed,
       turnPassed,
-      selfiePhoto, // 📸 ከቅጽበታዊ ካሜራ የመጣ ሴልፊ ፎቶ (Base64 ወይም URL)
+      selfiePhoto, // 📸 ከካሜራ የመጣ አዲስ ሴልፊ
       idPhoto      // 🪪 የመታወቂያ ፎቶ
     } = req.body;
 
@@ -42,23 +43,23 @@ router.post("/verify-success", async (req, res) => {
       });
     }
 
-    // 4. 📊 የእድሳት ሁኔታውን፣ ፎቶዎችን እና ጊዜውን በ LivenessVerification ላይ መመዝገብ
+    // 4. 📊 የዕድሳት ሁኔታን፣ ፎቶዎችን እና ጊዜውን በ livenessSchema ላይ መመዝገብ
     // 💡 ለሪፖርት ገጹ እንዲመች የጡረተኛውን ስም እና ስልክ አብረን እናስቀምጣለን
     await LivenessVerification.findOneAndUpdate(
       { faydaNumber: faydaNumber },
       {
         name: pensioner.nameAmh || pensioner.nameEng || pensioner.name || "ስም አልተጠቀሰም",
         phone: pensioner.phone || "የሌለ",
-        idPhoto: idPhoto || pensioner.photoUrl || pensioner.photo || "", // የመታወቂያ ፎቶ ካለ፣ ከሌለ ከዋናው ይወስዳል
-        selfiePhoto: selfiePhoto || "", // አዲሱ የሴልፊ ፎቶ
+        idPhoto: idPhoto || pensioner.photoUrl || pensioner.photo || "", 
+        selfiePhoto: selfiePhoto || "", 
         faceMatched: true,
         smilePassed: !!smilePassed,
         nodPassed: !!nodPassed,
         turnPassed: !!turnPassed,
-        verificationStatus: "Pending", // ⏳ ባለሙያው በሪፖርት ገጽ ላይ እስኪያጸድቀው 'Pending' ሆኖ ይቆያል
-        lastVerificationDate: new Date() // ⏰ የተደረገበት ትክክለኛ ጊዜ
+        verificationStatus: "Pending", // ⏳ ባለሙያው እስኪያጸድቀው 'Pending' ሆኖ ይቆያል
+        lastVerificationDate: new Date() // ⏰ የእድሳት ሙከራ የተደረገበት ትክክለኛ ጊዜ
       },
-      { upsert: true, new: true } // ዳታው ከሌለ አዲስ ይፈጥራል (ዳታቤዝህ ባዶ እንዳይሆን ያደርጋል)
+      { upsert: true, new: true } // ዳታው በ livenessverifications ውስጥ ከሌለ አዲስ ይፈጥራል
     );
 
     // 5. 📝 በ UserPensioner ዋና ሰንጠረዥ ላይ የታሪክ መዝገብ (Log) ማስፈር
@@ -75,7 +76,7 @@ router.post("/verify-success", async (req, res) => {
     pensioner.editHistory.push(livenessLogEntry);
     await pensioner.save();
 
-    console.log(`🟢 ጡረተኛው [${pensioner.nameAmh || pensioner.nameEng}] የ AI ፈተናውን አልፏል!`);
+    console.log(`🟢 ጡረተኛው [${pensioner.nameAmh || pensioner.nameEng}] የ AI ፈተናውን አጠናቋል!`);
 
     return res.status(200).json({
       success: true,
@@ -87,7 +88,7 @@ router.post("/verify-success", async (req, res) => {
     console.error("Liveness Verification Endpoint Error:", error);
     return res.status(500).json({
       success: false,
-      message: `❌ በሰርቨር ላይ መረጃውን ለማስቀመጥ ያልታሰበ ስህተት አጋጥሟል፦ ${error.message}`
+      message: `❌ በሰርቨር ላይ መረጃውን ለማስቀመጥ ያልታሰበ ስህተት አጋጥम्मत፦ ${error.message}`
     });
   }
 });
@@ -140,10 +141,9 @@ router.put("/pensioners/verify-status/:faydaNumber", async (req, res) => {
       });
     }
 
-    // 2. በዋናው የ UserPensioner ሰንጠረዥ ላይም የጡረተኛውን የእድሳት ሁኔታ (Status) ማመሳሰል
+    // 2. በዋናው የ UserPensioner ሰንጠረዥ ላይም የጡረተኛውን የዕድሳት ሁኔታ (Status) ማመሳሰል
     const pensioner = await UserPensioner.findOne({ faydaNumber: faydaNumber });
     if (pensioner) {
-      // ባለሙያው ካጸደቀው "Active" (የታደሰ) ይሆናል፣ ካልሆነ "Suspended" (የታገደ) ይሆናል
       pensioner.status = verificationStatus === "Verified" ? "Active" : "Suspended";
       pensioner.statusChangedDate = new Date();
       pensioner.lastEditedBy = "System Admin / Expert";
