@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import PensionerRegistration from './PensionerRegistration';
 import IdCardGenerationAndSearch from './IdCardGenerationAndSearch';
-import Report from './Report'; // 📊 አዲሱ የሪፖርት ኮምፖነንት እዚህ ይመጣል (እንደ አወቃቀሩ ስሙን ማስተካከል ትችላለህ)
+import Report from './Report'; // 📊 በትክክል የመጣው የሪፖርት ኮምፖነንት
 import './EmployeeDashboard.css';
 
 function EmployeeDashboard() {
@@ -17,8 +17,6 @@ function EmployeeDashboard() {
 
   const [lang, setLang] = useState('am');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
-  // 'registration'፣ 'report' ወይም 'search' ሊሆን ይችላል
   const [activeSubPage, setActiveSubPage] = useState('registration');
 
   // Load employee info
@@ -39,7 +37,6 @@ function EmployeeDashboard() {
     });
   }, []);
 
-  // Logout
   const handleLogout = () => {
     if (
       window.confirm(
@@ -64,16 +61,11 @@ function EmployeeDashboard() {
         >
           ☰
         </button>
-
-        <span className="mobile-portal-title">
-          POESSA INTERNAL PORTAL
-        </span>
+        <span className="mobile-portal-title">POESSA INTERNAL PORTAL</span>
       </div>
 
       {/* Sidebar */}
       <div className={`employee-sidebar no-print ${isMobileMenuOpen ? 'open' : ''}`}>
-
-        {/* Close Button for Mobile Menu */}
         <button
           className="close-menu-btn"
           onClick={() => setIsMobileMenuOpen(false)}
@@ -86,22 +78,15 @@ function EmployeeDashboard() {
         {/* Employee Profile */}
         <div className="sidebar-profile-box">
           {currentEmployee.profilePic ? (
-            <img
-              src={currentEmployee.profilePic}
-              alt="Profile"
-              className="profile-img"
-            />
+            <img src={currentEmployee.profilePic} alt="Profile" className="profile-img" />
           ) : (
             <div className="profile-placeholder">
               {currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : '👤'}
             </div>
           )}
-
           <div className="profile-info">
             <h4>{currentEmployee.username}</h4>
-            <span className="role-tag">
-              {currentEmployee.role}
-            </span>
+            <span className="role-tag">{currentEmployee.role}</span>
           </div>
         </div>
 
@@ -109,12 +94,8 @@ function EmployeeDashboard() {
 
         {/* Menu Items */}
         <div className="sidebar-menu-items">
-          
-          {/* 📝 ዳሽቦርድ / ምዝገባ */}
           <button
-            className={`menu-btn-item ${
-              activeSubPage === 'registration' ? 'active' : ''
-            }`}
+            className={`menu-btn-item ${activeSubPage === 'registration' ? 'active' : ''}`}
             onClick={() => {
               setActiveSubPage('registration');
               setIsMobileMenuOpen(false);
@@ -123,11 +104,8 @@ function EmployeeDashboard() {
             📝 {lang === 'am' ? 'ዳሽቦርድ / ምዝገባ' : 'Dashboard / Register'}
           </button>
 
-          {/* 📊 የማረጋገጫ ሪፖርት */}
           <button
-            className={`menu-btn-item ${
-              activeSubPage === 'report' ? 'active' : ''
-            }`}
+            className={`menu-btn-item ${activeSubPage === 'report' ? 'active' : ''}`}
             onClick={() => {
               setActiveSubPage('report');
               setIsMobileMenuOpen(false);
@@ -136,11 +114,8 @@ function EmployeeDashboard() {
             📊 {lang === 'am' ? 'የማረጋገጫ ሪፖርት' : 'Verification Report'}
           </button>
 
-          {/* 🔍 መረጃ መፈለጊያና መታወቂያ */}
           <button
-            className={`menu-btn-item ${
-              activeSubPage === 'search' ? 'active' : ''
-            }`}
+            className={`menu-btn-item ${activeSubPage === 'search' ? 'active' : ''}`}
             onClick={() => {
               setActiveSubPage('search');
               setIsMobileMenuOpen(false);
@@ -150,7 +125,6 @@ function EmployeeDashboard() {
           </button>
         </div>
 
-        {/* Language Button */}
         <button
           className="lang-switcher-btn"
           onClick={() => setLang(lang === 'am' ? 'en' : 'am')}
@@ -158,32 +132,20 @@ function EmployeeDashboard() {
           🌐 {lang === 'am' ? 'English' : 'አማርኛ'}
         </button>
 
-        {/* Logout */}
-        <button
-          className="sidebar-logout-button"
-          onClick={handleLogout}
-        >
+        <button className="sidebar-logout-button" onClick={handleLogout}>
           🚪 {lang === 'am' ? 'ከሲስተም ውጣ' : 'Logout'}
         </button>
-
       </div>
 
       {/* Main Content */}
       <div className="main-content">
-
-        {/* Welcome Section */}
         <div className="dashboard-header">
           <div>
             <h2>እንኳን ደህና መጡ</h2>
             <p>{currentEmployee.username}</p>
           </div>
-
           {currentEmployee.profilePic ? (
-            <img
-              src={currentEmployee.profilePic}
-              alt="Profile"
-              className="dashboard-profile-image"
-            />
+            <img src={currentEmployee.profilePic} alt="Profile" className="dashboard-profile-image" />
           ) : (
             <div className="dashboard-profile-placeholder">
               {currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : 'U'}
@@ -191,14 +153,13 @@ function EmployeeDashboard() {
           )}
         </div>
 
-        {/* ዳይናሚክ በሆነ መልኩ ገጾችን መቀያየሪያ ክፍል */}
         <main className="dashboard-body">
           <div className="dynamic-content-area">
             {activeSubPage === 'registration' && (
               <PensionerRegistration currentEmployee={currentEmployee.username} />
             )}
             {activeSubPage === 'report' && (
-              <VerificationReport /> 
+              <Report /> {/* 🛠️ እዚህ ጋር ስሙ ተስተካክሏል */}
             )}
             {activeSubPage === 'search' && (
               <IdCardGenerationAndSearch />
@@ -207,17 +168,11 @@ function EmployeeDashboard() {
         </main>
 
         <Footer />
-
       </div>
 
-      {/* Overlay */}
       {isMobileMenuOpen && (
-        <div
-          className="sidebar-overlay"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
+        <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)} />
       )}
-
     </div>
   );
 }
