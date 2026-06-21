@@ -211,7 +211,7 @@ app.use("/api/auth", require("./LoginBack"));
 app.use("/api/admin", require("./AdminBack")(io, users, busyAgents, forceDisconnectUser));
 app.use("/api/pensioners", require("./PensionerRegistrationBack"));
 app.use("/api/liveness", livenessRoute);
-
+app.use("/api", require("./ReportBack"));
 /* =========================
    PORT
 ========================= */
