@@ -1,11 +1,18 @@
 import React, { useState, useRef } from "react";
+import axios from "axios";
+
+// 🔗 ያንተ የቤክኤንድ API አድራሻ
+const API_BASE_URL = "https://your-backend-service.onrender.com/api";
+// 🔑 ያንተ የ ImgBB API ቁልፍ
+const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
 function CaptureIDCard({ onSuccess }) {
   const [faydaNumber, setFaydaNumber] = useState("");
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState(null); // 🔗 እዚህ ላይ የመጨረሻው የ ImgBB URL ይቀመጣል
   const [cameraActive, setCameraActive] = useState(false);
   const [scanStatus, setScanStatus] = useState(""); 
   const [scanning, setScanning] = useState(false); 
+  const [verifyingInDB, setVerifyingInDB] = useState(false);
   const videoRef = useRef(null);
 
   const startCamera = async () => {
@@ -18,7 +25,35 @@ function CaptureIDCard({ onSuccess }) {
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err) {
       console.error("ካሜራ መክፈት አልተቻለም፦", err);
-      alert("እባክዎ የካሜራ ፌርሚሽን ይፍቀዱ!");
+      alert("እባክዎ የካሜራ ፈቃድ (Permission) ይፍቀዱ!");
+    }
+  };
+
+  /* ==========================================================================
+     📸 ፎቶን ወደ ImgBB ሰቅሎ እውነተኛ ሊንክ (URL) ማምጫ ተግባር
+  ========================================================================== */
+  const uploadIdToImgBB = async (base64Image) => {
+    try {
+      let cleanBase64 = base64Image;
+      if (base64Image.includes("base64,")) {
+        cleanBase64 = base64Image.split("base64,")[1];
+      }
+
+      const formData = new URLSearchParams();
+      formData.append("image", cleanBase64);
+
+      const response = await axios.post(
+        `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+        formData
+      );
+
+      if (response.data && response.data.data && response.data.data.url) {
+        return response.data.data.url; // 🔗 የተፈጠረው የፎቶ ሊንክ
+      }
+      return null;
+    } catch (error) {
+      console.error("❌ ImgBB Upload Error:", error);
+      return null;
     }
   };
 
@@ -34,7 +69,6 @@ function CaptureIDCard({ onSuccess }) {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
     const base64Image = canvas.toDataURL("image/jpeg");
-    setImage(base64Image);
 
     const stream = video.srcObject;
     if (stream) {
@@ -43,48 +77,55 @@ function CaptureIDCard({ onSuccess }) {
     setCameraActive(false);
 
     setScanning(true);
-    setScanStatus("⏳ ከመታወቂያው ላይ የ QR ኮድ እና ቁጥር በማንበብ ላይ...");
+    setScanStatus("⏳ ከመታወቂያው ላይ መረጃ እያነበብን እና ፎቶውን ወደ ImgBB እየሰቀልን ነው...");
 
-    setTimeout(async () => {
-      try {
-        let foundFayda = "";
+    // 1. መጀመሪያ ፎቶውን ወደ ImgBB መጫን
+    const uploadedUrl = await uploadIdToImgBB(base64Image);
+    if (uploadedUrl) {
+      setImage(uploadedUrl); // 🌟 አሁን ስቴቱ ላይ የሚቀመጠው ረጅም ፅሁፍ ሳይሆን የ ImgBB ሊንክ ነው!
+    } else {
+      setScanStatus("⚠️ ፎቶውን ደመና (ImgBB) ላይ መጫን አልተቻለም። እባክዎ ድጋሚ ይሞክሩ።");
+      setScanning(false);
+      return;
+    }
 
-        // 1. QR ኮድ መፈተሽ
-        if (window.jsQR) {
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const qrCode = window.jsQR(imageData.data, imageData.width, imageData.height);
-          if (qrCode && qrCode.data) {
-            const qrMatch = qrCode.data.match(/\d{16}/);
-            if (qrMatch) foundFayda = qrMatch[0];
-          }
+    // 2. የ QR ኮድ እና የ OCR ጽሑፍ መፈተሽ
+    try {
+      let foundFayda = "";
+
+      if (window.jsQR) {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const qrCode = window.jsQR(imageData.data, imageData.width, imageData.height);
+        if (qrCode && qrCode.data) {
+          const qrMatch = qrCode.data.match(/\d{16}/);
+          if (qrMatch) foundFayda = qrMatch[0];
         }
-
-        // 2. OCR ጽሑፍ መፈተሽ
-        if (!foundFayda && window.Tesseract) {
-          const result = await window.Tesseract.recognize(base64Image, "eng");
-          const cleanText = result.data.text.replace(/[\s-]/g, "");
-          const matched = cleanText.match(/\d{16}/);
-          if (matched) foundFayda = matched[0];
-        }
-
-        if (foundFayda) {
-          setFaydaNumber(foundFayda);
-          setScanStatus("🟢 የፋይዳ ቁጥር በራስ-ሰር ተገኝቶ ተሞልቷል!");
-        } else {
-          setScanStatus("⚠️ AI ቁጥሩን ማግኘት አልተቻለም። እባክዎ ከመታወቂያው ላይ አይተው ከታች በእጅዎ ይሙሉ::");
-        }
-      } catch (error) {
-        console.error(error);
-        setScanStatus("⚠️ እባክዎ የፋይዳ ቁጥሩን ከታች በእጅዎ ይሙሉ::");
-      } finally {
-        setScanning(false);
       }
-    }, 400);
+
+      if (!foundFayda && window.Tesseract) {
+        const result = await window.Tesseract.recognize(base64Image, "eng");
+        const cleanText = result.data.text.replace(/[\s-]/g, "");
+        const matched = cleanText.match(/\d{16}/);
+        if (matched) foundFayda = matched[0];
+      }
+
+      if (foundFayda) {
+        setFaydaNumber(foundFayda);
+        setScanStatus("🟢 መታወቂያው በተሳካ ሁኔታ ተሰቅሏል፤ የፋይዳ ቁጥርም ተገኝቷል!");
+      } else {
+        setScanStatus("⚠️ ፎቶው ተሰቅሏል ነገር ግን AI ቁጥሩን አላነበበውም። እባክዎ ከታች በእጅዎ ይሙሉ::");
+      }
+    } catch (error) {
+      console.error(error);
+      setScanStatus("⚠️ እባክዎ የፋይዳ ቁጥሩን ከታች በእጅዎ ይሙሉ::");
+    } finally {
+      setScanning(false);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // 🚨 ዋናው ጥብቅ መቆለፊያ - ቁጥሩ ልክ 16 አሃዝ ካልሆነ በፍጹም አያሳልፍም!
+    
     if (faydaNumber.length !== 16) {
       alert("⚠️ እባክዎ መጀመሪያ ባለ 16 ዲጂት የፋይዳ ቁጥር በትክክል መሙላቱን ያረጋግጡ!");
       return;
@@ -93,7 +134,34 @@ function CaptureIDCard({ onSuccess }) {
       alert("⚠️ እባክዎ የመታወቂያውን ፎቶ ያንሱ!");
       return;
     }
-    onSuccess({ faydaNumber, image });
+
+    try {
+      setVerifyingInDB(true);
+      setScanStatus("⏳ የፋይዳ ቁጥሩን ከዳታቤዝ ጋር እያመሳከርን ነው...");
+
+      const response = await axios.get(`${API_BASE_URL}/pensioners`);
+      
+      if (response.data.success) {
+        const foundInDB = response.data.data.find(p => p.faydaNumber === faydaNumber);
+        
+        if (foundInDB) {
+          const name = foundInDB.nameAmh || foundInDB.name || "ጡረተኛ";
+          alert(`🟢 እንኳን ደህና መጡ ${name}! መረጃዎ ተረጋግጧል። ወደ ባዮሜትሪክስ ፈተና መሻገር ይችላሉ።`);
+          
+          // 💡 ወደሚቀጥለው ገጽ የሚተላለፈው 'image' አሁን ንጹህ የ ImgBB URL ነው!
+          onSuccess({ faydaNumber, idPhotoUrl: image });
+        } else {
+          setScanStatus("❌ ይህ የፋይዳ ቁጥር በሲስተሙ ላይ አልተመዘገበም!");
+          alert("❌ ስህተት፦ ይህ የፋይዳ ቁጥር በጡረታ ባለስልጣን ሲስተም ላይ አልተገኘም!");
+        }
+      }
+    } catch (error) {
+      console.error("DB Verification Error:", error);
+      // ሰርቨር መድረስ ባይቻል እንኳ መረጃውን ይዞ እንዲያልፍ ይደረጋል
+      onSuccess({ faydaNumber, idPhotoUrl: image });
+    } finally {
+      setVerifyingInDB(false);
+    }
   };
 
   return (
@@ -110,7 +178,7 @@ function CaptureIDCard({ onSuccess }) {
         </div>
 
         {!cameraActive ? (
-          <button type="button" onClick={startCamera} disabled={scanning} style={{ background: "#475569", color: "#fff", padding: "10px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+          <button type="button" onClick={startCamera} disabled={scanning || verifyingInDB} style={{ background: "#475569", color: "#fff", padding: "10px", border: "none", borderRadius: "8px", cursor: "pointer" }}>
             {image ? "🔄 እንደገና አንሳ" : "📸 ካሜራ ክፈት"}
           </button>
         ) : (
@@ -131,9 +199,10 @@ function CaptureIDCard({ onSuccess }) {
             type="text" 
             maxLength="16"
             value={faydaNumber} 
-            onChange={(e) => setFaydaNumber(e.target.value.replace(/\D/g, ""))} // ቁጥር ብቻ እንዲቀበል
+            onChange={(e) => setFaydaNumber(e.target.value.replace(/\D/g, ""))}
             placeholder="እዚህ ጋር ይጻፉ..." 
             required
+            disabled={verifyingInDB}
             style={{ 
               width: "100%", padding: "12px", marginTop: "5px", borderRadius: "8px", 
               border: faydaNumber.length === 16 ? "2px solid #22c55e" : "2px solid #dc2626", 
@@ -143,17 +212,16 @@ function CaptureIDCard({ onSuccess }) {
           />
         </div>
 
-        {/* 🔒 ቁጥሩ 16 ካልሞላ በተኑ አይሰራም ወይም ፎርሙን አያሳልፍም */}
         <button 
           type="submit" 
-          disabled={scanning || faydaNumber.length !== 16} 
+          disabled={scanning || verifyingInDB || faydaNumber.length !== 16} 
           style={{ 
             background: faydaNumber.length === 16 ? "#162447" : "#cbd5e1", 
             color: "#fff", padding: "14px", border: "none", borderRadius: "8px", 
-            cursor: faydaNumber.length === 16 ? "pointer" : "not-allowed", fontWeight: "bold", marginTop: "10px" 
+            cursor: (faydaNumber.length === 16 && !verifyingInDB) ? "pointer" : "not-allowed", fontWeight: "bold", marginTop: "10px" 
           }}
         >
-          ቀጥል (ከዳታቤዝ ጋር አመሳስል) →
+          {verifyingInDB ? "⏳ መረጃ በመፈተሽ ላይ..." : "ቀጥል (ከዳታቤዝ ጋር አመሳስል) →"}
         </button>
       </form>
     </div>
