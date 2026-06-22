@@ -39,7 +39,34 @@
 .verification-wizard-btn:hover {
   background: #1f4068;
 }
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 20px;
+  z-index: 9999;
+}
 
+.error {
+  background: #ffdddd;
+  color: red;
+  padding: 10px;
+  margin: 10px;
+  border-radius: 6px;
+}
+
+.step-info {
+  text-align: center;
+  margin-top: 10px;
+  font-weight: bold;
+}
 /* =========================
    WEBCAM CONTAINER
 ========================= */
