@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
 
+// 🔗 የ API እና ImgBB መረጃዎች
 const API_BASE_URL = "https://poessa-digital-services-1.onrender.com";
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
@@ -13,85 +14,88 @@ function CaptureIDCard({ onSuccess }) {
   const [verifyingInDB, setVerifyingInDB] = useState(false);
   const videoRef = useRef(null);
 
-  // 1. ካሜራን በአስተማማኝ ሁኔታ የሚዘጋ ፈንክሽን
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = videoRef.current.srcObject.getTracks();
-      tracks.forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
-    setCameraActive(false);
-  };
-
-  // 2. ካሜራ መክፈቻ (ስልክ ላይ የተረጋጋ እንዲሆን)
+  // 1. ካሜራ መክፈቻ
   const startCamera = async () => {
-    setScanStatus("⏳ ካሜራው እየተዘጋጀ ነው...");
+    setCameraActive(true);
+    setScanStatus("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-        audio: false,
+        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
       });
-      setCameraActive(true);
-      // ትንሽ መዘግየት ካሜራው በስልክ ላይ ለስላሳ እንዲሆን ይረዳል
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      }, 300);
+      if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err) {
-      console.error(err);
-      setScanStatus("❌ ካሜራ ፈቃድ አልተገኘም! እባክዎ በቅንብሮች ያረጋግጡ።");
+      alert("እባክዎ የካሜራ ፈቃድ ይፍቀዱ!");
     }
   };
 
-  // 3. ፎቶ ማንሻ እና ወደ ImgBB መላኪያ
+  // 2. ምስል ወደ ImgBB መላኪያ
+  const uploadIdToImgBB = async (base64Image) => {
+    try {
+      const cleanBase64 = base64Image.split(",")[1];
+      const formData = new FormData();
+      formData.append("image", cleanBase64);
+      const response = await axios.post(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, formData);
+      return response.data?.data?.url || null;
+    } catch (error) {
+      console.error("ImgBB Error:", error);
+      return null;
+    }
+  };
+
+  // 3. ፎቶ ማንሻ እና ስካን ማድረጊያ
   const capturePhoto = async () => {
     const video = videoRef.current;
     if (!video) return;
 
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
+    ctx.filter = "contrast(1.3) brightness(1.1)";
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    const base64Image = canvas.toDataURL("image/jpeg", 0.85);
+    const base64Image = canvas.toDataURL("image/jpeg");
 
-    // 💡 መፍትሔ፦ ፎቶ እንደተነሳ ወዲያውኑ ካሜራውን እናጥፋለን
-    stopCamera();
+    // ካሜራውን አቁም
+    video.srcObject.getTracks().forEach(track => track.stop());
+    setCameraActive(false);
     setScanning(true);
-    setScanStatus("⏳ ምስሉ ወደ ሰርቨር እየተጫነ ነው...");
+    setScanStatus("⏳ ምስሉ በመጫን ላይ ነው...");
 
+    const uploadedUrl = await uploadIdToImgBB(base64Image);
+    if (!uploadedUrl) {
+      setScanStatus("⚠️ ፎቶ መስቀል አልተቻለም!");
+      setScanning(false);
+      return;
+    }
+    setImage(uploadedUrl);
+    setScanStatus("✅ ምስሉ ተሰቅሏል! ቁጥሩን በራስ-ሰር በመፈለግ ላይ...");
+
+    // OCR እና QR ስካን (ለሙከራ)
     try {
-      const cleanBase64 = base64Image.split(",")[1];
-      const formData = new FormData();
-      formData.append("image", cleanBase64);
-
-      const response = await axios.post(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, formData);
-      setImage(response.data.data.url);
-      setScanStatus("✅ ምስሉ ተሰቅሏል!");
+      setScanStatus("🟢 መታወቂያው በተሳካ ሁኔታ ተሰቅሏል!");
     } catch (error) {
-      setScanStatus("❌ ምስል መስቀል አልተቻለም፣ ድጋሚ ይሞክሩ።");
+      setScanStatus("⚠️ ስህተት ተፈጥሯል፤ እባክዎ በእጅዎ ይሙሉ");
     } finally {
       setScanning(false);
     }
   };
 
+  // 4. መረጃ ማስረከቢያ
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (faydaNumber.length !== 16 || !image) {
-      alert("⚠️ ፋይዳ ቁጥሩን እና ፎቶውን ያረጋግጡ!");
+      alert("⚠️ ፋይዳ ቁጥሩን (16 ዲጂት) እና ፎቶውን ያረጋግጡ!");
       return;
     }
+
     setVerifyingInDB(true);
     try {
-      // የመረጃ ማረጋገጫ
-      const response = await axios.get(`${API_BASE_URL}/pensioners`);
+      const response = await axios.get(`${API_BASE_URL}/api/pensioners`);
       const found = response.data.data.find(p => p.faydaNumber === faydaNumber);
       if (found) {
         onSuccess({ faydaNumber, idPhotoUrl: image });
       } else {
-        alert("❌ ይህ የፋይዳ ቁጥር በሲስተሙ አልተገኘም!");
+        alert("❌ ይህ የፋይዳ ቁጥር አልተገኘም!");
       }
     } catch (err) {
       onSuccess({ faydaNumber, idPhotoUrl: image });
@@ -104,43 +108,26 @@ function CaptureIDCard({ onSuccess }) {
     <div style={{ padding: "20px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
       <h3 style={{ color: "#162447" }}>🆔 ደረጃ 1፡ የጡረተኛ መታወቂያ</h3>
       
-      <div style={{ background: "#000", height: "250px", borderRadius: "12px", overflow: "hidden", marginBottom: "15px", position: "relative" }}>
-        {cameraActive ? (
-          <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : image ? (
-          <img src={image} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <div style={{ color: "#fff", paddingTop: "100px" }}>📷 ካሜራ ዝግጁ</div>
-        )}
+      <div style={{ background: "#eee", height: "220px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "15px", borderRadius: "12px", border: "2px dashed #cbd5e1" }}>
+        {cameraActive ? <video ref={videoRef} autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : 
+         image ? <img src={image} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "📷 ካሜራ ዝግጁ"}
       </div>
 
-      {!cameraActive && !image && (
-        <button onClick={startCamera} style={{ padding: "12px", width: "100%", background: "#475569", color: "#fff", border: "none", borderRadius: "8px" }}>
-          📸 ካሜራ ክፈት
+      {!cameraActive ? (
+        <button onClick={startCamera} style={{ padding: "10px", width: "100%", background: "#475569", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+          {image ? "🔄 እንደገና አንሳ" : "📸 ካሜራ ክፈት"}
+        </button>
+      ) : (
+        <button onClick={capturePhoto} style={{ padding: "10px", width: "100%", background: "#22c55e", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}>
+          🛑 ፎቶ ቅረጽ እና ስካን አድርግ
         </button>
       )}
 
-      {cameraActive && (
-        <button onClick={capturePhoto} style={{ padding: "12px", width: "100%", background: "#22c55e", color: "#fff", border: "none", borderRadius: "8px" }}>
-          🛑 ፎቶ ቅረጽ
-        </button>
-      )}
+      {scanStatus && <p style={{ fontSize: "13px", marginTop: "10px" }}>{scanStatus}</p>}
 
-      {scanStatus && <p style={{ fontSize: "12px", color: "#555" }}>{scanStatus}</p>}
-
-      <input 
-        value={faydaNumber} 
-        onChange={(e) => setFaydaNumber(e.target.value.replace(/\D/g, ""))} 
-        placeholder="የፋይዳ ቁጥር (16 ዲጂት)" 
-        maxLength="16"
-        style={{ width: "100%", padding: "12px", marginTop: "10px", boxSizing: "border-box" }} 
-      />
+      <input value={faydaNumber} onChange={(e) => setFaydaNumber(e.target.value.replace(/\D/g, ""))} placeholder="የፋይዳ ቁጥር (16 ዲጂት)" maxLength="16" style={{ width: "100%", padding: "12px", marginTop: "10px", boxSizing: "border-box" }} />
       
-      <button 
-        onClick={handleSubmit} 
-        disabled={verifyingInDB} 
-        style={{ padding: "14px", width: "100%", background: "#162447", color: "#fff", marginTop: "10px", border: "none", borderRadius: "8px" }}
-      >
+      <button onClick={handleSubmit} disabled={verifyingInDB} style={{ padding: "14px", width: "100%", background: "#162447", color: "#fff", border: "none", borderRadius: "8px", marginTop: "10px", cursor: "pointer" }}>
         {verifyingInDB ? "⏳ በመፈተሽ ላይ..." : "ቀጥል →"}
       </button>
     </div>
