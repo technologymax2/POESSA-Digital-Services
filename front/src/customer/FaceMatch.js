@@ -1,77 +1,95 @@
 import React, { useEffect, useState } from "react";
-import * as faceapi from "face-api.js";
 
-function FaceMatch({ registeredPhoto, selfiePhoto, onSuccess }) {
-  const [statusMessage, setStatusMessage] = useState("Loading...");
+let modelsLoaded = false;
+
+function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
   const [matchPercentage, setMatchPercentage] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [statusMessage, setStatusMessage] = useState("⏳ Starting AI...");
+  const [isMatched, setIsMatched] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    const run = async () => {
+    const runFaceMatch = async () => {
       try {
-        console.log("REGISTERED:", registeredPhoto);
-        console.log("SELFIE:", selfiePhoto);
+        const faceapi = window.faceapi;
 
-        if (!registeredPhoto || !selfiePhoto) {
-          setStatusMessage("Missing images");
+        if (!faceapi) {
+          setStatusMessage("❌ face-api.js not loaded");
           return;
         }
 
-        const MODEL_URL = "/models";
+        const MODEL_URL =
+          "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
 
-        setStatusMessage("Loading AI models...");
+        // =========================
+        // LOAD MODELS ONCE
+        // =========================
+        if (!modelsLoaded) {
+          setStatusMessage("⏳ Loading AI models...");
 
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-        ]);
+          await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+            faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+          ]);
 
-        setStatusMessage("Loading images...");
+          modelsLoaded = true;
+        }
 
         const loadImage = (src) =>
           new Promise((resolve, reject) => {
             const img = new Image();
             img.crossOrigin = "anonymous";
-            img.onload = () => resolve(img);
-            img.onerror = (e) => reject("Image load failed: " + src);
             img.src = src;
+            img.onload = () => resolve(img);
+            img.onerror = () =>
+              reject(new Error("Image load failed: " + src));
           });
 
-        const img1 = await loadImage(registeredPhoto);
-        const img2 = await loadImage(selfiePhoto);
+        setStatusMessage("⏳ Loading images...");
 
-        setStatusMessage("Detecting faces...");
+        const [img1, img2] = await Promise.all([
+          loadImage(idPhoto),
+          loadImage(selfiePhoto),
+        ]);
 
-        const options = new faceapi.TinyFaceDetectorOptions({
-          inputSize: 320,
+        const detectorOptions = new faceapi.TinyFaceDetectorOptions({
+          inputSize: 224,
           scoreThreshold: 0.5,
         });
 
-        const result1 = await faceapi
-          .detectSingleFace(img1, options)
+        setStatusMessage("⏳ Detecting faces...");
+
+        const face1 = await faceapi
+          .detectSingleFace(img1, detectorOptions)
           .withFaceLandmarks()
           .withFaceDescriptor();
 
-        const result2 = await faceapi
-          .detectSingleFace(img2, options)
+        const face2 = await faceapi
+          .detectSingleFace(img2, detectorOptions)
           .withFaceLandmarks()
           .withFaceDescriptor();
 
-        if (!result1 || !result2) {
-          setStatusMessage("Face not detected in one image");
-          return;
+        if (!face1?.descriptor || !face2?.descriptor) {
+          throw new Error("Face not detected properly");
         }
 
+        setStatusMessage("⏳ Comparing faces...");
+
         const distance = faceapi.euclideanDistance(
-          result1.descriptor,
-          result2.descriptor
+          face1.descriptor,
+          face2.descriptor
         );
 
-        console.log("DISTANCE:", distance);
+        console.log("Distance:", distance);
 
+        // =========================
+        // CORRECT SIMILARITY FORMULA
+        // =========================
         let similarity = (1 - distance / 0.6) * 100;
+
         similarity = Math.max(0, Math.min(100, Math.round(similarity)));
 
         if (!mounted) return;
@@ -79,37 +97,75 @@ function FaceMatch({ registeredPhoto, selfiePhoto, onSuccess }) {
         setMatchPercentage(similarity);
 
         if (similarity >= 50) {
-          setStatusMessage(`Match OK (${similarity}%)`);
-          setTimeout(() => onSuccess(similarity), 1000);
+          setIsMatched(true);
+          setStatusMessage(`🎉 Match Success (${similarity}%)`);
         } else {
-          setStatusMessage(`Face Mismatch (${similarity}%)`);
+          setIsMatched(false);
+          setStatusMessage(`❌ Match Failed (${similarity}%)`);
         }
       } catch (err) {
-        console.error("FACE MATCH ERROR:", err);
-        setStatusMessage("❌ Error: " + err);
+        console.error("Face Match Error:", err);
+        setStatusMessage("❌ Error: " + err.message);
+      } finally {
+        if (mounted) setLoading(false);
       }
     };
 
-    run();
+    runFaceMatch();
 
     return () => {
       mounted = false;
     };
-  }, [registeredPhoto, selfiePhoto]);
+  }, [idPhoto, selfiePhoto]);
 
   return (
-    <div style={{ textAlign: "center", padding: 20 }}>
-      <h2>Face Verification</h2>
+    <div style={{ padding: 20, textAlign: "center" }}>
+      <h3>🤖 Face Match AI</h3>
 
       <div style={{ display: "flex", justifyContent: "center", gap: 20 }}>
-        <img src={registeredPhoto} width={150} style={{ borderRadius: 10 }} />
-        <img src={selfiePhoto} width={150} style={{ borderRadius: 10 }} />
+        <img
+          src={idPhoto}
+          alt="ID"
+          width={120}
+          style={{ borderRadius: 10 }}
+        />
+        <img
+          src={selfiePhoto}
+          alt="Selfie"
+          width={120}
+          style={{ borderRadius: 10 }}
+        />
       </div>
 
-      <h3 style={{ marginTop: 20 }}>{statusMessage}</h3>
+      <div
+        style={{
+          marginTop: 15,
+          padding: 10,
+          background: isMatched ? "#dcfce7" : "#fee2e2",
+          borderRadius: 8,
+        }}
+      >
+        {statusMessage}
+      </div>
 
       {matchPercentage !== null && (
         <h2>{matchPercentage}% Match</h2>
+      )}
+
+      {!loading && (
+        <button
+          onClick={() => onSuccess(matchPercentage)}
+          style={{
+            marginTop: 20,
+            padding: "12px 20px",
+            background: isMatched ? "green" : "gray",
+            color: "white",
+            border: "none",
+            borderRadius: 8,
+          }}
+        >
+          Continue →
+        </button>
       )}
     </div>
   );
