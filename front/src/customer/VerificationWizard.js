@@ -16,7 +16,7 @@ function VerificationWizard() {
   const [idPhotoUrl, setIdPhotoUrl] = useState("");
   const [selfieUrl, setSelfieUrl] = useState("");
 
-  const [livenessResult, setLivenessResult] = useState(null);
+  const [livenessResult, setLivenessResult] = useState({});
   const [matchPercent, setMatchPercent] = useState(0);
 
   const [loading, setLoading] = useState(false);
@@ -52,22 +52,25 @@ function VerificationWizard() {
   };
 
   // =========================
-  // FINAL SAVE
+  // FINAL SAVE (FIXED)
   // =========================
   const handleFinal = async (match) => {
     setLoading(true);
+    setError("");
 
     try {
       const payload = {
         faydaNumber,
-        idPhotoUrl,
+
+        dbPhotoUrl: idPhotoUrl,
         selfiePhotoUrl: selfieUrl,
 
-        faceMatchPercent: match,
+        matchPercentage: match,
 
-        liveness: livenessResult,
-
-        verified: match >= 50 && livenessResult?.passed
+        // FIXED: correct structure from LivenessTest
+        smilePassed: livenessResult.smilePassed || false,
+        nodPassed: livenessResult.nodPassed || false,
+        turnPassed: livenessResult.turnPassed || false
       };
 
       const res = await axios.post(
@@ -81,6 +84,7 @@ function VerificationWizard() {
         setError("❌ Save failed");
       }
     } catch (err) {
+      console.error(err);
       setError("❌ System error");
     } finally {
       setLoading(false);
