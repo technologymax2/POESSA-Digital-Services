@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import * as faceapi from "face-api.js";
+
 
 function FaceMatch({ registeredPhoto, selfiePhoto, onSuccess }) {
   const [loading, setLoading] = useState(true);
