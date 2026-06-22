@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
-const IMGBB_API_KEY = "YOUR_KEY_HERE";
+const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408"; // ያንተን ቁልፍ እዚህ ተክቻለሁ
 
 function CaptureIDCard({ onSuccess }) {
   const videoRef = useRef(null);
@@ -36,9 +36,10 @@ function CaptureIDCard({ onSuccess }) {
       setScanStatus("");
       setIsStreamReady(false);
 
+      // ✅ FIX: ጥቁር ስክሪን እንዳይመጣ የፊት ካሜራን (user) አስቀድሞ ይሞክራል፣ ካልሆነ ያለውን ይከፍታል
       const constraints = {
         video: {
-          facingMode: { ideal: "environment" },
+          facingMode: "user", // 👈 ለሴልፊ እና ለፈጣን መታወቂያ ቀረጻ አስተማማኝው መንገድ
           width: { ideal: 640 },
           height: { ideal: 480 }
         },
@@ -50,53 +51,48 @@ function CaptureIDCard({ onSuccess }) {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        setTimeout(async () => {
-          try {
-            if (videoRef.current) {
-              await videoRef.current.play();
-              setIsStreamReady(true);
-            }
-          } catch (e) {
-            console.error("Video play error:", e);
-          }
-        }, 300);
+        
+        // በሞባይል ላይ በሃይል እንዲጫወት ማድረግ
+        videoRef.current.play().then(() => {
+          setIsStreamReady(true);
+        }).catch(err => {
+          console.error("Autoplay failed, trying manual", err);
+          setIsStreamReady(true);
+        });
       }
 
       setCameraActive(true);
     } catch (err) {
       console.error("Camera Access Error Details:", err);
       
-      // 🔴 የፈቃድ መከልከል ችግርን በግልጽ ለይቶ ለማሳወቅ ማስተካከያ
-      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-        alert(
-          "🔒 የካሜራ ፈቃድ ተከልክሏል!\n\n" +
-          "ችግሩን ለመፍታት፦\n" +
-          "1. ከባርያው በላይ (አድራሻ መጻፊያው አጠገብ) ያለውን የቁልፍ 🔒 ወይም የቅንብር ምልክት ይጫኑ።\n" +
-          "2. 'Site Settings' ወይም 'Permissions' ውስጥ በመግባት ካሜራውን 'Allow' (ፍቀድ) ያድርጉ።\n" +
-          "3. ገጹን Refresh (ድጋሚ መጫን) አድርገው ይሞክሩ።"
-        );
-        setScanStatus("❌ የካሜራ ፈቃድ አልተሰጠም");
-      } else {
-        // ሌሎች የሃርድዌር ስህተቶች ካሉ በቀላሉ ለመክፈት መሞከር
-        try {
-          const basicStream = await navigator.mediaDevices.getUserMedia({ video: true });
-          streamRef.current = basicStream;
-          if (videoRef.current) {
-            videoRef.current.srcObject = basicStream;
-            setTimeout(() => { videoRef.current?.play(); setIsStreamReady(true); }, 300);
-          }
-          setCameraActive(true);
-        } catch (fallbackErr) {
-          alert("❌ ካሜራውን ማግኘት አልተቻለም። እባክዎ ስልክዎን ያረጋግጡ።");
+      // የፊት ካሜራ ካልሰራ ማንኛውንም ያገኘውን ካሜራ እንዲከፍት ማድረግ (Fallback)
+      try {
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({ 
+          video: true, 
+          audio: false 
+        });
+        streamRef.current = fallbackStream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = fallbackStream;
+          videoRef.current.play();
+          setIsStreamReady(true);
         }
+        setCameraActive(true);
+      } catch (fallbackErr) {
+        alert("❌ ካሜራ መክፈት አልተቻለም። እባክዎ በስልክዎ የካሜራ ፈቃድ መፍቀድዎን ያረጋግጡ።");
+        setScanStatus("❌ የካሜራ ፈቃድ አልተሰጠም");
       }
     }
   };
 
   const uploadIdToImgBB = async (base64Image) => {
     try {
-      const cleanBase64 = base64Image.split(",")[1];
-      const formData = new FormData();
+      let cleanBase64 = base64Image;
+      if (base64Image.includes("base64,")) {
+        cleanBase64 = base64Image.split("base64,")[1];
+      }
+
+      const formData = new URLSearchParams();
       formData.append("image", cleanBase64);
 
       const response = await axios.post(
@@ -114,17 +110,18 @@ function CaptureIDCard({ onSuccess }) {
   const capturePhoto = async () => {
     const video = videoRef.current;
 
-    if (!video || !isStreamReady || video.videoWidth === 0) {
-      alert("⏳ ካሜራው ዝግጁ አይደለም። እባክዎ ስክሪኑ እስኪበራ ይጠብቁ።");
+    if (!video || !isStreamReady) {
+      alert("⏳ ካሜራው ምስል እያዘጋጀ ነው፣ እባክዎ ስክሪኑ እስኪበራ አንድ ሰከንድ ይጠብቁ...");
       return;
     }
 
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // ቪዲዮው ገና ሳይጭን ስፋቱ 0 ከሆነ ዲፎልት 640x480 ይሰጠዋል
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
 
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const base64Image = canvas.toDataURL("image/jpeg", 0.85);
 
@@ -186,7 +183,7 @@ function CaptureIDCard({ onSuccess }) {
             autoPlay
             playsInline
             muted
-            onPlaying={() => setIsStreamReady(true)}
+            controls={false}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : image ? (
@@ -205,12 +202,12 @@ function CaptureIDCard({ onSuccess }) {
       {/* BUTTONS */}
       <button
         onClick={cameraActive ? capturePhoto : startCamera}
-        disabled={uploading || (cameraActive && !isStreamReady)}
+        disabled={uploading}
         style={{
           width: "100%",
           padding: "14px",
           marginTop: 12,
-          background: cameraActive ? (isStreamReady ? "#1e293b" : "#475569") : "#162447",
+          background: cameraActive ? "#1e293b" : "#162447",
           color: "#fff",
           border: "none",
           borderRadius: 10,
@@ -219,7 +216,7 @@ function CaptureIDCard({ onSuccess }) {
           cursor: "pointer"
         }}
       >
-        {cameraActive ? (isStreamReady ? "📸 Capture" : "⏳ Loading Camera...") : image ? "🔄 Retake Photo" : "📷 Open Camera"}
+        {cameraActive ? "📸 Capture" : image ? "🔄 Retake Photo" : "📷 Open Camera"}
       </button>
 
       {/* INPUT FIELD */}
@@ -275,10 +272,6 @@ function CaptureIDCard({ onSuccess }) {
           {scanStatus}
         </p>
       )}
-      
-      <div style={{ textAlign: 'left', marginTop: 15, fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
-        Step 1 / 5
-      </div>
     </div>
   );
 }
