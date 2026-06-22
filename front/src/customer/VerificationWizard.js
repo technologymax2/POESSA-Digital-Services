@@ -10,15 +10,22 @@ import VerificationSuccess from "./VerificationSuccess";
 
 function VerificationWizard() {
   const [step, setStep] = useState(1);
+
   const [faydaNumber, setFaydaNumber] = useState("");
+
   const [dbPensionerData, setDbPensionerData] = useState(null);
+
   const [selfiePhoto, setSelfiePhoto] = useState("");
+
+  const [matchPercentage, setMatchPercentage] = useState(0);
+
   const [loading, setLoading] = useState(false);
+
   const [errorMessage, setErrorMessage] = useState("");
 
-  // ===============================
-  // STEP 1 - Verify Fayda Number
-  // ===============================
+  // ===========================
+  // STEP 1 : Verify Fayda Number
+  // ===========================
   const verifyIdWithDatabase = async (scannedData) => {
     setLoading(true);
     setErrorMessage("");
@@ -30,7 +37,9 @@ function VerificationWizard() {
 
       if (response.data?.success) {
         setFaydaNumber(scannedData.faydaNumber);
+
         setDbPensionerData(response.data.data);
+
         setStep(2);
       } else {
         setErrorMessage("❌ ይህ የፋይዳ ቁጥር አልተገኘም!");
@@ -46,9 +55,9 @@ function VerificationWizard() {
     }
   };
 
-  // ===============================
+  // ===========================
   // FINAL SAVE
-  // ===============================
+  // ===========================
   const handleFinalSuccess = async (livenessResults) => {
     setLoading(true);
 
@@ -61,12 +70,17 @@ function VerificationWizard() {
       const payload = {
         faydaNumber: exactFayda,
 
-        dbPhotoUrl:
+        // ID Photo
+        idPhotoUrl:
           dbPensionerData?.photoUrl ||
           dbPensionerData?.photo ||
           "",
 
+        // Selfie Photo
         selfiePhotoUrl: selfiePhoto,
+
+        // Face Match %
+        matchPercentage: matchPercentage,
 
         faceMatched: true,
 
@@ -74,14 +88,10 @@ function VerificationWizard() {
 
         nodPassed: livenessResults.nodPassed || false,
 
-        turnPassed: livenessResults.turnPassed || false,
-
-        verificationStatus: "Pending",
-
-        verifiedAt: new Date().toISOString()
+        turnPassed: livenessResults.turnPassed || false
       };
 
-      console.log("Saving verification...", payload);
+      console.log("Verification Payload:", payload);
 
       const response = await axios.post(
         "https://poessa-digital-services-1.onrender.com/api/liveness/verify-success",
@@ -91,10 +101,7 @@ function VerificationWizard() {
       if (response.data?.success) {
         setStep(5);
       } else {
-        alert(
-          response.data?.message ||
-            "Verification save failed"
-        );
+        alert(response.data?.message);
       }
     } catch (err) {
       console.error(
@@ -149,11 +156,14 @@ function VerificationWizard() {
       {step === 3 && dbPensionerData && (
         <FaceMatch
           idPhoto={
-            dbPensionerData.photoUrl ||
-            dbPensionerData.photo
+            dbPensionerData?.photoUrl ||
+            dbPensionerData?.photo
           }
           selfiePhoto={selfiePhoto}
-          onSuccess={() => setStep(4)}
+          onSuccess={(similarity) => {
+            setMatchPercentage(similarity);
+            setStep(4);
+          }}
         />
       )}
 
@@ -161,11 +171,6 @@ function VerificationWizard() {
       {step === 4 && (
         <LivenessTest
           faydaNumber={faydaNumber}
-          idPhoto={
-            dbPensionerData?.photoUrl ||
-            dbPensionerData?.photo
-          }
-          selfiePhoto={selfiePhoto}
           onSuccess={handleFinalSuccess}
         />
       )}
