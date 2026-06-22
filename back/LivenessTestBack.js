@@ -1,17 +1,23 @@
 const express = require("express");
 const router = express.Router();
-const axios = require("axios"); 
-const UserPensioner = require("./models/UserPensioner"); 
-const LivenessVerification = require("./models/livenessSchema"); 
+const axios = require("axios");
+
+const UserPensioner = require("./models/UserPensioner");
+const LivenessVerification = require("./models/LivenessVerification");
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
-// 📸 ፎቶን ወደ ImgBB ሰቅሎ ሊንክ ማምጫ ሄልፐር
+/* ==========================================
+   ImgBB Upload Helper
+========================================== */
 async function uploadToImgBB(base64Data) {
   try {
-    if (!base64Data || typeof base64Data !== "string") return "";
-    
+    if (!base64Data || typeof base64Data !== "string") {
+      return "";
+    }
+
     let cleanBase64 = base64Data;
+
     if (base64Data.includes("base64,")) {
       cleanBase64 = base64Data.split("base64,")[1];
     }
@@ -24,137 +30,236 @@ async function uploadToImgBB(base64Data) {
       formData
     );
 
-    if (response.data && response.data.data && response.data.data.url) {
-      return response.data.data.url; 
-    }
-    return "";
+    return response.data?.data?.url || "";
   } catch (error) {
-    console.error("❌ ImgBB Upload Error:", error.message);
-    return ""; 
+    console.error("ImgBB Upload Error:", error.message);
+    return "";
   }
 }
 
-/* ==========================================================================
-   📬 1. POST: /verify-success (የ AI ፈተና ሲያልፍ መደበኛውን ምስል ማስቀመጫ)
-========================================================================== */
+/* ==========================================
+   POST /verify-success
+========================================== */
 router.post("/verify-success", async (req, res) => {
   try {
     const {
       faydaNumber,
+      dbPhotoUrl,
+      selfiePhotoUrl,
+      faceMatched,
+      matchPercentage,
       smilePassed,
       nodPassed,
-      turnPassed,
-      selfiePhotoUrl,  // 🌟 ከፍሮንትኤንድ የመጣው መደበኛ ንጹህ ሴልፊ (ሊንክ ወይም Base64)
-      idPhotoUrl,      // 🌟 የመታወቂያ ፎቶ ሊንክ
-      matchPercentage  // 📊 የፊት መመሳሰል መጠን ቁጥር
+      turnPassed
     } = req.body;
 
     if (!faydaNumber) {
-      return res.status(400).json({ success: false, message: "⚠️ የጡረተኛው የፋይዳ ቁጥር አልተገኘም!" });
+      return res.status(400).json({
+        success: false,
+        message: "Fayda number is required"
+      });
     }
 
-    const pensioner = await UserPensioner.findOne({ faydaNumber: faydaNumber });
-    if (!pensioner) {
-      return res.status(404).json({ success: false, message: "❌ ይህ የፋይዳ ቁጥር አልተገኘም!" });
-    }
-
-    // 🌟 መደበኛው ሴልፊ ፎቶ አሁንም Base64 ከሆነ ወደ ImgBB ይሰቀላል (ሊንክ ከሆነ ግን በቀጥታ ይይዘዋል)
-    let finalSelfieUrl = selfiePhotoUrl;
-    if (selfiePhotoUrl && selfiePhotoUrl.startsWith("data:image")) {
-      console.log("⏳ መደበኛውን ሴልፊ ፎቶ ወደ ImgBB በመስቀል ላይ...");
-      finalSelfieUrl = await uploadToImgBB(selfiePhotoUrl);
-    }
-
-    let finalIdPhotoUrl = idPhotoUrl || pensioner.photoUrl || pensioner.photo || "";
-    if (finalIdPhotoUrl && finalIdPhotoUrl.startsWith("data:image")) {
-      finalIdPhotoUrl = await uploadToImgBB(finalIdPhotoUrl);
-    }
-
-    // 5. 📊 መረጃውን በ livenessSchema (ሪፖርት ገፅ የሚነበበው ሰንጠረዥ) ላይ መመዝገብ
-    await LivenessVerification.findOneAndUpdate(
-      { faydaNumber: faydaNumber },
-      {
-        name: pensioner.nameAmh || pensioner.nameEng || pensioner.name || "ስም አልተጠቀሰም",
-        phone: pensioner.phone || "የሌለ",
-        idPhotoUrl: finalIdPhotoUrl,     // 🌟 ከ Schemaው ስም ጋር ተገጥሟል
-        selfiePhotoUrl: finalSelfieUrl, // 🌟 መደበኛው ንጹህ ሴልፊ ሊንክ እዚህ ይቀመጣል!
-        faceMatched: true,
-        matchPercentage: Number(matchPercentage) || 0,
-        smilePassed: !!smilePassed,
-        nodPassed: !!nodPassed,
-        turnPassed: !!turnPassed,
-        verificationStatus: "Pending", 
-        lastVerificationDate: new Date()
-      },
-      { upsert: true, new: true }
-    );
-
-    if (!pensioner.editHistory) pensioner.editHistory = [];
-    pensioner.editHistory.push({
-      editedBy: "AI Biometric System",
-      editedAt: new Date(),
-      details: `🤖 ባዮሜትሪክስ ተረጋግጧል። መደበኛ ሴልፊ እና ID ወደ ሪፖርት ተልኳል።`
+    const pensioner = await UserPensioner.findOne({
+      faydaNumber
     });
-    await pensioner.save();
+
+    if (!pensioner) {
+      return res.status(404).json({
+        success: false,
+        message: "Pensioner not found"
+      });
+    }
+
+    /* DB Photo */
+    let finalDbPhotoUrl =
+      dbPhotoUrl ||
+      pensioner.photoUrl ||
+      pensioner.photo ||
+      "";
+
+    if (
+      finalDbPhotoUrl &&
+      finalDbPhotoUrl.startsWith("data:image")
+    ) {
+      finalDbPhotoUrl = await uploadToImgBB(finalDbPhotoUrl);
+    }
+
+    /* Selfie */
+    let finalSelfieUrl = selfiePhotoUrl || "";
+
+    if (
+      finalSelfieUrl &&
+      finalSelfieUrl.startsWith("data:image")
+    ) {
+      finalSelfieUrl = await uploadToImgBB(finalSelfieUrl);
+    }
+
+    /* Save verification */
+    const verification = new LivenessVerification({
+      faydaNumber,
+
+      name:
+        pensioner.nameAmh ||
+        pensioner.nameEng ||
+        pensioner.name ||
+        "ስም አልተጠቀሰም",
+
+      dbPhotoUrl: finalDbPhotoUrl,
+      selfiePhotoUrl: finalSelfieUrl,
+
+      faceMatched: !!faceMatched,
+
+      matchPercentage:
+        Number(matchPercentage) || 0,
+
+      smilePassed: !!smilePassed,
+      nodPassed: !!nodPassed,
+      turnPassed: !!turnPassed,
+
+      verificationStatus: "Pending",
+
+      verifiedAt: new Date()
+    });
+
+    await verification.save();
 
     return res.status(200).json({
       success: true,
-      message: `🎉 የ AI ፈተናው ተጠናቋል! መደበኛው ሴልፊ እና መታወቂያ በትክክል ተቀምጠዋል።`,
-      data: pensioner
+      message: "Verification saved successfully",
+      data: verification
     });
 
   } catch (error) {
-    console.error("Liveness Verification Endpoint Error:", error);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("Verify Success Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 });
 
-/* ==========================================================================
-   🔍 2. GET: /pensioners (ሁሉንም የባዮሜትሪክስ ዳታዎች ለ Report.js ማምጫ)
-========================================================================== */
+
+/* ==========================================
+   GET /pensioners
+========================================== */
 router.get("/pensioners", async (req, res) => {
   try {
-    const data = await LivenessVerification.find().sort({ createdAt: -1 });
-    return res.status(200).json({ success: true, data: data });
+
+    const data = await LivenessVerification
+      .find()
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data
+    });
+
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+
   }
 });
 
-/* ==========================================================================
-   🟢 🔴 3. PUT: /pensioners/verify-status/:faydaNumber (ማጽደቂያ/ውድቅ ማድረጊያ)
-========================================================================== */
-router.put("/pensioners/verify-status/:faydaNumber", async (req, res) => {
+
+/* ==========================================
+   GET /pensioners/:faydaNumber
+========================================== */
+router.get("/pensioners/:faydaNumber", async (req, res) => {
   try {
-    const { faydaNumber } = req.params;
-    const { verificationStatus, comment } = req.body;
 
-    if (!verificationStatus) {
-      return res.status(400).json({ success: false, message: "⚠️ ሁኔታውን መግለጽ ያስፈልጋል!" });
+    const record =
+      await LivenessVerification.findOne({
+        faydaNumber: req.params.faydaNumber
+      }).sort({ createdAt: -1 });
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        message: "Record not found"
+      });
     }
 
-    const updatedLiveness = await LivenessVerification.findOneAndUpdate(
-      { faydaNumber: faydaNumber },
-      { verificationStatus, comment, lastVerificationDate: new Date() },
-      { new: true }
-    );
+    return res.status(200).json({
+      success: true,
+      data: record
+    });
 
-    if (!updatedLiveness) {
-      return res.status(404).json({ success: false, message: "❌ መረጃው አልተገኘም!" });
-    }
-
-    await UserPensioner.findOneAndUpdate(
-      { faydaNumber: faydaNumber },
-      { 
-        status: verificationStatus === "Verified" ? "Active" : "Suspended",
-        statusChangedDate: new Date()
-      }
-    );
-
-    return res.status(200).json({ success: true, message: "ሁኔታው ተዘምኗል!", data: updatedLiveness });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+
   }
 });
+
+
+/* ==========================================
+   PUT /pensioners/verify-status/:id
+========================================== */
+router.put(
+  "/pensioners/verify-status/:id",
+  async (req, res) => {
+    try {
+
+      const {
+        verificationStatus,
+        comment
+      } = req.body;
+
+      const updated =
+        await LivenessVerification.findByIdAndUpdate(
+          req.params.id,
+          {
+            verificationStatus,
+            comment
+          },
+          {
+            new: true
+          }
+        );
+
+      if (!updated) {
+        return res.status(404).json({
+          success: false,
+          message: "Record not found"
+        });
+      }
+
+      await UserPensioner.findOneAndUpdate(
+        {
+          faydaNumber: updated.faydaNumber
+        },
+        {
+          status:
+            verificationStatus === "Verified"
+              ? "Active"
+              : "Suspended"
+        }
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Status updated successfully",
+        data: updated
+      });
+
+    } catch (error) {
+
+      return res.status(500).json({
+        success: false,
+        message: error.message
+      });
+
+    }
+  }
+);
 
 module.exports = router;
