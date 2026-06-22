@@ -8,13 +8,11 @@ const LivenessVerification = require("./models/LivenessVerification");
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
 /* ==========================================
-   ImgBB Upload Helper
+   IMAGE UPLOAD HELPER (IMGBB)
 ========================================== */
 async function uploadToImgBB(base64Data) {
   try {
-    if (!base64Data || typeof base64Data !== "string") {
-      return "";
-    }
+    if (!base64Data || typeof base64Data !== "string") return "";
 
     let cleanBase64 = base64Data;
 
@@ -31,14 +29,14 @@ async function uploadToImgBB(base64Data) {
     );
 
     return response.data?.data?.url || "";
-  } catch (error) {
-    console.error("ImgBB Upload Error:", error.message);
+  } catch (err) {
+    console.error("ImgBB Upload Error:", err.message);
     return "";
   }
 }
 
 /* ==========================================
-   POST /verify-success (MAIN FIXED API)
+   MAIN VERIFY (ID + SELFIE + LIVENESS FINAL SAVE)
 ========================================== */
 router.post("/verify-success", async (req, res) => {
   try {
@@ -46,7 +44,6 @@ router.post("/verify-success", async (req, res) => {
       faydaNumber,
       dbPhotoUrl,
       selfiePhotoUrl,
-      faceMatched,
       matchPercentage,
       smilePassed,
       nodPassed,
@@ -60,7 +57,12 @@ router.post("/verify-success", async (req, res) => {
       });
     }
 
-    const pensioner = await UserPensioner.findOne({ faydaNumber });
+    /* =========================
+       FIND PENSIONER
+    ========================= */
+    const pensioner = await UserPensioner.findOne({
+      faydaNumber
+    });
 
     if (!pensioner) {
       return res.status(404).json({
@@ -70,10 +72,10 @@ router.post("/verify-success", async (req, res) => {
     }
 
     /* =========================
-       DB PHOTO (safe fallback)
+       DB PHOTO CLEAN
     ========================= */
     let finalDbPhotoUrl =
-      pensioner.photoUrl || "";
+      dbPhotoUrl || pensioner.photoUrl || "";
 
     if (finalDbPhotoUrl.startsWith("data:image")) {
       finalDbPhotoUrl = await uploadToImgBB(finalDbPhotoUrl);
@@ -89,15 +91,30 @@ router.post("/verify-success", async (req, res) => {
     }
 
     /* =========================
-       SAFE FACE MATCH LOGIC (FIXED)
+       FACE MATCH LOGIC (SERVER SIDE CONTROL)
     ========================= */
-    const finalMatchPercentage = Number(matchPercentage) || 0;
-    const isFaceMatched = finalMatchPercentage >= 50;
+    const finalMatch = Number(matchPercentage) || 0;
+    const faceMatched = finalMatch >= 50;
 
     /* =========================
-       SAVE VERIFICATION
+       LIVENESS VALIDATION
     ========================= */
-    const verification = new LivenessVerification({
+    const livenessPassed =
+      !!smilePassed && !!nodPassed && !!turnPassed;
+
+    /* =========================
+       FINAL STATUS
+    ========================= */
+    let verificationStatus = "Failed";
+
+    if (faceMatched && livenessPassed) {
+      verificationStatus = "Verified";
+    }
+
+    /* =========================
+       SAVE TO DB
+    ========================= */
+    const record = new LivenessVerification({
       faydaNumber,
 
       name:
@@ -109,26 +126,26 @@ router.post("/verify-success", async (req, res) => {
       dbPhotoUrl: finalDbPhotoUrl,
       selfiePhotoUrl: finalSelfieUrl,
 
-      faceMatched: isFaceMatched,
-      matchPercentage: finalMatchPercentage,
+      matchPercentage: finalMatch,
+      faceMatched,
 
       smilePassed: !!smilePassed,
       nodPassed: !!nodPassed,
       turnPassed: !!turnPassed,
 
-      verificationStatus: isFaceMatched ? "Verified" : "Failed"
+      verificationStatus
     });
 
-    await verification.save();
+    await record.save();
 
     return res.status(200).json({
       success: true,
-      message: "Verification saved successfully",
-      data: verification
+      message: "Liveness verification completed",
+      data: record
     });
 
   } catch (error) {
-    console.error("Verify Success Error:", error);
+    console.error("Liveness Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -136,3 +153,93 @@ router.post("/verify-success", async (req, res) => {
     });
   }
 });
+
+/* ==========================================
+   GET ALL VERIFICATIONS (EMPLOYEE DASHBOARD)
+========================================== */
+router.get("/all", async (req, res) => {
+  try {
+    const data = await LivenessVerification
+      .find()
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+/* ==========================================
+   GET BY FAYDA NUMBER
+========================================== */
+router.get("/:faydaNumber", async (req, res) => {
+  try {
+    const record = await LivenessVerification
+      .findOne({ faydaNumber: req.params.faydaNumber })
+      .sort({ createdAt: -1 });
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        message: "Record not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: record
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+/* ==========================================
+   EMPLOYEE APPROVAL / REJECTION
+========================================== */
+router.put("/status/:id", async (req, res) => {
+  try {
+    const { verificationStatus, comment } = req.body;
+
+    const updated = await LivenessVerification.findByIdAndUpdate(
+      req.params.id,
+      {
+        verificationStatus,
+        comment
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: "Record not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Status updated",
+      data: updated
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+module.exports = router;
