@@ -1,40 +1,48 @@
 import React, { useState, useRef } from "react";
-import axios from "axios"; // 💡 ፎቶውን ወደ ImgBB ለመስቀል ተጨምሯል
+import axios from "axios";
 
-// 🔑 ያንተ የ ImgBB API ቁልፍ
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
 function CaptureSelfie({ onSuccess }) {
-  const [image, setImage] = useState(null); // 🔗 እዚህ ላይ የመጨረሻው የ ImgBB URL ይቀመጣል
+  const [image, setImage] = useState("");
   const [cameraActive, setCameraActive] = useState(false);
-  const [uploading, setUploading] = useState(false); // ⏳ የጭነት ሁኔታን ለማሳየት
+  const [uploading, setUploading] = useState(false);
+
   const videoRef = useRef(null);
 
+  // ======================
+  // Open Selfie Camera
+  // ======================
   const startSelfieCamera = async () => {
-    setImage(null);
-    setCameraActive(true);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "user" } // የፊት ለፊት (Selfie) ካሜራን ይከፍታል
+      setImage("");
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "user"
+        }
       });
-      if (videoRef.current) videoRef.current.srcObject = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+
+      setCameraActive(true);
     } catch (err) {
-      console.error("💡 ሴልፊ ካሜራ መክፈት አልተቻለም፦", err);
-      alert("እባክዎ የካሜራ ፈቃድ (Permission) ይፍቀዱ!");
+      console.error(err);
+      alert("❌ ካሜራ መክፈት አልተቻለም");
     }
   };
 
-  /* ==========================================================================
-     📸 ፎቶን ወደ ImgBB ሰቅሎ እውነተኛ ሊንክ (URL) ማምጫ ተግባር
-  ========================================================================== */
+  // ======================
+  // Upload Image to ImgBB
+  // ======================
   const uploadSelfieToImgBB = async (base64Image) => {
     try {
-      let cleanBase64 = base64Image;
-      if (base64Image.includes("base64,")) {
-        cleanBase64 = base64Image.split("base64,")[1];
-      }
+      const cleanBase64 = base64Image.split(",")[1];
 
-      const formData = new URLSearchParams();
+      const formData = new FormData();
+
       formData.append("image", cleanBase64);
 
       const response = await axios.post(
@@ -42,86 +50,189 @@ function CaptureSelfie({ onSuccess }) {
         formData
       );
 
-      if (response.data && response.data.data && response.data.data.url) {
-        return response.data.data.url; // 🔗 የተፈጠረው የፎቶ ሊንክ
-      }
-      return null;
-    } catch (error) {
-      console.error("❌ ImgBB Selfie Upload Error:", error);
+      return response.data?.data?.url || null;
+    } catch (err) {
+      console.error("ImgBB Error:", err);
       return null;
     }
   };
 
+  // ======================
+  // Capture Selfie
+  // ======================
   const captureSelfie = async () => {
     const video = videoRef.current;
+
     if (!video) return;
 
     const canvas = document.createElement("canvas");
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    const base64Image = canvas.toDataURL("image/jpeg");
 
-    // ካሜራውን መዝጋት
-    const stream = video.srcObject;
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+    const ctx = canvas.getContext("2d");
+
+    ctx.drawImage(video, 0, 0);
+
+    const base64Image = canvas.toDataURL(
+      "image/jpeg",
+      0.8
+    );
+
+    // stop camera
+    if (video.srcObject) {
+      video.srcObject
+        .getTracks()
+        .forEach((track) => track.stop());
     }
+
     setCameraActive(false);
-    
-    // ⏳ ፎቶውን ወደ ImgBB መጫን መጀመር
+
+    // upload
     setUploading(true);
-    const uploadedUrl = await uploadSelfieToImgBB(base64Image);
+
+    const uploadedUrl =
+      await uploadSelfieToImgBB(base64Image);
+
     setUploading(false);
 
     if (uploadedUrl) {
-      setImage(uploadedUrl); // 🌟 አሁን ስቴቱ ላይ የሚቀመጠው ንጹህ የ ImgBB ሊንክ ነው!
+      setImage(uploadedUrl);
     } else {
-      alert("⚠️ ፎቶውን ወደ ደመና (ImgBB) መጫን አልተቻለም። እባክዎ እንደገና ይሞክሩ።");
+      alert("❌ ImgBB upload failed");
     }
   };
 
+  // ======================
+  // Next Step
+  // ======================
   const handleNext = () => {
     if (!image) {
-      alert("⚠️ እባክዎ መጀመሪያ የጡረተኛውን የራስ ፎቶ (Selfie) ያንሱ!");
+      alert("⚠️ እባክዎ መጀመሪያ selfie ያንሱ");
       return;
     }
-    // 💡 ወደሚቀጥለው ገጽ የሚተላለፈው 'image' አሁን ንጹህ የ ImgBB URL ነው!
+
     onSuccess(image);
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
-      <h3 style={{ color: "#162447" }}>👤 ደረጃ 2፡ የጡረተኛው የራስ ፎቶ (Selfie)</h3>
-      <p style={{ color: "#64748b", fontSize: "14px" }}>እባክዎ የጡረተኛውን ቀጥተኛ የፊት ገጽታ ፎቶ ያንሱ</p>
+    <div
+      style={{
+        maxWidth: "450px",
+        margin: "0 auto",
+        padding: "20px",
+        textAlign: "center"
+      }}
+    >
+      <h3>👤 ደረጃ 2 - Selfie</h3>
 
-      {/* 📸 ክብ የፎቶ ማሳያ ክፈፍ */}
-      <div style={{ background: "#f1f5f9", borderRadius: "50%", width: "200px", height: "200px", margin: "25px auto", overflow: "hidden", position: "relative", border: "4px solid #162447", boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
-        {cameraActive && <video ref={videoRef} autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
-        {image && !cameraActive && <img src={image} alt="Selfie Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
-        {!cameraActive && !image && !uploading && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#94a3b8", fontSize: "40px" }}>👤</div>}
-        {uploading && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#162447", fontSize: "14px", fontWeight: "bold", background: "#e2e8f0" }}>⏳ ImgBB ላይ...</div>}
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        {!cameraActive ? (
-          <button type="button" onClick={startSelfieCamera} disabled={uploading} style={{ background: "#475569", color: "#fff", padding: "12px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
-            {image ? "🔄 እንደገና በትክክል አንሳ" : "🤳 የራስ ፎቶ ካሜራ ክፈት"}
-          </button>
-        ) : (
-          <button type="button" onClick={captureSelfie} style={{ background: "#22c55e", color: "#fff", padding: "12px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
-            📸 ፎቶ አንሳ
-          </button>
+      <div
+        style={{
+          width: "200px",
+          height: "200px",
+          margin: "20px auto",
+          borderRadius: "50%",
+          overflow: "hidden",
+          border: "4px solid #162447",
+          background: "#f1f5f9"
+        }}
+      >
+        {cameraActive && (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover"
+            }}
+          />
         )}
 
-        {image && !uploading && (
-          <button type="button" onClick={handleNext} style={{ background: "#162447", color: "#fff", padding: "14px", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", marginTop: "15px" }}>
-            ወደ ፊት ማነፃፀሪያ ደረጃ እለፍ (Face Match) →
-          </button>
+        {!cameraActive && image && (
+          <img
+            src={image}
+            alt="Selfie"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover"
+            }}
+          />
+        )}
+
+        {!cameraActive && !image && !uploading && (
+          <div
+            style={{
+              marginTop: "80px",
+              fontSize: "40px"
+            }}
+          >
+            👤
+          </div>
+        )}
+
+        {uploading && (
+          <div
+            style={{
+              marginTop: "85px"
+            }}
+          >
+            ⏳ Uploading...
+          </div>
         )}
       </div>
+
+      {!cameraActive ? (
+        <button
+          onClick={startSelfieCamera}
+          disabled={uploading}
+          style={{
+            width: "100%",
+            padding: "14px",
+            background: "#475569",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px"
+          }}
+        >
+          {image
+            ? "🔄 እንደገና አንሳ"
+            : "🤳 Selfie Camera"}
+        </button>
+      ) : (
+        <button
+          onClick={captureSelfie}
+          style={{
+            width: "100%",
+            padding: "14px",
+            background: "#22c55e",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px"
+          }}
+        >
+          📸 Capture
+        </button>
+      )}
+
+      {image && !uploading && (
+        <button
+          onClick={handleNext}
+          style={{
+            width: "100%",
+            marginTop: "15px",
+            padding: "15px",
+            background: "#162447",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px"
+          }}
+        >
+          Face Match →
+        </button>
+      )}
     </div>
   );
 }
