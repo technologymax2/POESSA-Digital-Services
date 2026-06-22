@@ -10,7 +10,7 @@ function CaptureIDCard({ onSuccess }) {
   const [faydaNumber, setFaydaNumber] = useState("");
   const [image, setImage] = useState("");
   const [cameraActive, setCameraActive] = useState(false);
-  const [isStreamReady, setIsStreamReady] = useState(false); // ✅ FIX: ካሜራው ዝግጁ መሆኑን ማረጋገጫ
+  const [isStreamReady, setIsStreamReady] = useState(false); // ካሜራው በትክክል እየሰራ መሆኑን ማሳያ
   const [scanStatus, setScanStatus] = useState("");
   const [uploading, setUploading] = useState(false);
 
@@ -27,7 +27,7 @@ function CaptureIDCard({ onSuccess }) {
       videoRef.current.srcObject = null;
     }
     setCameraActive(false);
-    setIsStreamReady(false); // ✅ Reset stream status
+    setIsStreamReady(false);
   };
 
   const startCamera = async () => {
@@ -36,24 +36,50 @@ function CaptureIDCard({ onSuccess }) {
       setScanStatus("");
       setIsStreamReady(false);
 
-      const stream = await navigator.mediaDevices.getUserMedia({
+      // የቪዲዮ ጥራትን ቀለል አድርጎ በፍጥነት ስክሪኑ እንዲነሳ ማድረግ
+      const constraints = {
         video: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          facingMode: { ideal: "environment" }, // የኋላ ካሜራ
+          width: { ideal: 640 },
+          height: { ideal: 480 }
         },
-      });
+        audio: false
+      };
 
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        
+        // 🔴 ዋናው ማስተካከያ፦ ቪዲዮው በስልኩ ብሮውዘር ላይ በሀይል እንዲጫወት (Force Play) ማድረግ
+        setTimeout(async () => {
+          try {
+            if (videoRef.current) {
+              await videoRef.current.play();
+              setIsStreamReady(true); // ቪዲዮው መጫወት ሲጀምር ዝግጁ ነው እንላለን
+            }
+          } catch (e) {
+            console.error("Video play triggered error:", e);
+          }
+        }, 300);
       }
 
       setCameraActive(true);
     } catch (err) {
-      console.error(err);
-      alert("❌ ካሜራ መክፈት አልተቻለም። እባክዎ የካሜራ ፈቃድ መፍቀድዎን ያረጋግጡ።");
+      console.error("Camera Access Error:", err);
+      // ፎልባክ፦ መሰረታዊ የቪዲዮ ፍቃድ ጠይቆ መክፈት
+      try {
+        const basicStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        streamRef.current = basicStream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = basicStream;
+          setTimeout(() => { videoRef.current?.play(); setIsStreamReady(true); }, 300);
+        }
+        setCameraActive(true);
+      } catch (fallbackErr) {
+        alert("❌ ካሜራ መክፈት አልተቻለም። እባክዎ የስልክዎን የካሜራ ፍቃድ ያረጋግጡ።");
+      }
     }
   };
 
@@ -78,9 +104,9 @@ function CaptureIDCard({ onSuccess }) {
   const capturePhoto = async () => {
     const video = videoRef.current;
 
-    // ✅ FIX: የካሜራው ፍሬም መጫኑን በሁለት መንገድ ያረጋግጣል
+    // ካሜራው ጥቁር ከሆነ ወይም ምስል ማሳየት ካልጀመረ እንዳይቀርጽ መከልከል
     if (!video || !isStreamReady || video.videoWidth === 0) {
-      alert("⏳ ካሜራው ምስል እያስተላለፈ ነው፣ እባክዎ አንድ ሰከንድ ይጠብቁ...");
+      alert("⏳ ካሜራው ምስል እያዘጋጀ ነው፣ እባክዎ ስክሪኑ እስኪበራ አንድ ሰከንድ ይጠብቁ...");
       return;
     }
 
@@ -89,7 +115,6 @@ function CaptureIDCard({ onSuccess }) {
     canvas.height = video.videoHeight;
 
     const ctx = canvas.getContext("2d");
-    // የፊት ካሜራ ከሆነ ምስሉ እንዳይገላበጥ (Mirror) ለማስተካከል (ከተፈለገ)
     ctx.drawImage(video, 0, 0);
 
     const base64Image = canvas.toDataURL("image/jpeg", 0.85);
@@ -127,13 +152,13 @@ function CaptureIDCard({ onSuccess }) {
   return (
     <div style={{ padding: "20px 15px", maxWidth: 450, margin: "auto", fontFamily: "sans-serif", boxSizing: "border-box" }}>
       
-      {/* 🆔 ID Capture ርዕስ (ከዲዛይኑ ጋር የሚሄድ ሰማያዊ ስታይል) */}
+      {/* ID Capture ርዕስ */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 15 }}>
         <span style={{ background: '#162447', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold' }}>ID</span>
         <h3 style={{ margin: 0, color: '#162447', fontSize: '18px', fontWeight: 'bold' }}>ID Capture</h3>
       </div>
 
-      {/* CAMERA SCREEN (ከፎቶ ማሳያ ሳጥን ጋር) */}
+      {/* CAMERA SCREEN */}
       <div
         style={{
           width: "100%",
@@ -151,7 +176,8 @@ function CaptureIDCard({ onSuccess }) {
             ref={videoRef}
             autoPlay
             playsInline
-            onCanPlay={() => setIsStreamReady(true)} // ✅ FIX: ቪዲዮው ዝግጁ ሲሆን ስቴቱን ያበራል
+            muted
+            onPlaying={() => setIsStreamReady(true)} // ቪዲዮው በእርግጥም መጫወት ሲጀምር
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : image ? (
@@ -167,29 +193,27 @@ function CaptureIDCard({ onSuccess }) {
         )}
       </div>
 
-      {/* 📸 CAPTURE / OPEN CAMERA BUTTON (ከአፕሊኬሽኑ ከለር ጋር የተስተካከለ) */}
+      {/* BUTTONS */}
       <button
         onClick={cameraActive ? capturePhoto : startCamera}
-        disabled={uploading}
+        disabled={uploading || (cameraActive && !isStreamReady)} // ካሜራው ጥቁር ሆኖ ሳለ "Capture" እንዳይጫን ይከለክላል
         style={{
           width: "100%",
           padding: "14px",
           marginTop: 12,
-          background: cameraActive ? "#1e293b" : "#162447",
+          background: cameraActive ? (isStreamReady ? "#1e293b" : "#475569") : "#162447",
           color: "#fff",
           border: "none",
           borderRadius: 10,
           fontSize: "14px",
           fontWeight: "600",
-          cursor: "pointer",
-          transition: "background 0.2s",
-          boxShadow: "0 2px 5px rgba(0,0,0,0.1)"
+          cursor: "pointer"
         }}
       >
-        {cameraActive ? "📸 Capture" : image ? "🔄 Retake Photo" : "📷 Open Camera"}
+        {cameraActive ? (isStreamReady ? "📸 Capture" : "⏳ Loading Camera...") : image ? "🔄 Retake Photo" : "📷 Open Camera"}
       </button>
 
-      {/* 🔢 FAYDA INPUT FIELD */}
+      {/* INPUT FIELD */}
       <div style={{ marginTop: 20 }}>
         <input
           type="text"
@@ -204,15 +228,12 @@ function CaptureIDCard({ onSuccess }) {
             borderRadius: 10,
             fontSize: "15px",
             boxSizing: "border-box",
-            outline: "none",
-            transition: "border-color 0.2s"
+            outline: "none"
           }}
-          onFocus={(e) => e.target.style.borderColor = "#162447"}
-          onBlur={(e) => e.target.style.borderColor = "#cbd5e1"}
         />
       </div>
 
-      {/* 🟢 CONTINUE BUTTON (ከምስሉ አረንጓዴ ከለር ጋር ፍጹም አንድ አይነት) */}
+      {/* CONTINUE BUTTON */}
       <button
         onClick={handleContinue}
         disabled={uploading || !image}
@@ -233,7 +254,7 @@ function CaptureIDCard({ onSuccess }) {
         Continue →
       </button>
 
-      {/* ⏳ STATUS MESSAGE */}
+      {/* STATUS MESSAGE */}
       {scanStatus && (
         <p style={{ 
           fontSize: "13px", 
@@ -246,7 +267,6 @@ function CaptureIDCard({ onSuccess }) {
         </p>
       )}
       
-      {/* ደረጃ አመልካች (Step 1 / 5) */}
       <div style={{ textAlign: 'left', marginTop: 15, fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
         Step 1 / 5
       </div>
