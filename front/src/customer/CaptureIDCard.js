@@ -1,14 +1,14 @@
-Import React, { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import axios from "axios";
 
 // 🔗 ያንተ የቤክኤንድ API አድራሻ
-const API_BASE_URL = "Https://poessa-digital-services-1.onrender.com";
+const API_BASE_URL = "https://poessa-digital-services-1.onrender.com";
 // 🔑 ያንተ የ ImgBB API ቁልፍ
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
 function CaptureIDCard({ onSuccess }) {
   const [faydaNumber, setFaydaNumber] = useState("");
-  const [image, setImage] = useState(null); // 🔗 እዚህ ላይ የመጨረሻው የ ImgBB URL ይቀመጣል
+  const [image, setImage] = useState(null); 
   const [cameraActive, setCameraActive] = useState(false);
   const [scanStatus, setScanStatus] = useState(""); 
   const [scanning, setScanning] = useState(false); 
@@ -29,51 +29,23 @@ function CaptureIDCard({ onSuccess }) {
     }
   };
 
-  /* ==========================================================================
-     📸 ፎቶን ወደ ImgBB ሰቅሎ እውነተኛ ሊንክ (URL) ማምጫ ተግባር
-  ========================================================================== */
-  // 1. የ uploadIdToImgBB ፈንክሽንን በዚህ አስተካክል
-const uploadIdToImgBB = async (base64Image) => {
-  try {
-    const cleanBase64 = base64Image.split(",")[1];
-    const formData = new FormData(); // FormData መጠቀማችንን እናረጋግጥ
-    formData.append("image", cleanBase64);
+  const uploadIdToImgBB = async (base64Image) => {
+    try {
+      const cleanBase64 = base64Image.split(",")[1];
+      const formData = new FormData();
+      formData.append("image", cleanBase64);
 
-    const response = await axios.post(
-      `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
-      formData
-    );
+      const response = await axios.post(
+        `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+        formData
+      );
 
-    return response.data?.data?.url || null;
-  } catch (error) {
-    console.error("❌ ImgBB Upload Error:", error);
-    return null;
-  }
-};
-
-// 2. capturePhoto ውስጥ ምስሉን ከመላክህ በፊት አሳንሰው
-const capturePhoto = async () => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const canvas = document.createElement("canvas");
-    // ጥራቱን በመቀነስ ምስሉን ያሳንሱት (ይህ ፎቶው በፍጥነት እንዲሰቀል ያደርጋል)
-    canvas.width = 600; 
-    canvas.height = 400;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // በ 0.6 ጥራት JPEG አድርገን እንላከው
-    const base64Image = canvas.toDataURL("image/jpeg", 0.6);
-
-    // ... ቀሪው ኮድህ እዚህ ይቀጥላል ...
-    setScanning(true);
-    setScanStatus("⏳ ምስሉ በመጫን ላይ ነው...");
-    
-    const uploadedUrl = await uploadIdToImgBB(base64Image);
-    // ...
-};
-
+      return response.data?.data?.url || null;
+    } catch (error) {
+      console.error("❌ ImgBB Upload Error:", error);
+      return null;
+    }
+  };
 
   const capturePhoto = async () => {
     const video = videoRef.current;
@@ -86,7 +58,7 @@ const capturePhoto = async () => {
     ctx.filter = "contrast(1.3) brightness(1.1)";
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    const base64Image = canvas.toDataURL("image/jpeg");
+    const base64Image = canvas.toDataURL("image/jpeg", 0.6);
 
     const stream = video.srcObject;
     if (stream) {
@@ -97,20 +69,17 @@ const capturePhoto = async () => {
     setScanning(true);
     setScanStatus("⏳ ከመታወቂያው ላይ መረጃ እያነበብን እና ፎቶውን ወደ ImgBB እየሰቀልን ነው...");
 
-    // 1. መጀመሪያ ፎቶውን ወደ ImgBB መጫን
     const uploadedUrl = await uploadIdToImgBB(base64Image);
     if (uploadedUrl) {
-      setImage(uploadedUrl); // 🌟 አሁን ስቴቱ ላይ የሚቀመጠው ረጅም ፅሁፍ ሳይሆን የ ImgBB ሊንክ ነው!
+      setImage(uploadedUrl); 
     } else {
       setScanStatus("⚠️ ፎቶውን ደመና (ImgBB) ላይ መጫን አልተቻለም። እባክዎ ድጋሚ ይሞክሩ።");
       setScanning(false);
       return;
     }
 
-    // 2. የ QR ኮድ እና የ OCR ጽሑፍ መፈተሽ
     try {
       let foundFayda = "";
-
       if (window.jsQR) {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const qrCode = window.jsQR(imageData.data, imageData.width, imageData.height);
@@ -143,7 +112,6 @@ const capturePhoto = async () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (faydaNumber.length !== 16) {
       alert("⚠️ እባክዎ መጀመሪያ ባለ 16 ዲጂት የፋይዳ ቁጥር በትክክል መሙላቱን ያረጋግጡ!");
       return;
@@ -156,17 +124,13 @@ const capturePhoto = async () => {
     try {
       setVerifyingInDB(true);
       setScanStatus("⏳ የፋይዳ ቁጥሩን ከዳታቤዝ ጋር እያመሳከርን ነው...");
-
       const response = await axios.get(`${API_BASE_URL}/pensioners`);
       
       if (response.data.success) {
         const foundInDB = response.data.data.find(p => p.faydaNumber === faydaNumber);
-        
         if (foundInDB) {
           const name = foundInDB.nameAmh || foundInDB.name || "ጡረተኛ";
-          alert(`🟢 እንኳን ደህና መጡ ${name}! መረጃዎ ተረጋግጧል። ወደ ባዮሜትሪክስ ፈተና መሻገር ይችላሉ።`);
-          
-          // 💡 ወደሚቀጥለው ገጽ የሚተላለፈው 'image' አሁን ንጹህ የ ImgBB URL ነው!
+          alert(`🟢 እንኳን ደህና መጡ ${name}! መረጃዎ ተረጋግጧል።`);
           onSuccess({ faydaNumber, idPhotoUrl: image });
         } else {
           setScanStatus("❌ ይህ የፋይዳ ቁጥር በሲስተሙ ላይ አልተመዘገበም!");
@@ -175,7 +139,6 @@ const capturePhoto = async () => {
       }
     } catch (error) {
       console.error("DB Verification Error:", error);
-      // ሰርቨር መድረስ ባይቻል እንኳ መረጃውን ይዞ እንዲያልፍ ይደረጋል
       onSuccess({ faydaNumber, idPhotoUrl: image });
     } finally {
       setVerifyingInDB(false);
@@ -188,7 +151,6 @@ const capturePhoto = async () => {
       <p style={{ color: "#64748b", fontSize: "14px" }}>የ QR ኮዱን ወይም የፋይዳ ቁጥሩን በራስ-ሰር ለማንበብ ፎቶ ያንሱ</p>
 
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "15px", marginTop: "20px" }}>
-        
         <div style={{ background: "#f1f5f9", borderRadius: "12px", height: "220px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", border: "2px dashed #cbd5e1" }}>
           {cameraActive && <video ref={videoRef} autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
           {image && !cameraActive && <img src={image} alt="ID" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
