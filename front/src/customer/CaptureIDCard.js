@@ -38,25 +38,33 @@ function CaptureIDCard({ onSuccess }) {
 
   const uploadIdToImgBB = async (base64Image, retryCount = 0) => {
   try {
-    const cleanBase64 = base64Image.split(",")[1];
+    // 1. መረጃውን በደንብ ማጽዳት
+    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
+    
     const formData = new FormData();
-    formData.append("image", cleanBase64);
+    formData.append("image", base64Data);
 
     const response = await axios.post(
       `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
       formData,
-      { timeout: 15000 } // 15 ሰከንድ የመጠባበቂያ ጊዜ
+      {
+        headers: {
+          "Content-Type": "multipart/form-data", // ይሄ ወሳኝ ነው
+        },
+        timeout: 20000,
+      }
     );
     return response.data?.data?.url || null;
   } catch (error) {
     if (retryCount < 2) {
-      console.warn("Retrying upload...");
       return await uploadIdToImgBB(base64Image, retryCount + 1);
     }
-    console.error("❌ ImgBB Upload Failed:", error);
+    // ስህተቱን በኮንሶል ለማየት እንዲያግዘን
+    console.error("❌ ImgBB Detailed Error:", error.response?.data || error.message);
     return null;
   }
 };
+
 
 
   const capturePhoto = async () => {
