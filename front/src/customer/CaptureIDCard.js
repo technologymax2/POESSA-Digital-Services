@@ -10,7 +10,7 @@ function CaptureIDCard({ onSuccess }) {
   const [faydaNumber, setFaydaNumber] = useState("");
   const [image, setImage] = useState("");
   const [cameraActive, setCameraActive] = useState(false);
-  const [isStreamReady, setIsStreamReady] = useState(false); // ካሜራው በትክክል እየሰራ መሆኑን ማሳያ
+  const [isStreamReady, setIsStreamReady] = useState(false);
   const [scanStatus, setScanStatus] = useState("");
   const [uploading, setUploading] = useState(false);
 
@@ -36,10 +36,9 @@ function CaptureIDCard({ onSuccess }) {
       setScanStatus("");
       setIsStreamReady(false);
 
-      // የቪዲዮ ጥራትን ቀለል አድርጎ በፍጥነት ስክሪኑ እንዲነሳ ማድረግ
       const constraints = {
         video: {
-          facingMode: { ideal: "environment" }, // የኋላ ካሜራ
+          facingMode: { ideal: "environment" },
           width: { ideal: 640 },
           height: { ideal: 480 }
         },
@@ -51,34 +50,45 @@ function CaptureIDCard({ onSuccess }) {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        
-        // 🔴 ዋናው ማስተካከያ፦ ቪዲዮው በስልኩ ብሮውዘር ላይ በሀይል እንዲጫወት (Force Play) ማድረግ
         setTimeout(async () => {
           try {
             if (videoRef.current) {
               await videoRef.current.play();
-              setIsStreamReady(true); // ቪዲዮው መጫወት ሲጀምር ዝግጁ ነው እንላለን
+              setIsStreamReady(true);
             }
           } catch (e) {
-            console.error("Video play triggered error:", e);
+            console.error("Video play error:", e);
           }
         }, 300);
       }
 
       setCameraActive(true);
     } catch (err) {
-      console.error("Camera Access Error:", err);
-      // ፎልባክ፦ መሰረታዊ የቪዲዮ ፍቃድ ጠይቆ መክፈት
-      try {
-        const basicStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        streamRef.current = basicStream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = basicStream;
-          setTimeout(() => { videoRef.current?.play(); setIsStreamReady(true); }, 300);
+      console.error("Camera Access Error Details:", err);
+      
+      // 🔴 የፈቃድ መከልከል ችግርን በግልጽ ለይቶ ለማሳወቅ ማስተካከያ
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        alert(
+          "🔒 የካሜራ ፈቃድ ተከልክሏል!\n\n" +
+          "ችግሩን ለመፍታት፦\n" +
+          "1. ከባርያው በላይ (አድራሻ መጻፊያው አጠገብ) ያለውን የቁልፍ 🔒 ወይም የቅንብር ምልክት ይጫኑ።\n" +
+          "2. 'Site Settings' ወይም 'Permissions' ውስጥ በመግባት ካሜራውን 'Allow' (ፍቀድ) ያድርጉ።\n" +
+          "3. ገጹን Refresh (ድጋሚ መጫን) አድርገው ይሞክሩ።"
+        );
+        setScanStatus("❌ የካሜራ ፈቃድ አልተሰጠም");
+      } else {
+        // ሌሎች የሃርድዌር ስህተቶች ካሉ በቀላሉ ለመክፈት መሞከር
+        try {
+          const basicStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          streamRef.current = basicStream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = basicStream;
+            setTimeout(() => { videoRef.current?.play(); setIsStreamReady(true); }, 300);
+          }
+          setCameraActive(true);
+        } catch (fallbackErr) {
+          alert("❌ ካሜራውን ማግኘት አልተቻለም። እባክዎ ስልክዎን ያረጋግጡ።");
         }
-        setCameraActive(true);
-      } catch (fallbackErr) {
-        alert("❌ ካሜራ መክፈት አልተቻለም። እባክዎ የስልክዎን የካሜራ ፍቃድ ያረጋግጡ።");
       }
     }
   };
@@ -104,9 +114,8 @@ function CaptureIDCard({ onSuccess }) {
   const capturePhoto = async () => {
     const video = videoRef.current;
 
-    // ካሜራው ጥቁር ከሆነ ወይም ምስል ማሳየት ካልጀመረ እንዳይቀርጽ መከልከል
     if (!video || !isStreamReady || video.videoWidth === 0) {
-      alert("⏳ ካሜራው ምስል እያዘጋጀ ነው፣ እባክዎ ስክሪኑ እስኪበራ አንድ ሰከንድ ይጠብቁ...");
+      alert("⏳ ካሜራው ዝግጁ አይደለም። እባክዎ ስክሪኑ እስኪበራ ይጠብቁ።");
       return;
     }
 
@@ -177,7 +186,7 @@ function CaptureIDCard({ onSuccess }) {
             autoPlay
             playsInline
             muted
-            onPlaying={() => setIsStreamReady(true)} // ቪዲዮው በእርግጥም መጫወት ሲጀምር
+            onPlaying={() => setIsStreamReady(true)}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : image ? (
@@ -196,7 +205,7 @@ function CaptureIDCard({ onSuccess }) {
       {/* BUTTONS */}
       <button
         onClick={cameraActive ? capturePhoto : startCamera}
-        disabled={uploading || (cameraActive && !isStreamReady)} // ካሜራው ጥቁር ሆኖ ሳለ "Capture" እንዳይጫን ይከለክላል
+        disabled={uploading || (cameraActive && !isStreamReady)}
         style={{
           width: "100%",
           padding: "14px",
