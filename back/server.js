@@ -3,18 +3,18 @@ const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
-const path = require("path"); // 🚨 የተጨመረ፦ ለፎልደር መንገድ መፈለጊያ (Path module)
+const path = require("path"); 
 require("dotenv").config();
 const livenessRoute = require("./LivenessTestBack");
 
 const app = express();
 
 /* =========================
-   CORS CONFIGURATION (የተስተካከለ ✅)
+   CORS CONFIGURATION (የተስተካከለ 🔒)
 ========================= */
 const allowedOrigins = [
   "https://poessa-digital-services.vercel.app",
-  "https://poessa-digital-services-1.onrender.com", // የሬንደር ሰርቨርህ ራሱ እዚህ መካተት አለበት
+  "https://poessa-digital-services-1.onrender.com", 
   "http://localhost:3000"
 ];
 
@@ -31,11 +31,23 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"] // ✅ የተጨመረ
   })
 );
 
-app.use(express.json());
+// ✅ ለቪዲዮ እና ምስል አፕሎድ ትልቅ ዳታ እንዲቀበል የሊሚት ማስተካከያ
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+/* =========================
+   የደህንነት HEADERS (ካሜራው በ HTTPS ላይ እንዲሰራ ፈቃድ መስጫ)
+========================= */
+app.use((req, res, next) => {
+  // ብሮውዘሩ ካሜራን ያለ ገደብ እንዲጠቀም መፍቀጃ (Permissions Policy)
+  res.setHeader("Permissions-Policy", "camera=(self), microphone=()");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  next();
+});
 
 /* =========================
    HOME ROUTE
@@ -84,15 +96,12 @@ const activeCalls = new Map();
 ========================= */
 const forceDisconnectUser = (userId) => {
   const user = users.get(userId);
-
   if (!user) return;
 
   const socket = io.sockets.sockets.get(user.socketId);
-
   if (socket) {
     socket.disconnect(true);
   }
-
   users.delete(userId);
   busyAgents.delete(userId);
 };
@@ -102,6 +111,7 @@ const forceDisconnectUser = (userId) => {
 ========================= */
 io.on("connection", (socket) => {
   console.log("Connected:", socket.id);
+  
   socket.on("cancel-call", ({ pensionerId }) => {
     io.emit("remove-call", { pensionerId });
   });
@@ -109,18 +119,12 @@ io.on("connection", (socket) => {
   socket.on("register-user", ({ userId, role }) => {
     console.log("REGISTER:", userId, role);
     users.set(userId, { socketId: socket.id, role });
-    console.log("USERS:", [...users.entries()]);
   });
 
   socket.on("request-agent-call", (data) => {
-    console.log("========== NEW CALL ==========");
-    console.log("Pensioner:", data.pensionerId);
-
     const availableAgents = Array.from(users.entries()).filter(
       ([userId, user]) => user.role === "employee" && !busyAgents.has(userId)
     );
-
-    console.log("Available Employees:", availableAgents.length);
 
     if (availableAgents.length === 0) {
       socket.emit("all-agents-busy", { message: "ሁሉም ሰራተኞች በስራ ላይ ናቸው።" });
@@ -143,7 +147,6 @@ io.on("connection", (socket) => {
     activeCalls.set(data.pensionerId, { pensionerId: data.pensionerId, agentId: data.agentId });
 
     const pensioner = users.get(data.pensionerId);
-
     if (pensioner) {
       io.to(pensioner.socketId).emit("agent-accepted", {
         signal: data.signal,
@@ -199,7 +202,6 @@ io.on("connection", (socket) => {
         }
       }
     }
-
     console.log("Disconnected:", socket.id);
   });
 });
@@ -212,6 +214,7 @@ app.use("/api/admin", require("./AdminBack")(io, users, busyAgents, forceDisconn
 app.use("/api/pensioners", require("./PensionerRegistrationBack"));
 app.use("/api/liveness", livenessRoute);
 app.use("/api", require("./ReportBack"));
+
 /* =========================
    PORT
 ========================= */
