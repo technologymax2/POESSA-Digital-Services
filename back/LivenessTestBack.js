@@ -38,7 +38,7 @@ async function uploadToImgBB(base64Data) {
 }
 
 /* ==========================================
-   POST /verify-success
+   POST /verify-success (MAIN FIXED API)
 ========================================== */
 router.post("/verify-success", async (req, res) => {
   try {
@@ -60,9 +60,7 @@ router.post("/verify-success", async (req, res) => {
       });
     }
 
-    const pensioner = await UserPensioner.findOne({
-      faydaNumber
-    });
+    const pensioner = await UserPensioner.findOne({ faydaNumber });
 
     if (!pensioner) {
       return res.status(404).json({
@@ -71,31 +69,34 @@ router.post("/verify-success", async (req, res) => {
       });
     }
 
-    /* DB Photo */
+    /* =========================
+       DB PHOTO (safe fallback)
+    ========================= */
     let finalDbPhotoUrl =
-      dbPhotoUrl ||
-      pensioner.photoUrl ||
-      pensioner.photo ||
-      "";
+      pensioner.photoUrl || "";
 
-    if (
-      finalDbPhotoUrl &&
-      finalDbPhotoUrl.startsWith("data:image")
-    ) {
+    if (finalDbPhotoUrl.startsWith("data:image")) {
       finalDbPhotoUrl = await uploadToImgBB(finalDbPhotoUrl);
     }
 
-    /* Selfie */
+    /* =========================
+       SELFIE UPLOAD
+    ========================= */
     let finalSelfieUrl = selfiePhotoUrl || "";
 
-    if (
-      finalSelfieUrl &&
-      finalSelfieUrl.startsWith("data:image")
-    ) {
+    if (finalSelfieUrl.startsWith("data:image")) {
       finalSelfieUrl = await uploadToImgBB(finalSelfieUrl);
     }
 
-    /* Save verification */
+    /* =========================
+       SAFE FACE MATCH LOGIC (FIXED)
+    ========================= */
+    const finalMatchPercentage = Number(matchPercentage) || 0;
+    const isFaceMatched = finalMatchPercentage >= 50;
+
+    /* =========================
+       SAVE VERIFICATION
+    ========================= */
     const verification = new LivenessVerification({
       faydaNumber,
 
@@ -108,18 +109,14 @@ router.post("/verify-success", async (req, res) => {
       dbPhotoUrl: finalDbPhotoUrl,
       selfiePhotoUrl: finalSelfieUrl,
 
-      faceMatched: !!faceMatched,
-
-      matchPercentage:
-        Number(matchPercentage) || 0,
+      faceMatched: isFaceMatched,
+      matchPercentage: finalMatchPercentage,
 
       smilePassed: !!smilePassed,
       nodPassed: !!nodPassed,
       turnPassed: !!turnPassed,
 
-      verificationStatus: "Pending",
-
-      verifiedAt: new Date()
+      verificationStatus: isFaceMatched ? "Verified" : "Failed"
     });
 
     await verification.save();
@@ -139,127 +136,3 @@ router.post("/verify-success", async (req, res) => {
     });
   }
 });
-
-
-/* ==========================================
-   GET /pensioners
-========================================== */
-router.get("/pensioners", async (req, res) => {
-  try {
-
-    const data = await LivenessVerification
-      .find()
-      .sort({ createdAt: -1 });
-
-    return res.status(200).json({
-      success: true,
-      data
-    });
-
-  } catch (error) {
-
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
-
-  }
-});
-
-
-/* ==========================================
-   GET /pensioners/:faydaNumber
-========================================== */
-router.get("/pensioners/:faydaNumber", async (req, res) => {
-  try {
-
-    const record =
-      await LivenessVerification.findOne({
-        faydaNumber: req.params.faydaNumber
-      }).sort({ createdAt: -1 });
-
-    if (!record) {
-      return res.status(404).json({
-        success: false,
-        message: "Record not found"
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: record
-    });
-
-  } catch (error) {
-
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
-
-  }
-});
-
-
-/* ==========================================
-   PUT /pensioners/verify-status/:id
-========================================== */
-router.put(
-  "/pensioners/verify-status/:id",
-  async (req, res) => {
-    try {
-
-      const {
-        verificationStatus,
-        comment
-      } = req.body;
-
-      const updated =
-        await LivenessVerification.findByIdAndUpdate(
-          req.params.id,
-          {
-            verificationStatus,
-            comment
-          },
-          {
-            new: true
-          }
-        );
-
-      if (!updated) {
-        return res.status(404).json({
-          success: false,
-          message: "Record not found"
-        });
-      }
-
-      await UserPensioner.findOneAndUpdate(
-        {
-          faydaNumber: updated.faydaNumber
-        },
-        {
-          status:
-            verificationStatus === "Verified"
-              ? "Active"
-              : "Suspended"
-        }
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: "Status updated successfully",
-        data: updated
-      });
-
-    } catch (error) {
-
-      return res.status(500).json({
-        success: false,
-        message: error.message
-      });
-
-    }
-  }
-);
-
-module.exports = router;
