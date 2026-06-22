@@ -5,10 +5,14 @@ function VerificationSuccess({ pensionerData }) {
   const [searchFayda, setSearchFayda] = useState(
     pensionerData?.faydaNumber || ""
   );
+
   const [statusResult, setStatusResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // =========================
+  // CHECK STATUS
+  // =========================
   const checkMyStatus = async () => {
     const fayda = searchFayda.trim();
 
@@ -28,9 +32,9 @@ function VerificationSuccess({ pensionerData }) {
     setLoading(true);
 
     try {
-      // ✅ BEST PRACTICE: backend should filter, not frontend
+      // ✅ FIXED ROUTE (MATCH YOUR BACKEND)
       const res = await axios.get(
-        `https://poessa-digital-services-1.onrender.com/api/liveness/status/${fayda}`
+        `https://poessa-digital-services-1.onrender.com/api/liveness/pensioners/${fayda}`
       );
 
       if (res.data?.success) {
@@ -49,34 +53,40 @@ function VerificationSuccess({ pensionerData }) {
   return (
     <div
       style={{
-        padding: "30px 20px",
-        maxWidth: "450px",
+        padding: 30,
+        maxWidth: 450,
         margin: "30px auto",
         textAlign: "center",
         fontFamily: "sans-serif",
         background: "#fff",
-        borderRadius: "12px",
+        borderRadius: 12,
         boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
       }}
     >
-      <div style={{ fontSize: "70px" }}>⏳</div>
+      <div style={{ fontSize: 60 }}>🎉</div>
 
-      <h3 style={{ color: "#162447" }}>Verification Submitted</h3>
+      <h3 style={{ color: "#162447" }}>
+        Verification Completed
+      </h3>
 
       <p style={{ color: "#475569" }}>
         የጡረተኛው{" "}
-        <strong>{pensionerData?.nameAmh || "User"}</strong> መረጃ ተቀብለናል
+        <strong>{pensionerData?.nameAmh || "User"}</strong>{" "}
+        መረጃ ተሳክቷል
       </p>
 
+      {/* =========================
+          STATUS CHECK SECTION
+      ========================= */}
       <div
         style={{
+          marginTop: 20,
           background: "#f8fafc",
-          padding: "20px",
-          borderRadius: "10px",
-          border: "1px solid #e2e8f0",
+          padding: 20,
+          borderRadius: 10,
         }}
       >
-        <h4>🔍 Status Check</h4>
+        <h4>🔍 Check Verification Status</h4>
 
         <input
           type="text"
@@ -88,8 +98,8 @@ function VerificationSuccess({ pensionerData }) {
           maxLength={16}
           style={{
             width: "100%",
-            padding: "12px",
-            borderRadius: "8px",
+            padding: 12,
+            borderRadius: 8,
             border: "1px solid #cbd5e1",
           }}
         />
@@ -101,25 +111,30 @@ function VerificationSuccess({ pensionerData }) {
             width: "100%",
             background: "#162447",
             color: "#fff",
-            padding: "12px",
-            borderRadius: "8px",
-            marginTop: "12px",
+            padding: 12,
+            borderRadius: 8,
+            marginTop: 10,
+            border: "none",
             cursor: "pointer",
           }}
         >
           {loading ? "Checking..." : "Check Status"}
         </button>
 
+        {/* ERROR */}
         {error && (
-          <p style={{ color: "red", marginTop: "10px" }}>{error}</p>
+          <p style={{ color: "red", marginTop: 10 }}>
+            {error}
+          </p>
         )}
 
+        {/* RESULT */}
         {statusResult && (
           <div
             style={{
-              marginTop: "15px",
-              padding: "15px",
-              borderRadius: "8px",
+              marginTop: 15,
+              padding: 15,
+              borderRadius: 8,
               background:
                 statusResult.verificationStatus === "Verified"
                   ? "#dcfce7"
@@ -130,12 +145,17 @@ function VerificationSuccess({ pensionerData }) {
           >
             <strong>Status: </strong>
 
-            {statusResult.verificationStatus === "Verified" && "✅ Approved"}
-            {statusResult.verificationStatus === "Failed" && "❌ Rejected"}
-            {statusResult.verificationStatus === "Pending" && "⏳ Pending"}
+            {statusResult.verificationStatus === "Verified" &&
+              "✅ Approved"}
+
+            {statusResult.verificationStatus === "Failed" &&
+              "❌ Rejected"}
+
+            {statusResult.verificationStatus === "Pending" &&
+              "⏳ Pending"}
 
             {statusResult.comment && (
-              <p style={{ fontSize: "12px", marginTop: "5px" }}>
+              <p style={{ fontSize: 12, marginTop: 5 }}>
                 Reason: {statusResult.comment}
               </p>
             )}
