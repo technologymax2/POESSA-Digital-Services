@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from "react";
 
 function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
+  const [matchPercentage, setMatchPercentage] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isMatched, setIsMatched] = useState(false);
-  const [matchPercentage, setMatchPercentage] = useState(0);
   const [statusMessage, setStatusMessage] = useState(
     "⏳ የAI ሞዴሎችን በመጫን ላይ..."
   );
+  const [isMatched, setIsMatched] = useState(false);
 
   useEffect(() => {
     const runFaceMatch = async () => {
       try {
         if (!window.faceapi) {
-          setStatusMessage("❌ face-api.js አልተጫነም");
+          setStatusMessage(
+            "❌ የፊት መለያው ስክሪፕት አልተጫነም።"
+          );
           setLoading(false);
           return;
         }
@@ -22,17 +24,18 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
         const MODEL_URL =
           "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
 
-        // models
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-        ]);
+        setStatusMessage("⏳ የAI ሞዴሎችን በመጫን ላይ...");
 
-        setStatusMessage("⏳ ፎቶዎችን በመጫን ላይ...");
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
 
-        const loadImage = src =>
-          new Promise((resolve, reject) => {
+        // ----------------------------
+        // helper
+        // ----------------------------
+        const loadImage = (src) => {
+          return new Promise((resolve, reject) => {
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.src = src;
@@ -40,13 +43,16 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
             img.onload = () => resolve(img);
             img.onerror = reject;
           });
+        };
+
+        setStatusMessage("⏳ ፎቶዎችን በማንበብ ላይ...");
 
         const img1 = await loadImage(idPhoto);
         const img2 = await loadImage(selfiePhoto);
 
-        setStatusMessage("⏳ ፊቶችን በማግኘት ላይ...");
+        setStatusMessage("⏳ የፊት መመሳሰልን በማረጋገጥ ላይ...");
 
-        const detection1 = await faceapi
+        let detection1 = await faceapi
           .detectSingleFace(
             img1,
             new faceapi.TinyFaceDetectorOptions()
@@ -54,7 +60,7 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
           .withFaceLandmarks()
           .withFaceDescriptor();
 
-        const detection2 = await faceapi
+        let detection2 = await faceapi
           .detectSingleFace(
             img2,
             new faceapi.TinyFaceDetectorOptions()
@@ -62,22 +68,38 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
           .withFaceLandmarks()
           .withFaceDescriptor();
 
+        // fallback
+        if (!detection1) {
+          detection1 = await faceapi
+            .detectSingleFace(img1)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+        }
+
+        if (!detection2) {
+          detection2 = await faceapi
+            .detectSingleFace(img2)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+        }
+
         if (!detection1 || !detection2) {
           setStatusMessage(
-            "❌ በአንዱ ወይም በሁለቱም ፎቶዎች ላይ ፊት አልተገኘም።"
+            "❌ በፎቶዎቹ ላይ ፊት ማግኘት አልተቻለም።"
           );
           setLoading(false);
           return;
         }
-
-        setStatusMessage("⏳ ማነፃፀር በመካሄድ ላይ...");
 
         const distance = faceapi.euclideanDistance(
           detection1.descriptor,
           detection2.descriptor
         );
 
-        const similarity = Math.round((1 - distance) * 100);
+        const similarity = Math.max(
+          0,
+          Math.min(100, Math.round((1 - distance) * 100))
+        );
 
         setMatchPercentage(similarity);
 
@@ -85,20 +107,20 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
           setIsMatched(true);
 
           setStatusMessage(
-            `✅ ፊቶቹ ተመሳስለዋል (${similarity}%)`
+            `🎉 ማመሳሰሉ ተሳክቷል! የፊት መመሳሰል ${similarity}%`
           );
         } else {
           setIsMatched(false);
 
           setStatusMessage(
-            `❌ ፊቶቹ አልተመሳሰሉም (${similarity}%)`
+            `❌ ፎቶዎቹ አልተመሳሰሉም። የመመሳሰል መጠን ${similarity}%`
           );
         }
       } catch (err) {
-        console.error(err);
+        console.error("Face Match Error:", err);
 
         setStatusMessage(
-          "❌ Face Match ስህተት ተፈጥሯል።"
+          "❌ በፊት ማነፃፀሪያው ላይ ስህተት ተፈጥሯል።"
         );
       } finally {
         setLoading(false);
@@ -117,34 +139,43 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
         textAlign: "center"
       }}
     >
-      <h3>🤖 የፊት ማነፃፀሪያ</h3>
+      <h3>🤖 ደረጃ 3፦ የፊት ማነፃፀሪያ</h3>
 
       <div
         style={{
           display: "flex",
           justifyContent: "center",
-          gap: "20px"
+          gap: "20px",
+          margin: "20px 0"
         }}
       >
-        <img
-          src={idPhoto}
-          alt=""
-          style={{
-            width: "120px",
-            height: "130px",
-            objectFit: "cover"
-          }}
-        />
+        <div>
+          <img
+            src={idPhoto}
+            alt="ID"
+            style={{
+              width: "120px",
+              height: "130px",
+              objectFit: "cover",
+              borderRadius: "8px"
+            }}
+          />
+          <p>የመታወቂያ ፎቶ</p>
+        </div>
 
-        <img
-          src={selfiePhoto}
-          alt=""
-          style={{
-            width: "120px",
-            height: "130px",
-            objectFit: "cover"
-          }}
-        />
+        <div>
+          <img
+            src={selfiePhoto}
+            alt="Selfie"
+            style={{
+              width: "120px",
+              height: "130px",
+              objectFit: "cover",
+              borderRadius: "8px"
+            }}
+          />
+          <p>የአሁኑ ሴልፊ</p>
+        </div>
       </div>
 
       <div
@@ -152,41 +183,49 @@ function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
           marginTop: "20px",
           padding: "15px",
           borderRadius: "10px",
-          background: loading
-            ? "#f8fafc"
-            : isMatched
-            ? "#dcfce7"
-            : "#fee2e2"
+          background: isMatched ? "#ecfdf5" : "#fef2f2"
         }}
       >
         {statusMessage}
-
-        {!loading && (
-          <div style={{ marginTop: "10px" }}>
-            Match: {matchPercentage}%
-          </div>
-        )}
       </div>
+
+      {matchPercentage !== null && (
+        <h2 style={{ marginTop: "20px" }}>
+          {matchPercentage}%
+        </h2>
+      )}
 
       {!loading && isMatched && (
         <button
-          onClick={() =>
-            onSuccess({
-              faceMatched: true,
-              matchPercentage
-            })
-          }
+          onClick={() => onSuccess(matchPercentage)}
           style={{
             marginTop: "20px",
-            width: "100%",
-            padding: "14px",
-            background: "#22c55e",
+            background: "#16a34a",
             color: "#fff",
             border: "none",
-            borderRadius: "8px"
+            padding: "14px 25px",
+            borderRadius: "8px",
+            cursor: "pointer"
           }}
         >
-          ወደ Liveness Test →
+          ደረጃ 4 ይቀጥሉ →
+        </button>
+      )}
+
+      {!loading && !isMatched && (
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            marginTop: "20px",
+            background: "#dc2626",
+            color: "#fff",
+            border: "none",
+            padding: "14px 25px",
+            borderRadius: "8px",
+            cursor: "pointer"
+          }}
+        >
+          🔄 እንደገና ይሞክሩ
         </button>
       )}
     </div>
