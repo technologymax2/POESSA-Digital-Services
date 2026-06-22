@@ -36,18 +36,28 @@ function CaptureIDCard({ onSuccess }) {
     }
   };
 
-  const uploadIdToImgBB = async (base64Image) => {
-    try {
-      const cleanBase64 = base64Image.split(",")[1];
-      const formData = new FormData();
-      formData.append("image", cleanBase64);
-      const response = await axios.post(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, formData);
-      return response.data?.data?.url || null;
-    } catch (error) {
-      console.error("ImgBB Error:", error);
-      return null;
+  const uploadIdToImgBB = async (base64Image, retryCount = 0) => {
+  try {
+    const cleanBase64 = base64Image.split(",")[1];
+    const formData = new FormData();
+    formData.append("image", cleanBase64);
+
+    const response = await axios.post(
+      `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+      formData,
+      { timeout: 15000 } // 15 ሰከንድ የመጠባበቂያ ጊዜ
+    );
+    return response.data?.data?.url || null;
+  } catch (error) {
+    if (retryCount < 2) {
+      console.warn("Retrying upload...");
+      return await uploadIdToImgBB(base64Image, retryCount + 1);
     }
-  };
+    console.error("❌ ImgBB Upload Failed:", error);
+    return null;
+  }
+};
+
 
   const capturePhoto = async () => {
     const video = videoRef.current;
