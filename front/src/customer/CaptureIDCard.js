@@ -10,7 +10,6 @@ function CaptureIDCard({ onSuccess }) {
   const [faydaNumber, setFaydaNumber] = useState("");
   const [image, setImage] = useState("");
   const [cameraActive, setCameraActive] = useState(false);
-  const [isStreamReady, setIsStreamReady] = useState(false);
   const [scanStatus, setScanStatus] = useState("");
   const [uploading, setUploading] = useState(false);
 
@@ -27,20 +26,17 @@ function CaptureIDCard({ onSuccess }) {
       videoRef.current.srcObject = null;
     }
     setCameraActive(false);
-    setIsStreamReady(false);
   };
 
   const startCamera = async () => {
     try {
       setImage("");
-      setScanStatus("⏳ ካሜራው እየተዘጋጀ ነው...");
-      setIsStreamReady(false);
+      setScanStatus("⏳ ካሜራው እየተነሳ ነው...");
 
+      // 💡 ማስተካከያ፦ በስልኮች ላይ የተሻለ ተኳኋኝነት እንዲኖረው constraints ማቅለል
       const constraints = {
         video: {
-          facingMode: "user", 
-          width: { ideal: 640 },
-          height: { ideal: 480 }
+          facingMode: "user" // የፊት ካሜራ (ወደ "environment" መቀየር ትችላለህ የጀርባ ካሜራ ከሆነ)
         },
         audio: false
       };
@@ -50,22 +46,16 @@ function CaptureIDCard({ onSuccess }) {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        
-        videoRef.current.play()
-          .then(() => {
-            setIsStreamReady(true);
-            setScanStatus("✅ ካሜራው ዝግጁ ነው");
-          })
-          .catch(err => {
-            console.error("Autoplay failed", err);
-            setIsStreamReady(true);
-          });
+        // መስራቱን ለማረጋገጥ autoPlay ን በኮድ ማረጋገጥ
+        videoRef.current.setAttribute("playsinline", true); 
+        await videoRef.current.play();
       }
 
       setCameraActive(true);
+      setScanStatus("✅ ካሜራው ዝግጁ ነው - ፎቶ ማንሳት ይችላሉ");
     } catch (err) {
-      console.error("Camera Error:", err);
-      setScanStatus("❌ ካሜራ መክፈት አልተቻለም። ፈቃድ መስጠትዎን ያረጋግጡ።");
+      console.error("Camera access error:", err);
+      setScanStatus("❌ ካሜራውን መክፈት አልተቻለም። እባክዎ ለገጹ የካሜራ ፈቃድ መስጠትዎን ያረጋግጡ።");
     }
   };
 
@@ -94,33 +84,38 @@ function CaptureIDCard({ onSuccess }) {
   const capturePhoto = async () => {
     const video = videoRef.current;
 
-    // ✅ FIX: alert() ከማምጣት ይልቅ በቴክስት ስታተስ ያሳያል
-    if (!video || !isStreamReady) {
-      setScanStatus("⏳ ምስሉ እየተስተካከለ ነው፣ እባክዎ አንድ ሰከንድ ይጠብቁ...");
+    if (!video || !cameraActive) {
+      setScanStatus("⚠️ እባክዎ መጀመሪያ ካሜራውን ይክፈቱት!");
       return;
     }
 
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    try {
+      const canvas = document.createElement("canvas");
+      // 💡 ማስተካከያ፦ videoWidth 0 ከሆነ የዲፎልት መጠን በመስጠት እንዳይቆም ማድረግ
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
 
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const base64Image = canvas.toDataURL("image/jpeg", 0.85);
+      const base64Image = canvas.toDataURL("image/jpeg", 0.85);
 
-    stopCamera();
-    setUploading(true);
-    setScanStatus("⏳ መታወቂያው ወደ ሰርቨር እየተላከ ነው...");
+      stopCamera();
+      setUploading(true);
+      setScanStatus("⏳ መታወቂያው ወደ ሰርቨር እየተጫነ ነው...");
 
-    const uploadedUrl = await uploadIdToImgBB(base64Image);
-    setUploading(false);
+      const uploadedUrl = await uploadIdToImgBB(base64Image);
+      setUploading(false);
 
-    if (uploadedUrl) {
-      setImage(uploadedUrl);
-      setScanStatus("✅ መታወቂያው በትክክል ተጭኗል");
-    } else {
-      setScanStatus("❌ መታወቂያውን መጫን አልተቻለም። ድጋሚ ይሞክሩ።");
+      if (uploadedUrl) {
+        setImage(uploadedUrl);
+        setScanStatus("✅ መታወቂያው በትክክል ተነቦ ተጭኗል");
+      } else {
+        setScanStatus("❌ ፎቶውን መጫን አልተቻለም። እባክዎ ድጋሚ ይሞክሩ።");
+      }
+    } catch (error) {
+      console.error("Capture failed:", error);
+      setScanStatus("❌ ፎቶ ማንሳት አልተቻለም።");
     }
   };
 
@@ -156,7 +151,7 @@ function CaptureIDCard({ onSuccess }) {
         style={{
           width: "100%",
           aspectRatio: "1.58",
-          background: "#050505",
+          background: "#000000",
           borderRadius: 14,
           overflow: "hidden",
           position: "relative",
@@ -170,7 +165,6 @@ function CaptureIDCard({ onSuccess }) {
             autoPlay
             playsInline
             muted
-            controls={false}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : image ? (
@@ -194,7 +188,7 @@ function CaptureIDCard({ onSuccess }) {
           width: "100%",
           padding: "14px",
           marginTop: 12,
-          background: cameraActive ? "#1e293b" : "#162447",
+          background: cameraActive ? "#e11d48" : "#162447",
           color: "#fff",
           border: "none",
           borderRadius: 10,
