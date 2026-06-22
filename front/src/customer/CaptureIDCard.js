@@ -1,56 +1,35 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import axios from "axios";
 
-const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
+const IMGBB_API_KEY = "YOUR_IMGBB_KEY";
 
 function CaptureIDCard({ onSuccess }) {
   const [faydaNumber, setFaydaNumber] = useState("");
   const [image, setImage] = useState("");
   const [cameraActive, setCameraActive] = useState(false);
-  const [scanStatus, setScanStatus] = useState("");
   const [uploading, setUploading] = useState(false);
 
   const videoRef = useRef(null);
+  const streamRef = useRef(null);
 
-  // ==========================
-  // CLEANUP CAMERA ON UNMOUNT
-  // ==========================
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, []);
-
-  // ==========================
-  // STOP CAMERA
-  // ==========================
+  // stop camera
   const stopCamera = () => {
-    const stream = videoRef.current?.srcObject;
-
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
     }
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-
     setCameraActive(false);
   };
 
-  // ==========================
-  // START CAMERA
-  // ==========================
+  // start camera
   const startCamera = async () => {
     try {
       setImage("");
-      setScanStatus("");
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment",
-        },
+        video: { facingMode: "environment" }
       });
+
+      streamRef.current = stream;
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -58,48 +37,31 @@ function CaptureIDCard({ onSuccess }) {
 
       setCameraActive(true);
     } catch (err) {
-      console.error(err);
-      alert("❌ ካሜራ መክፈት አልተቻለም");
+      alert("❌ ካሜራ አልተከፈተም");
     }
   };
 
-  // ==========================
-  // UPLOAD IMAGE TO IMGBB
-  // ==========================
-  const uploadIdToImgBB = async (base64Image) => {
+  // upload
+  const uploadToImgBB = async (base64) => {
     try {
       const formData = new FormData();
+      formData.append("image", base64.split(",")[1]);
 
-      // FIXED: proper base64 cleanup
-      const cleanBase64 = base64Image.replace(
-        /^data:image\/\w+;base64,/,
-        ""
-      );
-
-      formData.append("image", cleanBase64);
-
-      const response = await axios.post(
+      const res = await axios.post(
         `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
         formData
       );
 
-      return response.data?.data?.url || null;
+      return res.data?.data?.url || null;
     } catch (err) {
-      console.error("Upload Error:", err);
       return null;
     }
   };
 
-  // ==========================
-  // CAPTURE PHOTO
-  // ==========================
+  // capture
   const capturePhoto = async () => {
     const video = videoRef.current;
-
-    if (!video || video.videoWidth === 0) {
-      alert("⏳ ካሜራ እስካሁን አልተዘጋጀም");
-      return;
-    }
+    if (!video) return;
 
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
@@ -108,155 +70,58 @@ function CaptureIDCard({ onSuccess }) {
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0);
 
-    const base64Image = canvas.toDataURL("image/jpeg", 0.85);
+    const base64 = canvas.toDataURL("image/jpeg", 0.8);
 
     stopCamera();
-
     setUploading(true);
-    setScanStatus("⏳ ፎቶ በመላክ ላይ...");
 
-    const uploadedUrl = await uploadIdToImgBB(base64Image);
+    const url = await uploadToImgBB(base64);
 
     setUploading(false);
 
-    if (uploadedUrl) {
-      setImage(uploadedUrl);
-      setScanStatus("✅ ፎቶ ተሳክቷል");
+    if (url) {
+      setImage(url);
     } else {
-      setScanStatus("❌ Upload failed");
+      alert("❌ Upload failed");
     }
   };
 
-  // ==========================
-  // CONTINUE
-  // ==========================
   const handleContinue = () => {
-    const cleanFayda = faydaNumber.replace(/\D/g, "");
+    if (!image) return alert("Take ID photo first");
+    if (faydaNumber.length !== 16)
+      return alert("Fayda must be 16 digits");
 
-    if (!image) {
-      return alert("⚠️ መጀመሪያ ፎቶ ያንሱ");
-    }
-
-    if (cleanFayda.length !== 16) {
-      return alert("⚠️ 16 ዲጂት የፋይዳ ቁጥር ያስገቡ");
-    }
-
-    setScanStatus("🎉 ተሳክቷል");
-
-    onSuccess({
-      faydaNumber: cleanFayda,
-      idPhotoUrl: image,
-      capturedAt: new Date().toISOString(),
-    });
+    onSuccess({ faydaNumber, image });
   };
 
   return (
-    <div
-      style={{
-        padding: "20px",
-        maxWidth: "450px",
-        margin: "auto",
-        textAlign: "center",
-      }}
-    >
-      <h3>🆔 የጡረተኛ መታወቂያ ካሜራ</h3>
+    <div style={{ maxWidth: 450, margin: "auto" }}>
+      <h3>ID Capture</h3>
 
-      {/* CAMERA VIEW */}
-      <div
-        style={{
-          width: "100%",
-          aspectRatio: "1.6",
-          background: "#000",
-          borderRadius: "12px",
-          overflow: "hidden",
-        }}
-      >
+      <div style={{ height: 250, background: "#000" }}>
         {cameraActive ? (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-          />
+          <video ref={videoRef} autoPlay playsInline />
         ) : image ? (
-          <img
-            src={image}
-            alt="ID"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-          />
+          <img src={image} style={{ width: "100%" }} />
         ) : (
-          <div style={{ color: "#fff", paddingTop: "80px" }}>
-            ካሜራ ዝግጁ
-          </div>
+          <p style={{ color: "#fff" }}>Camera ready</p>
         )}
       </div>
 
-      {/* CAMERA BUTTON */}
-      <button
-        onClick={cameraActive ? capturePhoto : startCamera}
-        disabled={uploading}
-        style={{
-          width: "100%",
-          padding: "14px",
-          marginTop: "10px",
-          background: "#162447",
-          color: "#fff",
-          border: "none",
-          borderRadius: "8px",
-        }}
-      >
-        {cameraActive
-          ? "📸 ቅረጽ"
-          : image
-          ? "🔄 እንደገና አንሳ"
-          : "📷 ካሜራ ክፈት"}
+      <button onClick={cameraActive ? capturePhoto : startCamera}>
+        {cameraActive ? "Capture" : "Open Camera"}
       </button>
 
-      {/* FAYDA INPUT */}
       <input
-        type="text"
-        maxLength="16"
         value={faydaNumber}
         onChange={(e) =>
           setFaydaNumber(e.target.value.replace(/\D/g, ""))
         }
-        placeholder="16 ዲጂት የፋይዳ ቁጥር"
-        style={{
-          width: "100%",
-          padding: "12px",
-          marginTop: "15px",
-        }}
+        maxLength={16}
+        placeholder="Fayda Number"
       />
 
-      {/* CONTINUE */}
-      <button
-        onClick={handleContinue}
-        disabled={uploading || !image}
-        style={{
-          width: "100%",
-          padding: "15px",
-          marginTop: "15px",
-          background: "#22c55e",
-          color: "#fff",
-          border: "none",
-          borderRadius: "8px",
-        }}
-      >
-        ቀጥል
-      </button>
-
-      {/* STATUS */}
-      <p style={{ marginTop: "10px", fontSize: "13px" }}>
-        {scanStatus}
-      </p>
+      <button onClick={handleContinue}>Continue</button>
     </div>
   );
 }
