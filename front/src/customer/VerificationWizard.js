@@ -12,19 +12,16 @@ function VerificationWizard() {
   const [step, setStep] = useState(1);
 
   const [faydaNumber, setFaydaNumber] = useState("");
-
   const [dbPensionerData, setDbPensionerData] = useState(null);
 
   const [selfiePhoto, setSelfiePhoto] = useState("");
-
   const [matchPercentage, setMatchPercentage] = useState(0);
 
   const [loading, setLoading] = useState(false);
-
   const [errorMessage, setErrorMessage] = useState("");
 
   // ===========================
-  // STEP 1 : Verify Fayda Number
+  // STEP 1: VERIFY ID
   // ===========================
   const verifyIdWithDatabase = async (scannedData) => {
     setLoading(true);
@@ -37,19 +34,14 @@ function VerificationWizard() {
 
       if (response.data?.success) {
         setFaydaNumber(scannedData.faydaNumber);
-
         setDbPensionerData(response.data.data);
-
         setStep(2);
       } else {
         setErrorMessage("❌ ይህ የፋይዳ ቁጥር አልተገኘም!");
       }
     } catch (err) {
       console.error(err);
-
-      setErrorMessage(
-        "❌ መረጃውን ከዳታቤዝ ጋር ማመሳሰል አልተቻለም።"
-      );
+      setErrorMessage("❌ መረጃ ከዳታቤዝ ጋር አልተገናኘም");
     } finally {
       setLoading(false);
     }
@@ -60,6 +52,7 @@ function VerificationWizard() {
   // ===========================
   const handleFinalSuccess = async (livenessResults) => {
     setLoading(true);
+    setErrorMessage("");
 
     try {
       const exactFayda =
@@ -70,28 +63,24 @@ function VerificationWizard() {
       const payload = {
         faydaNumber: exactFayda,
 
-        // ID Photo
         idPhotoUrl:
           dbPensionerData?.photoUrl ||
           dbPensionerData?.photo ||
           "",
 
-        // Selfie Photo
         selfiePhotoUrl: selfiePhoto,
 
-        // Face Match %
         matchPercentage: matchPercentage,
 
-        faceMatched: true,
+        // ✅ FIXED LOGIC
+        faceMatched: matchPercentage >= 50,
 
         smilePassed: livenessResults.smilePassed || false,
-
         nodPassed: livenessResults.nodPassed || false,
-
         turnPassed: livenessResults.turnPassed || false
       };
 
-      console.log("Verification Payload:", payload);
+      console.log("FINAL PAYLOAD:", payload);
 
       const response = await axios.post(
         "https://poessa-digital-services-1.onrender.com/api/liveness/verify-success",
@@ -101,18 +90,12 @@ function VerificationWizard() {
       if (response.data?.success) {
         setStep(5);
       } else {
-        alert(response.data?.message);
+        setErrorMessage(response.data?.message || "❌ ማስቀመጥ አልተቻለም");
       }
     } catch (err) {
-      console.error(
-        "Verification Save Error:",
-        err.response?.data || err.message
-      );
-
-      alert(
-        err.response?.data?.message ||
-          "❌ ማስቀመጥ አልተቻለም"
-      );
+      console.error("SAVE ERROR:", err.response?.data || err.message);
+      setErrorMessage("❌ System error occurred");
+      setStep(1);
     } finally {
       setLoading(false);
     }
@@ -121,24 +104,24 @@ function VerificationWizard() {
   return (
     <div className="verification-wizard-container">
 
+      {/* LOADING OVERLAY */}
+      {loading && (
+        <div className="overlay-loading">
+          ⏳ Processing...
+        </div>
+      )}
+
+      {/* ERROR */}
       {errorMessage && (
         <div className="verification-error-banner">
           {errorMessage}
         </div>
       )}
 
-      {loading && (
-        <div className="verification-loading-spinner">
-          ⏳ በሂደት ላይ...
-        </div>
-      )}
-
       {/* STEP 1 */}
       {step === 1 && (
         <CaptureIDCard
-          onSuccess={(data) => {
-            verifyIdWithDatabase(data);
-          }}
+          onSuccess={(data) => verifyIdWithDatabase(data)}
         />
       )}
 
@@ -182,11 +165,13 @@ function VerificationWizard() {
         />
       )}
 
+      {/* STEP INFO */}
       {step < 5 && (
         <div className="verification-wizard-step-info">
           ደረጃ {step} ከ 5
         </div>
       )}
+
     </div>
   );
 }
