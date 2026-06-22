@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
-
+import * as faceapi from "face-api.js";
 function LivenessTest({ faydaNumber, onSuccess }) {
   const videoRef = useRef(null);
 
