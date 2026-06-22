@@ -14,16 +14,13 @@ function VerificationWizard() {
   const [pensionerData, setPensionerData] = useState(null);
 
   const [selfieUrl, setSelfieUrl] = useState("");
-
   const [livenessResult, setLivenessResult] = useState({});
   const [matchPercent, setMatchPercent] = useState(0);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // =========================
-  // STEP 1: ID VERIFY
-  // =========================
+  // STEP 1
   const handleIdSuccess = async (data) => {
     setLoading(true);
     setError("");
@@ -33,14 +30,15 @@ function VerificationWizard() {
         `https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${data.faydaNumber}`
       );
 
-      if (!res.data?.success) {
+      if (!res.data.success) {
         setError("❌ Pensioner not found");
         return;
       }
 
-      setFaydaNumber(data.faydaNumber);
+      console.log("Pensioner =", res.data.data);
+      console.log("Photo URL =", res.data.data.photoUrl);
 
-      // save whole pensioner record
+      setFaydaNumber(data.faydaNumber);
       setPensionerData(res.data.data);
 
       setStep(2);
@@ -52,28 +50,25 @@ function VerificationWizard() {
     }
   };
 
-  // =========================
   // FINAL SAVE
-  // =========================
   const handleFinal = async (match) => {
     setLoading(true);
-    setError("");
 
     try {
       const payload = {
         faydaNumber,
 
-        // Registered image from database
+        // database image
         dbPhotoUrl: pensionerData.photoUrl,
 
-        // Selfie image
+        // selfie
         selfiePhotoUrl: selfieUrl,
 
         matchPercentage: match,
 
         smilePassed: livenessResult.smilePassed || false,
         nodPassed: livenessResult.nodPassed || false,
-        turnPassed: livenessResult.turnPassed || false
+        turnPassed: livenessResult.turnPassed || false,
       };
 
       const res = await axios.post(
@@ -81,7 +76,7 @@ function VerificationWizard() {
         payload
       );
 
-      if (res.data?.success) {
+      if (res.data.success) {
         setStep(5);
       } else {
         setError("❌ Save failed");
@@ -111,9 +106,7 @@ function VerificationWizard() {
 
       {/* STEP 1 */}
       {step === 1 && (
-        <CaptureIDCard
-          onSuccess={handleIdSuccess}
-        />
+        <CaptureIDCard onSuccess={handleIdSuccess} />
       )}
 
       {/* STEP 2 */}
@@ -139,8 +132,7 @@ function VerificationWizard() {
       {/* STEP 4 */}
       {step === 4 && pensionerData && (
         <FaceMatch
-          // Compare selfie with REGISTERED image
-          idPhoto={pensionerData.photoUrl}
+          registeredPhoto={pensionerData.photoUrl}
           selfiePhoto={selfieUrl}
           onSuccess={(percent) => {
             setMatchPercent(percent);
@@ -151,16 +143,15 @@ function VerificationWizard() {
 
       {/* STEP 5 */}
       {step === 5 && (
-        <VerificationSuccess
-          data={pensionerData}
-        />
+        <VerificationSuccess data={pensionerData} />
       )}
 
       {step < 5 && (
         <div className="step-info">
-          Step {step} / 5
+          Step {step}/5
         </div>
       )}
+
     </div>
   );
 }
