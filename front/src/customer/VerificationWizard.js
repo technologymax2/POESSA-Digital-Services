@@ -55,21 +55,21 @@ function VerificationWizard() {
     setLoading(true);
 
     try {
-      const payload = {
-        faydaNumber,
+const payload = {
+  faydaNumber,
 
-        // database image
-        dbPhotoUrl: pensionerData.photoUrl,
+  // image from MongoDB
+  dbPhotoUrl: pensionerData.photoUrl,
 
-        // selfie
-        selfiePhotoUrl: selfieUrl,
+  // captured selfie
+  selfiePhotoUrl: selfieUrl,
 
-        matchPercentage: match,
+  matchPercentage: match,
 
-        smilePassed: livenessResult.smilePassed || false,
-        nodPassed: livenessResult.nodPassed || false,
-        turnPassed: livenessResult.turnPassed || false,
-      };
+  smilePassed: livenessResult.smilePassed || false,
+  nodPassed: livenessResult.nodPassed || false,
+  turnPassed: livenessResult.turnPassed || false
+};
 
       const res = await axios.post(
         "https://poessa-digital-services-1.onrender.com/api/liveness/verify-success",
@@ -130,16 +130,16 @@ function VerificationWizard() {
       )}
 
       {/* STEP 4 */}
-      {step === 4 && pensionerData && (
-        <FaceMatch
-          registeredPhoto={pensionerData.photoUrl}
-          selfiePhoto={selfieUrl}
-          onSuccess={(percent) => {
-            setMatchPercent(percent);
-            handleFinal(percent);
-          }}
-        />
-      )}
+   {step === 4 && pensionerData && (
+  <FaceMatch
+    registeredPhoto={pensionerData.photoUrl}
+    selfiePhoto={selfieUrl}
+    onSuccess={(percent) => {
+      setMatchPercent(percent);
+      handleFinal(percent);
+    }}
+  />
+)}
 
       {/* STEP 5 */}
       {step === 5 && (
