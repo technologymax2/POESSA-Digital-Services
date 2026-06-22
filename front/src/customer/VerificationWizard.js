@@ -13,7 +13,6 @@ function VerificationWizard() {
   const [faydaNumber, setFaydaNumber] = useState("");
   const [pensionerData, setPensionerData] = useState(null);
 
-  const [idPhotoUrl, setIdPhotoUrl] = useState("");
   const [selfieUrl, setSelfieUrl] = useState("");
 
   const [livenessResult, setLivenessResult] = useState({});
@@ -40,11 +39,13 @@ function VerificationWizard() {
       }
 
       setFaydaNumber(data.faydaNumber);
+
+      // save whole pensioner record
       setPensionerData(res.data.data);
-      setIdPhotoUrl(data.idPhotoUrl);
 
       setStep(2);
     } catch (err) {
+      console.error(err);
       setError("❌ Server error");
     } finally {
       setLoading(false);
@@ -52,7 +53,7 @@ function VerificationWizard() {
   };
 
   // =========================
-  // FINAL SAVE (FIXED)
+  // FINAL SAVE
   // =========================
   const handleFinal = async (match) => {
     setLoading(true);
@@ -62,12 +63,14 @@ function VerificationWizard() {
       const payload = {
         faydaNumber,
 
-        dbPhotoUrl: idPhotoUrl,
+        // Registered image from database
+        dbPhotoUrl: pensionerData.photoUrl,
+
+        // Selfie image
         selfiePhotoUrl: selfieUrl,
 
         matchPercentage: match,
 
-        // FIXED: correct structure from LivenessTest
         smilePassed: livenessResult.smilePassed || false,
         nodPassed: livenessResult.nodPassed || false,
         turnPassed: livenessResult.turnPassed || false
@@ -100,11 +103,17 @@ function VerificationWizard() {
         </div>
       )}
 
-      {error && <div className="error">{error}</div>}
+      {error && (
+        <div className="error">
+          {error}
+        </div>
+      )}
 
       {/* STEP 1 */}
       {step === 1 && (
-        <CaptureIDCard onSuccess={handleIdSuccess} />
+        <CaptureIDCard
+          onSuccess={handleIdSuccess}
+        />
       )}
 
       {/* STEP 2 */}
@@ -128,9 +137,10 @@ function VerificationWizard() {
       )}
 
       {/* STEP 4 */}
-      {step === 4 && (
+      {step === 4 && pensionerData && (
         <FaceMatch
-          idPhoto={idPhotoUrl}
+          // Compare selfie with REGISTERED image
+          idPhoto={pensionerData.photoUrl}
           selfiePhoto={selfieUrl}
           onSuccess={(percent) => {
             setMatchPercent(percent);
@@ -141,7 +151,9 @@ function VerificationWizard() {
 
       {/* STEP 5 */}
       {step === 5 && (
-        <VerificationSuccess data={pensionerData} />
+        <VerificationSuccess
+          data={pensionerData}
+        />
       )}
 
       {step < 5 && (
@@ -149,7 +161,6 @@ function VerificationWizard() {
           Step {step} / 5
         </div>
       )}
-
     </div>
   );
 }
