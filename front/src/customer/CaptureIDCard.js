@@ -1,34 +1,32 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
-const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
+const IMGBB_API_KEY = "YOUR_KEY_HERE";
 
 function CaptureIDCard({ onSuccess }) {
+  const videoRef = useRef(null);
+  const streamRef = useRef(null); // ✅ FIX: store stream safely
+
   const [faydaNumber, setFaydaNumber] = useState("");
   const [image, setImage] = useState("");
   const [cameraActive, setCameraActive] = useState(false);
   const [scanStatus, setScanStatus] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  const videoRef = useRef(null);
-
   // ==========================
-  // CLEANUP CAMERA ON UNMOUNT
+  // CLEANUP
   // ==========================
   useEffect(() => {
-    return () => {
-      stopCamera();
-    };
+    return () => stopCamera();
   }, []);
 
   // ==========================
-  // STOP CAMERA
+  // STOP CAMERA (FIXED)
   // ==========================
   const stopCamera = () => {
-    const stream = videoRef.current?.srcObject;
-
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     }
 
     if (videoRef.current) {
@@ -52,6 +50,8 @@ function CaptureIDCard({ onSuccess }) {
         },
       });
 
+      streamRef.current = stream; // ✅ FIX
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
@@ -64,18 +64,13 @@ function CaptureIDCard({ onSuccess }) {
   };
 
   // ==========================
-  // UPLOAD IMAGE TO IMGBB
+  // UPLOAD TO IMGBB (FIXED)
   // ==========================
   const uploadIdToImgBB = async (base64Image) => {
     try {
+      const cleanBase64 = base64Image.split(",")[1]; // ✅ FIX
+
       const formData = new FormData();
-
-      // FIXED: proper base64 cleanup
-      const cleanBase64 = base64Image.replace(
-        /^data:image\/\w+;base64,/,
-        ""
-      );
-
       formData.append("image", cleanBase64);
 
       const response = await axios.post(
@@ -97,7 +92,7 @@ function CaptureIDCard({ onSuccess }) {
     const video = videoRef.current;
 
     if (!video || video.videoWidth === 0) {
-      alert("⏳ ካሜራ እስካሁን አልተዘጋጀም");
+      alert("⏳ Camera not ready");
       return;
     }
 
@@ -113,7 +108,7 @@ function CaptureIDCard({ onSuccess }) {
     stopCamera();
 
     setUploading(true);
-    setScanStatus("⏳ ፎቶ በመላክ ላይ...");
+    setScanStatus("⏳ Uploading...");
 
     const uploadedUrl = await uploadIdToImgBB(base64Image);
 
@@ -121,7 +116,7 @@ function CaptureIDCard({ onSuccess }) {
 
     if (uploadedUrl) {
       setImage(uploadedUrl);
-      setScanStatus("✅ ፎቶ ተሳክቷል");
+      setScanStatus("✅ Upload successful");
     } else {
       setScanStatus("❌ Upload failed");
     }
@@ -133,15 +128,11 @@ function CaptureIDCard({ onSuccess }) {
   const handleContinue = () => {
     const cleanFayda = faydaNumber.replace(/\D/g, "");
 
-    if (!image) {
-      return alert("⚠️ መጀመሪያ ፎቶ ያንሱ");
-    }
+    if (!image) return alert("⚠️ Take ID photo first");
 
     if (cleanFayda.length !== 16) {
-      return alert("⚠️ 16 ዲጂት የፋይዳ ቁጥር ያስገቡ");
+      return alert("⚠️ Invalid 16-digit Fayda number");
     }
-
-    setScanStatus("🎉 ተሳክቷል");
 
     onSuccess({
       faydaNumber: cleanFayda,
@@ -151,23 +142,16 @@ function CaptureIDCard({ onSuccess }) {
   };
 
   return (
-    <div
-      style={{
-        padding: "20px",
-        maxWidth: "450px",
-        margin: "auto",
-        textAlign: "center",
-      }}
-    >
-      <h3>🆔 የጡረተኛ መታወቂያ ካሜራ</h3>
+    <div style={{ padding: 20, maxWidth: 450, margin: "auto" }}>
+      <h3>🆔 ID Capture</h3>
 
-      {/* CAMERA VIEW */}
+      {/* CAMERA */}
       <div
         style={{
           width: "100%",
           aspectRatio: "1.6",
           background: "#000",
-          borderRadius: "12px",
+          borderRadius: 12,
           overflow: "hidden",
         }}
       >
@@ -176,63 +160,55 @@ function CaptureIDCard({ onSuccess }) {
             ref={videoRef}
             autoPlay
             playsInline
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : image ? (
           <img
             src={image}
             alt="ID"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : (
-          <div style={{ color: "#fff", paddingTop: "80px" }}>
-            ካሜራ ዝግጁ
+          <div style={{ color: "#fff", textAlign: "center", paddingTop: 80 }}>
+            Camera Ready
           </div>
         )}
       </div>
 
-      {/* CAMERA BUTTON */}
+      {/* BUTTON */}
       <button
         onClick={cameraActive ? capturePhoto : startCamera}
         disabled={uploading}
         style={{
           width: "100%",
-          padding: "14px",
-          marginTop: "10px",
+          padding: 14,
+          marginTop: 10,
           background: "#162447",
           color: "#fff",
           border: "none",
-          borderRadius: "8px",
+          borderRadius: 8,
         }}
       >
         {cameraActive
-          ? "📸 ቅረጽ"
+          ? "📸 Capture"
           : image
-          ? "🔄 እንደገና አንሳ"
-          : "📷 ካሜራ ክፈት"}
+          ? "🔄 Retake"
+          : "📷 Open Camera"}
       </button>
 
-      {/* FAYDA INPUT */}
+      {/* INPUT */}
       <input
         type="text"
-        maxLength="16"
+        maxLength={16}
         value={faydaNumber}
         onChange={(e) =>
           setFaydaNumber(e.target.value.replace(/\D/g, ""))
         }
-        placeholder="16 ዲጂት የፋይዳ ቁጥር"
+        placeholder="16-digit Fayda number"
         style={{
           width: "100%",
-          padding: "12px",
-          marginTop: "15px",
+          padding: 12,
+          marginTop: 15,
         }}
       />
 
@@ -242,21 +218,18 @@ function CaptureIDCard({ onSuccess }) {
         disabled={uploading || !image}
         style={{
           width: "100%",
-          padding: "15px",
-          marginTop: "15px",
+          padding: 15,
+          marginTop: 15,
           background: "#22c55e",
           color: "#fff",
           border: "none",
-          borderRadius: "8px",
+          borderRadius: 8,
         }}
       >
-        ቀጥል
+        Continue →
       </button>
 
-      {/* STATUS */}
-      <p style={{ marginTop: "10px", fontSize: "13px" }}>
-        {scanStatus}
-      </p>
+      <p style={{ fontSize: 12, marginTop: 10 }}>{scanStatus}</p>
     </div>
   );
 }
