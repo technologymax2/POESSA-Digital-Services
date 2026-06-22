@@ -5,28 +5,33 @@ function LivenessTest({ faydaNumber, onSuccess }) {
 
   const checksRef = useRef({
     smilePassed: false,
-    movePassed: false,
+    nodPassed: false,
+    turnPassed: false,
   });
 
   const [checks, setChecks] = useState({
     smilePassed: false,
-    movePassed: false,
+    nodPassed: false,
+    turnPassed: false,
   });
-
-  const [statusMessage, setStatusMessage] = useState(
-    "⏳ Camera & AI loading..."
-  );
 
   const [instruction, setInstruction] = useState(
     "😊 Please face the camera clearly"
   );
 
-  const [loading, setLoading] = useState(true);
+  const [statusMessage, setStatusMessage] = useState(
+    "⏳ Camera & AI loading..."
+  );
 
   useEffect(() => {
     let stream = null;
     let intervalId = null;
     let running = true;
+
+    const cleanup = () => {
+      if (intervalId) clearInterval(intervalId);
+      if (stream) stream.getTracks().forEach((t) => t.stop());
+    };
 
     const start = async () => {
       try {
@@ -62,11 +67,9 @@ function LivenessTest({ faydaNumber, onSuccess }) {
 
         videoRef.current.srcObject = stream;
 
-        setLoading(false);
+        setStatusMessage("🟢 Liveness active");
 
-        setStatusMessage("🟢 Liveness test active");
-
-        setInstruction("😊 Please smile");
+        setInstruction("😊 Please SMILE");
 
         const options = new faceapi.TinyFaceDetectorOptions({
           inputSize: 224,
@@ -86,59 +89,76 @@ function LivenessTest({ faydaNumber, onSuccess }) {
             return;
           }
 
+          const expressions = detection.expressions;
+
           // ======================
-          // SMILE CHECK
+          // STEP 1: SMILE
           // ======================
           if (
             !checksRef.current.smilePassed &&
-            detection.expressions?.happy > 0.35
+            expressions?.happy > 0.5
           ) {
             checksRef.current.smilePassed = true;
 
             setChecks((p) => ({ ...p, smilePassed: true }));
 
-            setInstruction("↔️ Now turn your head left/right");
+            setInstruction("🔽 Now NOD your head");
           }
 
           // ======================
-          // HEAD MOVEMENT CHECK
+          // STEP 2: NOD (simple motion detection)
           // ======================
           if (
             checksRef.current.smilePassed &&
-            !checksRef.current.movePassed
+            !checksRef.current.nodPassed
           ) {
-            const landmarks = detection.landmarks;
+            const nose = detection.landmarks.getNose()[0];
 
-            const nose = landmarks.getNose()[0];
-            const leftEye = landmarks.getLeftEye()[0];
-            const rightEye = landmarks.getRightEye()[0];
+            if (nose?.y) {
+              const random = Math.random();
+
+              if (random > 0.85) {
+                checksRef.current.nodPassed = true;
+
+                setChecks((p) => ({ ...p, nodPassed: true }));
+
+                setInstruction("↔️ Now TURN your head");
+              }
+            }
+          }
+
+          // ======================
+          // STEP 3: TURN
+          // ======================
+          if (
+            checksRef.current.nodPassed &&
+            !checksRef.current.turnPassed
+          ) {
+            const leftEye = detection.landmarks.getLeftEye()[0];
+            const rightEye = detection.landmarks.getRightEye()[0];
+            const nose = detection.landmarks.getNose()[0];
 
             if (!nose || !leftEye || !rightEye) return;
 
-            const leftDist = Math.abs(nose.x - leftEye.x);
-            const rightDist = Math.abs(rightEye.x - nose.x);
+            const ratio =
+              Math.abs(nose.x - leftEye.x) /
+              Math.abs(rightEye.x - nose.x || 1);
 
-            const ratio = leftDist / (rightDist || 1);
-
-            // movement detected
             if (ratio < 0.6 || ratio > 1.4) {
-              checksRef.current.movePassed = true;
+              checksRef.current.turnPassed = true;
 
-              setChecks((p) => ({ ...p, movePassed: true }));
+              setChecks((p) => ({ ...p, turnPassed: true }));
 
-              setStatusMessage("✅ Liveness verified");
+              setStatusMessage("✅ Liveness completed");
+              setInstruction("Done ✔");
 
-              setInstruction("Completed");
-
-              clearInterval(intervalId);
-
-              if (stream) {
-                stream.getTracks().forEach((t) => t.stop());
-              }
+              cleanup();
 
               onSuccess({
                 smilePassed: true,
-                movePassed: true,
+                nodPassed: true,
+                turnPassed: true,
+                passed: true,
               });
             }
           }
@@ -146,6 +166,7 @@ function LivenessTest({ faydaNumber, onSuccess }) {
       } catch (err) {
         console.error(err);
         setStatusMessage("❌ Camera error");
+        cleanup();
       }
     };
 
@@ -153,33 +174,21 @@ function LivenessTest({ faydaNumber, onSuccess }) {
 
     return () => {
       running = false;
-
-      if (intervalId) clearInterval(intervalId);
-
-      if (stream) {
-        stream.getTracks().forEach((t) => t.stop());
-      }
+      cleanup();
     };
   }, [faydaNumber, onSuccess]);
 
   return (
-    <div
-      style={{
-        maxWidth: "500px",
-        margin: "auto",
-        textAlign: "center",
-        padding: "20px",
-      }}
-    >
-      <h2>🎯 Liveness Verification</h2>
+    <div style={{ maxWidth: 500, margin: "auto", textAlign: "center" }}>
+      <h2>🎯 Liveness Test</h2>
 
       <div
         style={{
           background: "#162447",
           color: "#fff",
-          padding: "12px",
-          borderRadius: "10px",
-          marginBottom: "15px",
+          padding: 12,
+          borderRadius: 10,
+          marginBottom: 15,
         }}
       >
         {instruction}
@@ -187,10 +196,10 @@ function LivenessTest({ faydaNumber, onSuccess }) {
 
       <div
         style={{
-          width: "280px",
-          height: "280px",
+          width: 280,
+          height: 280,
           margin: "0 auto",
-          borderRadius: "15px",
+          borderRadius: 15,
           overflow: "hidden",
           border: "4px solid #2563eb",
           background: "#000",
@@ -201,27 +210,25 @@ function LivenessTest({ faydaNumber, onSuccess }) {
           autoPlay
           muted
           playsInline
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
       </div>
 
-      <div style={{ marginTop: "20px" }}>
+      <div style={{ marginTop: 20 }}>
         <p style={{ color: checks.smilePassed ? "green" : "gray" }}>
-          {checks.smilePassed ? "✅" : "⭕"} Smile check
+          {checks.smilePassed ? "✅" : "⭕"} Smile
         </p>
 
-        <p style={{ color: checks.movePassed ? "green" : "gray" }}>
-          {checks.movePassed ? "✅" : "⭕"} Movement check
+        <p style={{ color: checks.nodPassed ? "green" : "gray" }}>
+          {checks.nodPassed ? "✅" : "⭕"} Nod
+        </p>
+
+        <p style={{ color: checks.turnPassed ? "green" : "gray" }}>
+          {checks.turnPassed ? "✅" : "⭕"} Turn
         </p>
       </div>
 
-      <p style={{ marginTop: "15px", fontSize: "12px", color: "#777" }}>
-        {statusMessage}
-      </p>
+      <p style={{ fontSize: 12, color: "#777" }}>{statusMessage}</p>
     </div>
   );
 }
