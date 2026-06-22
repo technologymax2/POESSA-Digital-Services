@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
-// API ቁልፍ (በ .env ፋይልህ ውስጥ ቢቀመጥ ይመረጣል)
 const IMGBB_API_KEY = process.env.REACT_APP_IMGBB_API_KEY || "ebd592608f4dba1e8271bec8e920c408";
 
 function CaptureSelfie({ onSuccess }) {
@@ -10,18 +9,15 @@ function CaptureSelfie({ onSuccess }) {
   const [uploading, setUploading] = useState(false);
   const videoRef = useRef(null);
 
-  // 1. ገጹ እንደተከፈተ ካሜራውን በራስ-ሰር ለመክፈት
+  // ገጹ እንደተከፈተ ካሜራውን በራስ-ሰር ይክፈት
   useEffect(() => {
     startSelfieCamera();
-    // ገጹ ሲዘጋ ካሜራውን ለማጥፋት
     return () => stopCamera();
   }, []);
 
   const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject;
-      stream.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
+    if (videoRef.current?.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
     }
     setCameraActive(false);
   };
@@ -29,7 +25,7 @@ function CaptureSelfie({ onSuccess }) {
   const startSelfieCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 480 } },
+        video: { facingMode: "user" },
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -37,16 +33,12 @@ function CaptureSelfie({ onSuccess }) {
       }
     } catch (err) {
       console.error("Camera error:", err);
-      alert("❌ ካሜራ መክፈት አልተቻለም። እባክዎ ለካሜራ ፍቃድ ይስጡ።");
     }
   };
 
   const captureSelfie = async () => {
     const video = videoRef.current;
-    if (!video || video.readyState !== 4) {
-      alert("⏳ ካሜራው በመጫን ላይ ነው... እባክዎ ይጠብቁ።");
-      return;
-    }
+    if (!video || video.readyState !== 4) return alert("⏳ ካሜራ በመጫን ላይ...");
 
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
@@ -54,69 +46,50 @@ function CaptureSelfie({ onSuccess }) {
     canvas.getContext("2d").drawImage(video, 0, 0);
     const base64Image = canvas.toDataURL("image/jpeg", 0.7);
 
-    stopCamera();
     setUploading(true);
-
     try {
       const formData = new FormData();
       formData.append("image", base64Image.split(",")[1]);
-
-      const response = await axios.post(
-        `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
-        formData
-      );
-
-      if (response.data?.data?.url) {
-        setImage(response.data.data.url);
-      } else {
-        throw new Error("Upload failed");
-      }
+      const res = await axios.post(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, formData);
+      setImage(res.data.data.url);
+      stopCamera();
     } catch (err) {
-      console.error("Upload error:", err);
-      alert("❌ ፎቶውን መጫን አልተቻለም።");
+      alert("❌ አፕሎድ አልተሳካም");
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: "450px", margin: "0 auto", padding: "20px", textAlign: "center" }}>
+    <div style={{ padding: "20px", textAlign: "center" }}>
       <h3>👤 ደረጃ 2 - Selfie Capture</h3>
 
-      <div style={{ width: "220px", height: "220px", margin: "20px auto", borderRadius: "50%", overflow: "hidden", border: "4px solid #162447", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        {cameraActive ? (
-          <video ref={videoRef} autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      {/* የካሜራ ማሳያ */}
+      <div style={{ width: "220px", height: "220px", margin: "20px auto", borderRadius: "50%", overflow: "hidden", border: "4px solid #162447", background: "#f1f5f9" }}>
+        {uploading ? (
+            <div style={{ marginTop: "90px" }}>⏳ Uploading...</div>
         ) : image ? (
-          <img src={image} alt="Selfie" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : uploading ? (
-          <p>⏳ በመጫን ላይ...</p>
+            <img src={image} alt="Selfie" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <div style={{ fontSize: "50px" }}>👤</div>
+            <video ref={videoRef} autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         )}
       </div>
 
-      {/* የካሜራ ቁልፎች */}
-      {!cameraActive && !image && !uploading && (
-        <button onClick={startSelfieCamera} style={{ width: "100%", padding: "14px", background: "#475569", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}>
-          🤳 ካሜራ ክፈት
+      {/* ቁልፎች */}
+      {!image && !uploading && (
+        <button onClick={captureSelfie} style={{ width: "100%", padding: "15px", background: "#22c55e", color: "#fff", border: "none", borderRadius: "8px" }}>
+            📸 Capture
         </button>
       )}
 
-      {cameraActive && (
-        <button onClick={captureSelfie} style={{ width: "100%", padding: "14px", background: "#22c55e", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}>
-          📸 Capture
-        </button>
-      )}
-
-      {/* ውጤት ከታየ በኋላ የሚታዩ አማራጮች */}
-      {image && !uploading && (
+      {image && (
         <>
-          <button onClick={() => onSuccess(image)} style={{ width: "100%", padding: "14px", background: "#162447", color: "#fff", border: "none", borderRadius: "8px", marginBottom: "10px" }}>
-            Face Match →
-          </button>
-          <button onClick={startSelfieCamera} style={{ width: "100%", padding: "10px", background: "transparent", color: "#64748b", border: "1px solid #64748b", borderRadius: "8px" }}>
-            🔄 እንደገና አንሳ
-          </button>
+            <button onClick={() => onSuccess(image)} style={{ width: "100%", padding: "15px", background: "#162447", color: "#fff", border: "none", borderRadius: "8px" }}>
+                Face Match →
+            </button>
+            <button onClick={() => { setImage(""); startSelfieCamera(); }} style={{ width: "100%", padding: "10px", marginTop: "10px", background: "none", border: "1px solid #ccc" }}>
+                🔄 እንደገና አንሳ
+            </button>
         </>
       )}
     </div>
