@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-
+import * as faceapi from "face-api.js";
 
 function FaceMatch({ registeredPhoto, selfiePhoto, onSuccess }) {
   const [loading, setLoading] = useState(true);
@@ -11,8 +11,11 @@ function FaceMatch({ registeredPhoto, selfiePhoto, onSuccess }) {
 
     const runFaceMatch = async () => {
       try {
-        console.log("DB PHOTO =", registeredPhoto);
-        console.log("SELFIE PHOTO =", selfiePhoto);
+        setLoading(true);
+        setMatchPercentage(null);
+
+        console.log("REGISTERED =", registeredPhoto);
+        console.log("SELFIE =", selfiePhoto);
 
         if (!registeredPhoto || !selfiePhoto) {
           setStatusMessage("❌ Missing images");
@@ -20,9 +23,9 @@ function FaceMatch({ registeredPhoto, selfiePhoto, onSuccess }) {
           return;
         }
 
-        // =========================
+        // ======================
         // LOAD MODELS
-        // =========================
+        // ======================
         const MODEL_URL = "/models";
 
         setStatusMessage("⏳ Loading AI models...");
@@ -33,54 +36,69 @@ function FaceMatch({ registeredPhoto, selfiePhoto, onSuccess }) {
           faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
         ]);
 
-        // =========================
-        // LOAD IMAGES
-        // =========================
+        // ======================
+        // LOAD IMAGE SAFE
+        // ======================
         const loadImage = (src) =>
           new Promise((resolve, reject) => {
             const img = new Image();
             img.crossOrigin = "anonymous";
 
             img.onload = () => resolve(img);
-            img.onerror = () => reject(new Error("Image load failed"));
+            img.onerror = () => {
+              console.log("IMAGE LOAD FAILED:", src);
+              reject(new Error("Image load failed"));
+            };
 
             img.src = src;
           });
 
-        setStatusMessage("⏳ Preparing images...");
+        setStatusMessage("⏳ Loading images...");
 
         const img1 = await loadImage(registeredPhoto);
         const img2 = await loadImage(selfiePhoto);
 
-        // =========================
-        // FACE DETECTION
-        // =========================
-        setStatusMessage("⏳ Detecting faces...");
-
+        // ======================
+        // DETECTION OPTIONS
+        // ======================
         const options = new faceapi.TinyFaceDetectorOptions({
           inputSize: 320,
           scoreThreshold: 0.5,
         });
 
+        setStatusMessage("⏳ Detecting faces...");
+
+        // ======================
+        // DETECT FACE 1
+        // ======================
         const result1 = await faceapi
           .detectSingleFace(img1, options)
           .withFaceLandmarks()
           .withFaceDescriptor();
 
+        if (!result1) {
+          setStatusMessage("❌ No face detected in REGISTERED photo");
+          setLoading(false);
+          return;
+        }
+
+        // ======================
+        // DETECT FACE 2
+        // ======================
         const result2 = await faceapi
           .detectSingleFace(img2, options)
           .withFaceLandmarks()
           .withFaceDescriptor();
 
-        if (!result1 || !result2) {
-          setStatusMessage("❌ Face not detected in one of the images");
+        if (!result2) {
+          setStatusMessage("❌ No face detected in SELFIE photo");
           setLoading(false);
           return;
         }
 
-        // =========================
+        // ======================
         // COMPARE FACES
-        // =========================
+        // ======================
         const distance = faceapi.euclideanDistance(
           result1.descriptor,
           result2.descriptor
@@ -96,17 +114,20 @@ function FaceMatch({ registeredPhoto, selfiePhoto, onSuccess }) {
 
         setMatchPercentage(similarity);
 
+        // ======================
+        // RESULT
+        // ======================
         if (similarity >= 50) {
           setStatusMessage(`✅ Match Successful (${similarity}%)`);
 
           setTimeout(() => {
-            onSuccess(similarity);
+            if (mounted) onSuccess(similarity);
           }, 1000);
         } else {
           setStatusMessage(`❌ Face Mismatch (${similarity}%)`);
         }
       } catch (err) {
-        console.error("Face Match Error:", err);
+        console.error("FACE MATCH ERROR:", err);
         setStatusMessage("❌ Error while comparing faces");
       }
 
@@ -129,7 +150,7 @@ function FaceMatch({ registeredPhoto, selfiePhoto, onSuccess }) {
           <h4>Registered Photo</h4>
           <img
             src={registeredPhoto}
-            alt="Registered"
+            alt="registered"
             style={{
               width: 140,
               height: 140,
@@ -143,7 +164,7 @@ function FaceMatch({ registeredPhoto, selfiePhoto, onSuccess }) {
           <h4>Selfie</h4>
           <img
             src={selfiePhoto}
-            alt="Selfie"
+            alt="selfie"
             style={{
               width: 140,
               height: 140,
@@ -154,7 +175,7 @@ function FaceMatch({ registeredPhoto, selfiePhoto, onSuccess }) {
         </div>
       </div>
 
-      <div style={{ marginTop: 20, fontWeight: "bold", fontSize: 18 }}>
+      <div style={{ marginTop: 20, fontWeight: "bold" }}>
         {statusMessage}
       </div>
 
@@ -162,7 +183,7 @@ function FaceMatch({ registeredPhoto, selfiePhoto, onSuccess }) {
         <h2>{matchPercentage}% Match</h2>
       )}
 
-      {loading && <p style={{ marginTop: 15 }}>Processing...</p>}
+      {loading && <p>Processing...</p>}
     </div>
   );
 }
