@@ -3,7 +3,7 @@ const router = express.Router();
 const axios = require("axios");
 
 const UserPensioner = require("./models/UserPensioner");
-const LivenessVerification = require("./models/LivenessSchema");
+const LivenessVerification = require("./models/livenessSchema");
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
