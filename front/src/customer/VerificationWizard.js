@@ -15,12 +15,14 @@ function VerificationWizard() {
 
   const [selfieUrl, setSelfieUrl] = useState("");
   const [livenessResult, setLivenessResult] = useState({});
-  const [matchPercent, setMatchPercent] = useState(0);
+  const [matchPercent, setMatchPercent] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // STEP 1
+  // ======================
+  // STEP 1 - ID CARD
+  // ======================
   const handleIdSuccess = async (data) => {
     setLoading(true);
     setError("");
@@ -30,13 +32,10 @@ function VerificationWizard() {
         `https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${data.faydaNumber}`
       );
 
-      if (!res.data.success) {
+      if (!res.data?.success || !res.data?.data) {
         setError("❌ Pensioner not found");
         return;
       }
-
-      console.log("Pensioner =", res.data.data);
-      console.log("Photo URL =", res.data.data.photoUrl);
 
       setFaydaNumber(data.faydaNumber);
       setPensionerData(res.data.data);
@@ -50,33 +49,36 @@ function VerificationWizard() {
     }
   };
 
-  // FINAL SAVE
+  // ======================
+  // FINAL STEP
+  // ======================
   const handleFinal = async (match) => {
+    if (!pensionerData) {
+      setError("❌ Missing pensioner data");
+      return;
+    }
+
     setLoading(true);
+    setError("");
 
     try {
-const payload = {
-  faydaNumber,
+      const payload = {
+        faydaNumber,
+        dbPhotoUrl: pensionerData.photoUrl,
+        selfiePhotoUrl: selfieUrl,
+        matchPercentage: match,
 
-  // image from MongoDB
-  dbPhotoUrl: pensionerData.photoUrl,
-
-  // captured selfie
-  selfiePhotoUrl: selfieUrl,
-
-  matchPercentage: match,
-
-  smilePassed: livenessResult.smilePassed || false,
-  nodPassed: livenessResult.nodPassed || false,
-  turnPassed: livenessResult.turnPassed || false
-};
+        smilePassed: livenessResult?.smilePassed || false,
+        nodPassed: livenessResult?.nodPassed || false,
+        turnPassed: livenessResult?.turnPassed || false,
+      };
 
       const res = await axios.post(
         "https://poessa-digital-services-1.onrender.com/api/liveness/verify-success",
         payload
       );
 
-      if (res.data.success) {
+      if (res.data?.success) {
         setStep(5);
       } else {
         setError("❌ Save failed");
@@ -93,14 +95,17 @@ const payload = {
     <div className="wizard-container">
 
       {loading && (
-        <div className="overlay">
-          ⏳ Processing...
-        </div>
+        <div className="overlay">⏳ Processing...</div>
       )}
 
       {error && (
-        <div className="error">
-          {error}
+        <div className="error">{error}</div>
+      )}
+
+      {/* STEP INFO */}
+      {step < 5 && (
+        <div className="step-info">
+          Step {step}/5
         </div>
       )}
 
@@ -130,28 +135,21 @@ const payload = {
       )}
 
       {/* STEP 4 */}
-   {step === 4 && pensionerData && (
-  <FaceMatch
-    registeredPhoto={pensionerData.photoUrl}
-    selfiePhoto={selfieUrl}
-    onSuccess={(percent) => {
-      setMatchPercent(percent);
-      handleFinal(percent);
-    }}
-  />
-)}
+      {step === 4 && pensionerData && selfieUrl && (
+        <FaceMatch
+          registeredPhoto={pensionerData.photoUrl}
+          selfiePhoto={selfieUrl}
+          onSuccess={(percent) => {
+            setMatchPercent(percent);
+            handleFinal(percent);
+          }}
+        />
+      )}
 
       {/* STEP 5 */}
       {step === 5 && (
         <VerificationSuccess data={pensionerData} />
       )}
-
-      {step < 5 && (
-        <div className="step-info">
-          Step {step}/5
-        </div>
-      )}
-
     </div>
   );
 }
