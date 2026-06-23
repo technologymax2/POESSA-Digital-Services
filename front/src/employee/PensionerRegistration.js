@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import * as faceapi from 'face-api.js'; // 🔥 አዲስ፡ የፊት ለይቶ ማወቂያ ላይብረሪ
+import * as faceapi from 'face-api.js'; // 🔥 የፊት ለይቶ ማወቂያ ላይብረሪ
 import './PensionerRegistration.css';
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
@@ -22,21 +22,26 @@ function PensionerRegistration() {
   const [validationErrors, setValidationErrors] = useState({});
   const [duplicateErrors, setDuplicateErrors] = useState({ pensionerId: false, tin: false, faydaNumber: false });
   const [checkingStatus, setCheckingStatus] = useState({ pensionerId: false, tin: false, faydaNumber: false });
-  const [modelsLoaded, setModelsLoaded] = useState(false); // 🔥 አዲስ፡ የሞዴል መጫኛ ስቴት
+  const [modelsLoaded, setModelsLoaded] = useState(false); // 🔥 የሞዴል መጫኛ ስቴት
 
-  // 🔄 የ face-api.js ሞዴሎችን መጫኛ
+  // 🔄 የ face-api.js ሞዴሎችን በ tinyFaceDetector መጫኛ
   useEffect(() => {
     const loadModels = async () => {
       try {
-        // ሞዴሎቹ በ public/models/ ፎልደር ውስጥ መኖራቸውን ያረጋግጣል
-        await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
-        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+        // Vercel ላይ በደህንነት እንዲያነበው የ absolute path አጠቃቀም
+        const MODEL_URL = `${window.location.origin}/models`;
+        console.log("ሞዴሎችን ከዚህ በመጫን ላይ፦", MODEL_URL);
+        
+        // 🔥 በ GitHub ባሉህ ፋይሎች መሰረት ወደ tinyFaceDetector ተቀይሯል
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+        
         setModelsLoaded(true);
         console.log("Face-api.js ሞዴሎች በተሳካ ሁኔታ ተጭነዋል!");
       } catch (err) {
         console.error("የሞዴል መጫን ስህተት፦", err);
-        setStatus("⚠️ የፊት መለኪያ ሞዴሎችን መጫን አልተቻለም!");
+        setStatus(`❌ የፊት መለኪያ ሞዴሎችን መጫን አልተቻለም! ዝርዝር፡ ${err.message}`);
       }
     };
 
@@ -46,7 +51,7 @@ function PensionerRegistration() {
     if (storedName) setCurrentEmployee(storedName);
   }, []);
 
-  // 🔄 1. Debounce የተደረገ የደገሜታ ማረጋገጫ ፈንክሽን
+  // 🔄 Debounce የተደረገ የደገሜታ ማረጋገጫ ፈንክሽን
   const debounceCheck = useCallback((fieldName, value) => {
     if (!value || value.length < 5) return;
 
@@ -175,12 +180,14 @@ function PensionerRegistration() {
     }
 
     setLoading(true);
-    setStatus('🔍 የጡረተኛውን ፊት በመተንተን ላይ...'); // 🔥 መጀመሪያ ፊትን መተንተን
+    setStatus('🔍 የጡረተኛውን ፊት በመተንተን ላይ...');
 
     try {
       // 📷 1. የፊት መለኪያን ከምስሉ ላይ ማውጣት (Face Descriptor)
       const imgElement = await faceapi.bufferToImage(image);
-      const detection = await faceapi.detectSingleFace(imgElement)
+      
+      // 🔥 እዚህ ጋር በ TinyFaceDetectorOptions ተቀይሯል
+      const detection = await faceapi.detectSingleFace(imgElement, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks()
         .withFaceDescriptor();
 
@@ -190,7 +197,6 @@ function PensionerRegistration() {
         return;
       }
 
-      // ከ face-api የሚመጣውን Float32Array ወደ መደበኛ Array መለወጥ
       const descriptorArray = Array.from(detection.descriptor);
 
       setStatus('⏳ ፎቶውን ወደ Cloud ማከማቻ በመላክ ላይ...');
@@ -206,11 +212,11 @@ function PensionerRegistration() {
       if (!imgResult.success) throw new Error('ፎቶውን ወደ Cloud ማከማቻ መላክ አልተቻለም');
 
       setStatus('⏳ ሙሉ መረጃውን በዳታቤዝ ላይ በመመዝገብ ላይ...');
-      // 🚀 3. የፊት መለኪያውን (faceDescriptor) ጨምሮ ወደ Backend መላክ
+      // 🚀 3. የፊት መለኪያውን ጨምሮ ወደ Backend መላክ
       const finalData = { 
         ...formData, 
         photoUrl: imgResult.data.url, 
-        faceDescriptor: descriptorArray, // 🔥 አዲስ የተጨመረው የቁጥር ስብስብ
+        faceDescriptor: descriptorArray,
         employeeName: currentEmployee,
         lastAction: 'Created',
         lastActionTime: new Date().toISOString()
