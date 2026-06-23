@@ -15,63 +15,87 @@ function VerificationWizard() {
 
   const [selfieUrl, setSelfieUrl] = useState("");
   const [livenessResult, setLivenessResult] = useState({});
-  const [matchPercent, setMatchPercent] = useState(null);
+
+  const [matchPercent, setMatchPercent] = useState(0);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ======================
-  // STEP 1 - ID CARD
-  // ======================
+  // ==================================
+  // STEP 1 - ID CARD OCR SUCCESS
+  // ==================================
   const handleIdSuccess = async (data) => {
-    setLoading(true);
-    setError("");
-
     try {
+      setLoading(true);
+      setError("");
+
+      const fayda = data?.faydaNumber;
+
+      if (!fayda) {
+        setError("❌ Fayda number not found");
+        return;
+      }
+
       const res = await axios.get(
-        `https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${data.faydaNumber}`
+        `https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${fayda}`
       );
 
-      if (!res.data?.success || !res.data?.data) {
+      if (!res.data?.success) {
         setError("❌ Pensioner not found");
         return;
       }
 
-      setFaydaNumber(data.faydaNumber);
-      setPensionerData(res.data.data);
+      const pensioner = res.data.data;
+
+      console.log("PENSIONER:", pensioner);
+
+      if (!pensioner?.photoUrl) {
+        setError("❌ Registered photo not found");
+        return;
+      }
+
+      setFaydaNumber(fayda);
+      setPensionerData(pensioner);
 
       setStep(2);
-    } catch (err) {
-      console.error(err);
-      setError("❌ Server error");
+    } catch (error) {
+      console.error(error);
+      setError("❌ Failed to fetch pensioner");
     } finally {
       setLoading(false);
     }
   };
 
-  // ======================
-  // FINAL STEP
-  // ======================
+  // ==================================
+  // SAVE FINAL RESULT
+  // ==================================
   const handleFinal = async (match) => {
-    if (!pensionerData) {
-      setError("❌ Missing pensioner data");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
     try {
+      setLoading(true);
+      setError("");
+
+      if (!pensionerData) {
+        setError("❌ Missing pensioner data");
+        return;
+      }
+
       const payload = {
         faydaNumber,
+
         dbPhotoUrl: pensionerData.photoUrl,
+
         selfiePhotoUrl: selfieUrl,
+
         matchPercentage: match,
 
-        smilePassed: livenessResult?.smilePassed || false,
-        nodPassed: livenessResult?.nodPassed || false,
-        turnPassed: livenessResult?.turnPassed || false,
+        smilePassed: !!livenessResult?.smilePassed,
+
+        nodPassed: !!livenessResult?.nodPassed,
+
+        turnPassed: !!livenessResult?.turnPassed,
       };
+
+      console.log("VERIFY PAYLOAD:", payload);
 
       const res = await axios.post(
         "https://poessa-digital-services-1.onrender.com/api/liveness/verify-success",
@@ -81,11 +105,11 @@ function VerificationWizard() {
       if (res.data?.success) {
         setStep(5);
       } else {
-        setError("❌ Save failed");
+        setError("❌ Verification save failed");
       }
-    } catch (err) {
-      console.error(err);
-      setError("❌ System error");
+    } catch (error) {
+      console.error(error);
+      setError("❌ Verification error");
     } finally {
       setLoading(false);
     }
@@ -95,30 +119,54 @@ function VerificationWizard() {
     <div className="wizard-container">
 
       {loading && (
-        <div className="overlay">⏳ Processing...</div>
+        <div
+          style={{
+            padding: "10px",
+            background: "#fff3cd",
+            marginBottom: "10px",
+          }}
+        >
+          ⏳ Processing...
+        </div>
       )}
 
       {error && (
-        <div className="error">{error}</div>
+        <div
+          style={{
+            color: "red",
+            marginBottom: "10px",
+          }}
+        >
+          {error}
+        </div>
       )}
 
-      {/* STEP INFO */}
       {step < 5 && (
-        <div className="step-info">
-          Step {step}/5
+        <div
+          style={{
+            marginBottom: "15px",
+            fontWeight: "bold",
+          }}
+        >
+          Step {step} / 5
         </div>
       )}
 
       {/* STEP 1 */}
       {step === 1 && (
-        <CaptureIDCard onSuccess={handleIdSuccess} />
+        <CaptureIDCard
+          onSuccess={handleIdSuccess}
+        />
       )}
 
       {/* STEP 2 */}
       {step === 2 && (
         <CaptureSelfie
           onSuccess={(url) => {
+            console.log("SELFIE URL:", url);
+
             setSelfieUrl(url);
+
             setStep(3);
           }}
         />
@@ -128,27 +176,44 @@ function VerificationWizard() {
       {step === 3 && (
         <LivenessTest
           onSuccess={(result) => {
+            console.log("LIVENESS:", result);
+
             setLivenessResult(result);
+
             setStep(4);
           }}
         />
       )}
 
       {/* STEP 4 */}
-      {step === 4 && pensionerData && selfieUrl && (
-        <FaceMatch
-          registeredPhoto={pensionerData.photoUrl}
-          selfiePhoto={selfieUrl}
-          onSuccess={(percent) => {
-            setMatchPercent(percent);
-            handleFinal(percent);
-          }}
-        />
-      )}
+      {step === 4 &&
+        pensionerData &&
+        pensionerData.photoUrl &&
+        selfieUrl && (
+          <FaceMatch
+            idPhoto={pensionerData.photoUrl}
+            selfiePhoto={selfieUrl}
+            onSuccess={(percent) => {
+              console.log(
+                "FACE MATCH SUCCESS:",
+                percent
+              );
+
+              setMatchPercent(percent);
+
+              handleFinal(percent);
+            }}
+          />
+        )}
 
       {/* STEP 5 */}
       {step === 5 && (
-        <VerificationSuccess data={pensionerData} />
+        <VerificationSuccess
+          data={{
+            ...pensionerData,
+            matchPercent,
+          }}
+        />
       )}
     </div>
   );
