@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import * as faceapi from 'face-api.js'; // 🔥 አዲስ፡ የፊት ለይቶ ማወቂያ ላይብረሪ
 import './PensionerRegistration.css';
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
@@ -20,22 +21,37 @@ function PensionerRegistration() {
 
   const [validationErrors, setValidationErrors] = useState({});
   const [duplicateErrors, setDuplicateErrors] = useState({ pensionerId: false, tin: false, faydaNumber: false });
-  
-  // 🔥 አዲስ፡ በሪል-ታይም ሰርቨር ላይ ሲፈልግ የሚታይ የLoading ስቴት
   const [checkingStatus, setCheckingStatus] = useState({ pensionerId: false, tin: false, faydaNumber: false });
+  const [modelsLoaded, setModelsLoaded] = useState(false); // 🔥 አዲስ፡ የሞዴል መጫኛ ስቴት
 
+  // 🔄 የ face-api.js ሞዴሎችን መጫኛ
   useEffect(() => {
+    const loadModels = async () => {
+      try {
+        // ሞዴሎቹ በ public/models/ ፎልደር ውስጥ መኖራቸውን ያረጋግጣል
+        await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+        setModelsLoaded(true);
+        console.log("Face-api.js ሞዴሎች በተሳካ ሁኔታ ተጭነዋል!");
+      } catch (err) {
+        console.error("የሞዴል መጫን ስህተት፦", err);
+        setStatus("⚠️ የፊት መለኪያ ሞዴሎችን መጫን አልተቻለም!");
+      }
+    };
+
+    loadModels();
+
     const storedName = localStorage.getItem('fullName') || localStorage.getItem('username');
     if (storedName) setCurrentEmployee(storedName);
   }, []);
 
-  // 🔄 1. Debounce የተደረገ የደገሜታ ማረጋገጫ ፈንክሽን (ሰርቨር እንዳይጨናነቅ)
+  // 🔄 1. Debounce የተደረገ የደገሜታ ማረጋገጫ ፈንክሽን
   const debounceCheck = useCallback((fieldName, value) => {
     if (!value || value.length < 5) return;
 
     setCheckingStatus(prev => ({ ...prev, [fieldName]: true }));
 
-    // የቀደመውን የቲቪ ቆጣሪ ያጠፋል
     const handler = setTimeout(async () => {
       try {
         const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/check-duplicate?field=${fieldName}&value=${value}`);
@@ -59,7 +75,7 @@ function PensionerRegistration() {
       } finally {
         setCheckingStatus(prev => ({ ...prev, [fieldName]: false }));
       }
-    }, 500); // ተጠቃሚው መጻፍ ካቆመ ከ 500 ሚሊሰከንድ በኋላ ነው API የሚጠራው
+    }, 500);
 
     return () => clearTimeout(handler);
   }, []);
@@ -90,7 +106,7 @@ function PensionerRegistration() {
       } else {
         delete errors[name];
         if ((name === 'pensionerId' || name === 'tin') && cleanValue.length === 10) {
-          debounceCheck(name, cleanValue); // 🔥 እዚህ ጋር ነው ደንበኛው መጻፍ ሲያቆም ቼክ የሚደረገው
+          debounceCheck(name, cleanValue);
         }
       }
 
@@ -100,7 +116,6 @@ function PensionerRegistration() {
       if (value < 0) return;
       setFormData(prev => ({ ...prev, [name]: value }));
     } 
-    // 📅 2. የተሰጠበት እና የማብቂያ ቀን ቫሊዴሽን ህግ
     else if (name === 'expiryDate' && formData.issueDate && value < formData.issueDate) {
       errors.expiryDate = "⚠️ የማብቂያ ቀን ከተሰጠበት ቀን ቀድሞ ሊሆን አይችልም!";
       setValidationErrors(errors);
@@ -134,6 +149,11 @@ function PensionerRegistration() {
       return;
     }
 
+    if (!modelsLoaded) {
+      setStatus('⏳ የፊት መለኪያ ሞዴሎች ገና እየጫኑ ነው፣ እባክዎ ጥቂት ሰከንዶች ይጠብቁ...');
+      return;
+    }
+
     if (duplicateErrors.pensionerId || duplicateErrors.tin || duplicateErrors.faydaNumber || validationErrors.expiryDate) {
       setStatus('❌ እባክዎ የፎርሙን ስህተቶች ያስተካክሉ!');
       return;
@@ -155,9 +175,26 @@ function PensionerRegistration() {
     }
 
     setLoading(true);
-    setStatus('⏳ መረጃው በመመዝገብ ላይ ነው...');
+    setStatus('🔍 የጡረተኛውን ፊት በመተንተን ላይ...'); // 🔥 መጀመሪያ ፊትን መተንተን
 
     try {
+      // 📷 1. የፊት መለኪያን ከምስሉ ላይ ማውጣት (Face Descriptor)
+      const imgElement = await faceapi.bufferToImage(image);
+      const detection = await faceapi.detectSingleFace(imgElement)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (!detection) {
+        setStatus('❌ በምስሉ ላይ የሰው ፊት ማግኘት አልተቻለም! እባክዎ ግልጽ እና ፊት ለፊት የሚያሳይ ፎቶ ይምረጡ።');
+        setLoading(false);
+        return;
+      }
+
+      // ከ face-api የሚመጣውን Float32Array ወደ መደበኛ Array መለወጥ
+      const descriptorArray = Array.from(detection.descriptor);
+
+      setStatus('⏳ ፎቶውን ወደ Cloud ማከማቻ በመላክ ላይ...');
+      // ☁️ 2. ምስሉን ወደ imgBB መላክ
       const imgData = new FormData();
       imgData.append('image', image);
       
@@ -168,9 +205,12 @@ function PensionerRegistration() {
       const imgResult = await imgRes.json();
       if (!imgResult.success) throw new Error('ፎቶውን ወደ Cloud ማከማቻ መላክ አልተቻለም');
 
+      setStatus('⏳ ሙሉ መረጃውን በዳታቤዝ ላይ በመመዝገብ ላይ...');
+      // 🚀 3. የፊት መለኪያውን (faceDescriptor) ጨምሮ ወደ Backend መላክ
       const finalData = { 
         ...formData, 
         photoUrl: imgResult.data.url, 
+        faceDescriptor: descriptorArray, // 🔥 አዲስ የተጨመረው የቁጥር ስብስብ
         employeeName: currentEmployee,
         lastAction: 'Created',
         lastActionTime: new Date().toISOString()
@@ -184,7 +224,7 @@ function PensionerRegistration() {
 
       const result = await response.json();
       if (result.success) {
-        setStatus('🎉 መረጃው በተሳካ ሁኔታ ተመዝግቧል!');
+        setStatus('🎉 የጡረተኛው መረጃ እና የፊት አሻራ በተሳካ ሁኔታ ተመዝግቧል!');
         setValidationErrors({});
         setDuplicateErrors({ pensionerId: false, tin: false, faydaNumber: false });
         setFormData({ 
@@ -206,7 +246,7 @@ function PensionerRegistration() {
 
   return (
     <div className="pr-reg-container">
-      <h2 className="pr-form-title">POESSA የጡረተኞች ምዝገባ</h2>
+      <h2 className="pr-form-title">POESSA የጡረተኞች ምዝገባ (Face ID)</h2>
       <p>ፈጻሚ ባለሙያ: <strong>{currentEmployee}</strong></p>
 
       <form onSubmit={handleSubmit} className="pr-main-form">
@@ -250,7 +290,6 @@ function PensionerRegistration() {
             {validationErrors.faydaNumber && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.faydaNumber}</span>}
           </div>
 
-          {/* ሌሎች ፊልዶች */}
           <div className="pr-input-group"><label>ሙሉ ስም (አማርኛ)</label><input type="text" name="nameAmh" value={formData.nameAmh} onChange={handleChange} required /></div>
           <div className="pr-input-group"><label>Full Name (English)</label><input type="text" name="nameEng" value={formData.nameEng} onChange={handleChange} required /></div>
 
@@ -270,7 +309,6 @@ function PensionerRegistration() {
           </div>
           <div className="pr-input-group"><label>የተሰጠበት ቀን</label><input type="date" name="issueDate" value={formData.issueDate} onChange={handleChange} required /></div>
           
-          {/* የማብቂያ ቀን */}
           <div className="pr-input-group">
             <label>የማብቂያ ቀን</label>
             <input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} required style={{ borderColor: validationErrors.expiryDate ? 'red' : '' }} />
@@ -284,7 +322,6 @@ function PensionerRegistration() {
 
         {status && <div className="pr-status-msg">{status}</div>}
         
-        {/* የ Submit በተን መቆጣጠሪያ */}
         <button type="submit" className="pr-submit-btn" disabled={loading || duplicateErrors.pensionerId || duplicateErrors.tin || duplicateErrors.faydaNumber || validationErrors.expiryDate}>
           {loading ? 'እየተላከ ነው...' : 'መረጃውን መዝግብ'}
         </button>
