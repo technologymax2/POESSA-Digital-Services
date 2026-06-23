@@ -79,7 +79,7 @@ function VerificationWizard() {
     }
   };
 
-  // 🔥 የመጨረሻ ማረጋገጫ እና ወደ ሰርቨር መላክ
+  // 🔥 የመጨረሻ ማረጋገጫ እና
   const handleFinalSuccess = async (livenessResults) => {
     setLoading(true);
     try {
