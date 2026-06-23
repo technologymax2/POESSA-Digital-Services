@@ -1,4 +1,4 @@
-Const express = require("express");
+const express = require("express");
 const router = express.Router();
 const UserPensioner = require("./models/UserPensioner");
 const DeletedLog = require("./models/DeletedLog"); // 🟢 ለጠፉ መረጃዎች ታሪክ መዝገብ
