@@ -24,8 +24,6 @@ const UserPensionerSchema = new mongoose.Schema({
   registeredBy: { type: String, required: true }, 
   lastEditedBy: { type: String, default: "" },    
   lastEditedAt: { type: Date, default: Date.now }, 
-  // በ UserPensioner.js
-faceDescriptor: { type: [Number], default: [] },
 
   editHistory: [
     {
