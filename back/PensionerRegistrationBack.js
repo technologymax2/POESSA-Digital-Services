@@ -46,7 +46,6 @@ router.get("/check-duplicate", async (req, res) => {
   try {
     const { field, value } = req.query;
 
-    // ለደህንነት ሲባል የሚፈቀዱትን ቁልፍ ፊልዶች ብቻ መገደብ
     const allowedFields = ['pensionerId', 'tin', 'faydaNumber'];
     if (!allowedFields.includes(field)) {
       return res.status(400).json({ success: false, error: "ልክ ያልሆነ የፊልድ ስም ነው!" });
@@ -56,10 +55,7 @@ router.get("/check-duplicate", async (req, res) => {
       return res.status(400).json({ success: false, error: "እባክዎ የሚመረመረውን ዋጋ ያስገቡ!" });
     }
 
-    // በዳታቤዝ ውስጥ መኖሩን መፈለግ
     const exists = await UserPensioner.exists({ [field]: value });
-
-    // ካለ true ከሌለ false ይመልሳል (.exists() ፈጣንና አነስተኛ ሚሞሪ የሚወስድ ነው)
     return res.status(200).json({ exists: !!exists });
   } catch (error) {
     return res.status(500).json({ success: false, message: "የመደጋገም ማረጋገጫ ላይ ስህተት አጋጥሟል" });
@@ -74,22 +70,18 @@ router.put("/update/:id", async (req, res) => {
     const { id } = req.params;
     const { lastEditedBy, status, editHistory, ...updateFields } = req.body;
 
-    // 🛑 [ማሻሻያ 1] - የሰርቨር ደረጃ ጥብቅ ባለ 10 ዲጂት የቁጥር ቫሊዴሽን
     const numberFields = ['pensionerId', 'phone', 'tin'];
     for (const field of numberFields) {
       if (updateFields[field] !== undefined) {
-        // ቁጥር ብቻ መሆኑን ማረጋገጫ
         if (/\D/.test(updateFields[field])) {
           return res.status(400).json({ success: false, message: `❌ ${field} ቁጥር ብቻ መሆን አለበት!` });
         }
-        // ልክ 10 ዲጂት መሆኑን ማረጋገጫ
         if (updateFields[field].length !== 10) {
           return res.status(400).json({ success: false, message: `❌ ${field} ልክ 10 ዲጂት መሆን አለበት!` });
         }
       }
     }
 
-    // 📱 [ማሻሻያ 2] - ስልክ ቁጥር በ '0' መጀመሩን ማረጋገጥ
     if (updateFields.phone && updateFields.phone[0] !== '0') {
       return res.status(400).json({ success: false, message: "❌ ስልክ ቁጥር በ '0' መጀመር አለበት!" });
     }
@@ -104,7 +96,6 @@ router.put("/update/:id", async (req, res) => {
 
     let changedFields = [];
     
-    // 🌐 [ማሻሻያ 3] - ባለሁለት ቋንቋዎችን ያካተተ ፊልድ ማፒንግ
     const fieldMapping = {
       pensionerId: "Pension ID",
       nameAmh: "ሙሉ ስም (አማርኛ)",
@@ -193,7 +184,6 @@ router.delete("/delete/:id", async (req, res) => {
       return res.status(404).json({ success: false, message: "ጡረተኛው አልተገኘም!" });
     }
 
-    // 🛑 [ማሻሻያ 4] - የድሮው pensioner.name አሁን nameAmh ስለሆነ እዚህ ጋር ተስተካክሏል
     const auditLog = new DeletedLog({
       faydaNumber: pensioner.faydaNumber,
       pensionerName: pensioner.nameAmh || pensioner.nameEng,
@@ -226,17 +216,16 @@ router.get("/deleted-logs", async (req, res) => {
 });
 
 // ==========================================================================
-// 5️⃣ 📥 አዲስ መመዝገቢያ (POST)
+// 5️⃣ 📥 አዲስ መመዝገቢያ (POST) - 🔥 የፊት አሻራ (faceDescriptor) እንዲቀበል ተሻሽሏል
 // ==========================================================================
 router.post("/register", async (req, res) => {
   try {
-    const { photoUrl, ...pensionerData } = req.body;
+    const { photoUrl, faceDescriptor, ...pensionerData } = req.body; // 🔥 faceDescriptor ተለይቶ ወጥቷል
 
     if (!photoUrl) {
       return res.status(400).json({ success: false, message: "⚠️ የፎቶ ሊንክ አልተገኘም!" });
     }
 
-    // 🛑 [ማሻሻያ 5] - ለመመዝገቢያም የሰርቨር ደረጃ የ 10 ዲጂት እና የ '0' መነሻ ቫሊዴሽን ጥበቃ
     const numberFields = ['pensionerId', 'phone', 'tin'];
     for (const field of numberFields) {
       if (pensionerData[field]) {
@@ -259,6 +248,7 @@ router.post("/register", async (req, res) => {
     const newPensioner = new UserPensioner({
       ...pensionerData,
       photoUrl,
+      faceDescriptor: faceDescriptor || [], // 🔥 ወደ ሞዴል ገብቷል
       status: "Active",
       statusChangedDate: new Date(),
       age: Number(pensionerData.age) || 0,
@@ -298,6 +288,68 @@ router.get("/verify/:faydaNum", async (req, res) => {
     res.status(200).json({ success: true, data: pensioner });
   } catch (error) {
     res.status(500).json({ success: false, message: "በማረጋገጥ ሂደት ላይ የሰርቨር ስህተት አጋጥሟል!" });
+  }
+});
+
+// ==========================================================================
+// 🤖 7️⃣ የፊት ለይቶ ማወቂያ API (POST) - 🔥 አዲስ የጨመረ ክፍል ለምርመራ
+// ==========================================================================
+router.post("/verify-face", async (req, res) => {
+  try {
+    const { query, currentDescriptor } = req.body;
+
+    if (!query || !currentDescriptor || !Array.isArray(currentDescriptor)) {
+      return res.status(400).json({ success: false, message: "⚠️ ያልተሟላ መረጃ! መለያ ቁጥር እና የፊት አሻራ ያስፈልጋል።" });
+    }
+
+    // ጡረተኛውን በፋይዳ፣ በስልክ ወይም በፔንሽን ቁጥር መፈለግ
+    const pensioner = await UserPensioner.findOne({
+      $or: [{ faydaNumber: query }, { phone: query }, { pensionerId: query }]
+    });
+
+    if (!pensioner) {
+      return res.status(404).json({ success: false, message: "❌ ጡረተኛው አልተገኘም!" });
+    }
+
+    if (!pensioner.faceDescriptor || pensioner.faceDescriptor.length === 0) {
+      return res.status(400).json({ success: false, message: "⚠️ የዚህ ጡረተኛ የፊት አሻራ በሲስተሙ ላይ አልተመዘገበም!" });
+    }
+
+    // 📐 Euclidean Distance ን በመጠቀም በሁለቱ Descriptors መካከል ያለውን ልዩነት ማስላት
+    const dbDescriptor = pensioner.faceDescriptor;
+    let sumSquares = 0;
+    for (let i = 0; i < dbDescriptor.length; i++) {
+      sumSquares += Math.pow(dbDescriptor[i] - currentDescriptor[i], 2);
+    }
+    const distance = Math.sqrt(sumSquares);
+
+    // 🎯 የደህንነት ወሰን (Threshold) 0.6 ነው። ከ 0.6 በታች ከሆነ ፊቱ አንድ አይነት ነው ማለት ነው
+    const isMatch = distance < 0.6;
+
+    if (isMatch) {
+      // 🔄 ጡረተኛው በህይወት መኖሩ ከተረጋገጠ ሁኔታውን በራስ-ሰር 'Active' ማድረግ እና ቀኑን መመዝገብ
+      pensioner.status = "Active";
+      pensioner.statusChangedDate = new Date();
+      await pensioner.save();
+
+      return res.status(200).json({
+        success: true,
+        match: true,
+        distance,
+        message: `🎉 የማንነት ማረጋገጫ ተሳክቷል! ጡረተኛው፡ ${pensioner.nameAmh}`,
+        data: pensioner
+      });
+    } else {
+      return res.status(200).json({
+        success: false,
+        match: false,
+        distance,
+        message: "❌ የፊት ገጽታው በዳታቤዝ ካለው ምስል ጋር አልተዛመደም!"
+      });
+    }
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: `በፊት ማረጋገጥ ሂደት ላይ የሰርቨር ስህተት፦ ${error.message}` });
   }
 });
 
