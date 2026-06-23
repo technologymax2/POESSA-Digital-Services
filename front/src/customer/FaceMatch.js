@@ -2,81 +2,83 @@ import React, { useEffect, useState } from "react";
 import * as faceapi from "face-api.js";
 
 function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) {
-  const [statusMessage, setStatusMessage] = useState("⏳ የፊት ማረጋገጫ ይጀመራል...");
+  const [status, setStatus] = useState("⏳ ስርዓቱ እየተዘጋጀ ነው...");
   const [isMatched, setIsMatched] = useState(false);
-  const [matchPercentage, setMatchPercentage] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadModels = async () => {
+    const startProcessing = async () => {
       try {
+        setStatus("⏳ AI ሞዴሎችን በመጫን ላይ...");
         const MODEL_URL = "/models";
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-        processImages();
-      } catch (e) {
-        setStatusMessage("❌ AI ሞዴሎች አልተጫኑም!");
-      }
-    };
+        
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+        ]);
 
-    const processImages = async () => {
-      try {
-        setStatusMessage("⏳ ምስሎችን በማዘጋጀት ላይ...");
-        const img1 = await createHtmlImage(idPhoto);
-        const img2 = await createHtmlImage(selfiePhoto);
+        setStatus("⏳ ምስሎችን በማዘጋጀት ላይ...");
+        const img1 = await loadImage(idPhoto);
+        const img2 = await loadImage(selfiePhoto);
 
-        setStatusMessage("⏳ ፊቶችን በመለየት ላይ...");
-        // ለሞባይል ስክሪን የተሻለ ቅንብር
-        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 });
+        setStatus("⏳ ፊቶችን በመለየት ላይ...");
+        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224 });
+        
+        const detection1 = await faceapi.detectSingleFace(img1, options).withFaceLandmarks().withFaceDescriptor();
+        const detection2 = await faceapi.detectSingleFace(img2, options).withFaceLandmarks().withFaceDescriptor();
 
-        const f1 = await faceapi.detectSingleFace(img1, options).withFaceLandmarks().withFaceDescriptor();
-        const f2 = await faceapi.detectSingleFace(img2, options).withFaceLandmarks().withFaceDescriptor();
-
-        if (!f1 || !f2) {
-          setStatusMessage("❌ ፊት አልተገኘም! እባክዎ ብርሃን ባለበት ቦታ ሆነው ፊትዎን በግልጽ ያሳዩ።");
+        if (!detection1 || !detection2) {
+          setStatus("❌ ፊት አልተገኘም! እባክዎ ብርሃን ባለበት ቦታ ምስሉን እንደገና ያንሱ።");
           return;
         }
 
-        const dist = faceapi.euclideanDistance(f1.descriptor, f2.descriptor);
-        const score = Math.round((1 - dist) * 100);
-        
+        const distance = faceapi.euclideanDistance(detection1.descriptor, detection2.descriptor);
+        const score = Math.round((1 - distance) * 100);
+
         if (isMounted) {
-          setMatchPercentage(score);
-          if (score >= 45) { // Threshold 45% (ለሞባይል ትንሽ ልቅ ማድረግ ተገቢ ነው)
+          if (score > 40) {
             setIsMatched(true);
-            setStatusMessage(`✅ ማረጋገጫ ተሳክቷል! (${score}%)`);
-            setTimeout(() => onSuccess(score), 1000);
+            setStatus(`✅ ማረጋገጫ ተሳክቷል! (${score}%)`);
+            setTimeout(() => onSuccess(score), 1500);
           } else {
-            setStatusMessage(`❌ ፊቱ አይመሳሰልም! (${score}%) - እባክዎ እንደገና ይሞክሩ።`);
+            setStatus(`❌ ፊቱ አይመሳሰልም! (${score}%) - እባክዎ እንደገና ይሞክሩ።`);
           }
         }
       } catch (err) {
-        setStatusMessage("❌ የፊት ማነፃፀር ስህተት! እባክዎ የበይነመረብ ግንኙነትዎን ያረጋግጡ።");
+        setStatus("❌ ስህተት ተፈጥሯል! እባክዎ ኢንተርኔትዎን ያረጋግጡ።");
+        console.error("Face Match Error:", err);
       }
     };
 
-    const createHtmlImage = (src) => new Promise((res, rej) => {
+    const loadImage = (src) => new Promise((resolve, reject) => {
       const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.onload = () => res(img);
-      img.onerror = rej;
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("ምስል መጫን አልተቻለም"));
       img.src = src;
     });
 
-    loadModels();
+    startProcessing();
     return () => { isMounted = false; };
-  }, [idPhoto, selfiePhoto]);
+  }, [idPhoto, selfiePhoto, onSuccess]);
 
   return (
-    <div style={{ padding: "10px", textAlign: "center", maxWidth: "400px", margin: "0 auto" }}>
-      <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginBottom: "15px" }}>
-        <img src={idPhoto} alt="ID" style={{ width: "100px", height: "100px", borderRadius: "50%", border: "2px solid #ccc" }} />
-        <img src={selfiePhoto} alt="Selfie" style={{ width: "100px", height: "100px", borderRadius: "50%", border: "2px solid #ccc" }} />
+    <div style={{ padding: "20px", textAlign: "center", fontFamily: "sans-serif" }}>
+      <h3 style={{ color: "#333" }}>🤖 የፊት ማረጋገጫ (Face Verification)</h3>
+      <div style={{ display: "flex", justifyContent: "center", gap: "15px", marginBottom: "20px" }}>
+        <img src={idPhoto} alt="Registered" style={{ width: "100px", height: "100px", borderRadius: "50%", objectFit: "cover", border: "2px solid #ddd" }} />
+        <img src={selfiePhoto} alt="Selfie" style={{ width: "100px", height: "100px", borderRadius: "50%", objectFit: "cover", border: "2px solid #ddd" }} />
       </div>
-      <div style={{ padding: "15px", backgroundColor: isMatched ? "#dcfce7" : "#fee2e2", borderRadius: "10px" }}>
-        {statusMessage}
+      <div style={{ 
+        padding: "15px", 
+        borderRadius: "8px", 
+        background: isMatched ? "#dcfce7" : "#fee2e2", 
+        color: isMatched ? "#166534" : "#991b1b",
+        fontWeight: "bold" 
+      }}>
+        {status}
       </div>
     </div>
   );
