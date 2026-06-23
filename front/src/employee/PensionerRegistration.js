@@ -1,4 +1,4 @@
-Import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './PensionerRegistration.css';
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
