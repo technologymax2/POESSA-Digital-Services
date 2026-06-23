@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const UserPensioner = require("./models/UserPensioner");
-const DeletedLog = require("./models/DeletedLog"); // 🟢 ለጠፉ መረጃዎች ታሪክ መዝገብ
+const DeletedLog = require("./models/DeletedLog"); 
 
 // ==========================================================================
 // 1️⃣ 🔍 መረጃ መፈለጊያ (GET)
@@ -27,8 +27,7 @@ router.get("/search", async (req, res) => {
   }
 });
 
-
-// ሁሉንም ጡረተኞች ለሪፖርት ማምጫ መስመር (በ Express ሰርቨርህ ላይ የሚጨመር)
+// ሁሉንም ጡረተኞች ለሪፖርት ማምጫ መስመር
 router.get("/", async (req, res) => {
   try {
     const pensioners = await UserPensioner.find().sort({ createdAt: -1 });
@@ -38,9 +37,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-
 // ==========================================================================
-// 🔍 1.5️⃣ በሪል-ታይም መደጋገም ማረጋገጫ (GET) - በፍሮንት-ኤንድ ለቀረበው ቼከር
+// 🔍 1.5️⃣ በሪል-ታይም መደጋገም ማረጋገጫ (GET)
 // ==========================================================================
 router.get("/check-duplicate", async (req, res) => {
   try {
@@ -204,7 +202,7 @@ router.delete("/delete/:id", async (req, res) => {
 });
 
 // ==========================================================================
-// 🗑️ 3.5️⃣ የጠፉ መረጃዎችን በሙሉ ማምጫ (GET ALL DELETED LOGS)
+// 🗑️ 3.5️⃣ የጠፉ መረጃዎችን በሙሉ ማምጫ
 // ==========================================================================
 router.get("/deleted-logs", async (req, res) => {
   try {
@@ -216,14 +214,19 @@ router.get("/deleted-logs", async (req, res) => {
 });
 
 // ==========================================================================
-// 5️⃣ 📥 አዲስ መመዝገቢያ (POST) - 🔥 የፊት አሻራ (faceDescriptor) እንዲቀበል ተሻሽሏል
+// 5️⃣ 📥 አዲስ መመዝገቢያ (POST) - (🛠️ የተስተካከለ)
 // ==========================================================================
 router.post("/register", async (req, res) => {
   try {
-    const { photoUrl, faceDescriptor, ...pensionerData } = req.body; // 🔥 faceDescriptor ተለይቶ ወጥቷል
+    const { photoUrl, faceDescriptor, ...pensionerData } = req.body; 
 
     if (!photoUrl) {
       return res.status(400).json({ success: false, message: "⚠️ የፎቶ ሊንክ አልተገኘም!" });
+    }
+
+    // 💡 የ Pensioner ID መኖሩን አስቀድሞ የማረጋገጫ ሴፍቲ ኔት
+    if (!pensionerData.pensionerId) {
+      return res.status(400).json({ success: false, message: "❌ ስህተት፡ የጡረተኛው መለያ ቁጥር (Pensioner ID) አልተላከም!" });
     }
 
     const numberFields = ['pensionerId', 'phone', 'tin'];
@@ -238,9 +241,15 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ success: false, message: "❌ ስልክ ቁጥር በ '0' መጀመር አለበት!" });
     }
 
+    // የዱፕሊኬት ቼከር
     const existingFayda = await UserPensioner.findOne({ faydaNumber: pensionerData.faydaNumber });
     if (existingFayda) {
       return res.status(400).json({ success: false, message: "⚠️ ይህ የፋይዳ ቁጥር ቀድሞ ተመዝግቧል!" });
+    }
+
+    const existingId = await UserPensioner.findOne({ pensionerId: pensionerData.pensionerId });
+    if (existingId) {
+      return res.status(400).json({ success: false, message: "⚠️ ይህ የፔንሽን መለያ ቁጥር ቀድሞ ተመዝግቧል!" });
     }
 
     const creatorName = pensionerData.employeeName || "ያልታወቀ ባለሙያ";
@@ -248,7 +257,7 @@ router.post("/register", async (req, res) => {
     const newPensioner = new UserPensioner({
       ...pensionerData,
       photoUrl,
-      faceDescriptor: faceDescriptor || [], // 🔥 ወደ ሞዴል ገብቷል
+      faceDescriptor: faceDescriptor || [], 
       status: "Active",
       statusChangedDate: new Date(),
       age: Number(pensionerData.age) || 0,
@@ -269,7 +278,8 @@ router.post("/register", async (req, res) => {
       data: newPensioner
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: `በሰርቨር ላይ ስህተት አጋጥሟል! ዝርዝር፡ ${error.message}` });
+    // 💡 እዚህ ጋር ስህተቱ ምን እንደሆነ በግልጽ በፍሮንት-ኤንድ እንዲታይ አድርጌዋለሁ
+    res.status(500).json({ success: false, message: `በዳታቤዝ ምዝገባ ላይ ስህተት አጋጥሟል፦ ${error.message}` });
   }
 });
 
@@ -292,7 +302,7 @@ router.get("/verify/:faydaNum", async (req, res) => {
 });
 
 // ==========================================================================
-// 🤖 7️⃣ የፊት ለይቶ ማወቂያ API (POST) - 🔥 አዲስ የጨመረ ክፍል ለምርመራ
+// 🤖 7️⃣ የፊት ለይቶ ማወቂያ API (POST)
 // ==========================================================================
 router.post("/verify-face", async (req, res) => {
   try {
@@ -302,7 +312,6 @@ router.post("/verify-face", async (req, res) => {
       return res.status(400).json({ success: false, message: "⚠️ ያልተሟላ መረጃ! መለያ ቁጥር እና የፊት አሻራ ያስፈልጋል።" });
     }
 
-    // ጡረተኛውን በፋይዳ፣ በስልክ ወይም በፔንሽን ቁጥር መፈለግ
     const pensioner = await UserPensioner.findOne({
       $or: [{ faydaNumber: query }, { phone: query }, { pensionerId: query }]
     });
@@ -315,7 +324,6 @@ router.post("/verify-face", async (req, res) => {
       return res.status(400).json({ success: false, message: "⚠️ የዚህ ጡረተኛ የፊት አሻራ በሲስተሙ ላይ አልተመዘገበም!" });
     }
 
-    // 📐 Euclidean Distance ን በመጠቀም በሁለቱ Descriptors መካከል ያለውን ልዩነት ማስላት
     const dbDescriptor = pensioner.faceDescriptor;
     let sumSquares = 0;
     for (let i = 0; i < dbDescriptor.length; i++) {
@@ -323,11 +331,9 @@ router.post("/verify-face", async (req, res) => {
     }
     const distance = Math.sqrt(sumSquares);
 
-    // 🎯 የደህንነት ወሰን (Threshold) 0.6 ነው። ከ 0.6 በታች ከሆነ ፊቱ አንድ አይነት ነው ማለት ነው
     const isMatch = distance < 0.6;
 
     if (isMatch) {
-      // 🔄 ጡረተኛው በህይወት መኖሩ ከተረጋገጠ ሁኔታውን በራስ-ሰር 'Active' ማድረግ እና ቀኑን መመዝገብ
       pensioner.status = "Active";
       pensioner.statusChangedDate = new Date();
       await pensioner.save();
