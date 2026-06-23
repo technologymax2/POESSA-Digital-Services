@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import * as faceapi from 'face-api.js'; // 🔥 የፊት ለይቶ ማወቂያ ላይብረሪ
+Import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './PensionerRegistration.css';
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
@@ -21,43 +20,22 @@ function PensionerRegistration() {
 
   const [validationErrors, setValidationErrors] = useState({});
   const [duplicateErrors, setDuplicateErrors] = useState({ pensionerId: false, tin: false, faydaNumber: false });
+  
+  // 🔥 አዲስ፡ በሪል-ታይም ሰርቨር ላይ ሲፈልግ የሚታይ የLoading ስቴት
   const [checkingStatus, setCheckingStatus] = useState({ pensionerId: false, tin: false, faydaNumber: false });
-  const [modelsLoaded, setModelsLoaded] = useState(false); // 🔥 የሞዴል መጫኛ ስቴት
 
-  // 🔄 የ face-api.js ሞዴሎችን ከ CDN መጫኛ
   useEffect(() => {
-    const loadModels = async () => {
-      try {
-        // 🌍 የ Vercelን ፋይል ሲስተም ሙሉ በሙሉ ትተን ከኦፊሴላዊው የ GitHub CDN እንጭናለን
-        const MODEL_URL = "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights";
-        console.log("ሞዴሎችን ከ CDN በመጫን ላይ፦", MODEL_URL);
-        
-        // በ CDN ላይ ዋናው ssdMobilenetv1 በደንብ ስላለ እሱን እንጠቀማለን (ትክክለኛነቱ እጅግ ከፍተኛ ነው)
-        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-        
-        setModelsLoaded(true);
-        setStatus('');
-        console.log("Face-api.js ሞዴሎች ከ CDN በተሳካ ሁኔታ ተጭነዋል!");
-      } catch (err) {
-        console.error("የሞዴል መጫን ስህተት፦", err);
-        setStatus(`❌ የፊት መለኪያ ሞዴሎችን መጫን አልተቻለም! ከኢንተርኔት መስመርህ ጋር ተያያዥ ችግር ሊሆን ይችላል።`);
-      }
-    };
-
-    loadModels();
-
     const storedName = localStorage.getItem('fullName') || localStorage.getItem('username');
     if (storedName) setCurrentEmployee(storedName);
   }, []);
 
-  // 🔄 Debounce የተደረገ የደገሜታ ማረጋገጫ ፈንክሽን
+  // 🔄 1. Debounce የተደረገ የደገሜታ ማረጋገጫ ፈንክሽን (ሰርቨር እንዳይጨናነቅ)
   const debounceCheck = useCallback((fieldName, value) => {
     if (!value || value.length < 5) return;
 
     setCheckingStatus(prev => ({ ...prev, [fieldName]: true }));
 
+    // የቀደመውን የቲቪ ቆጣሪ ያጠፋል
     const handler = setTimeout(async () => {
       try {
         const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/check-duplicate?field=${fieldName}&value=${value}`);
@@ -81,7 +59,7 @@ function PensionerRegistration() {
       } finally {
         setCheckingStatus(prev => ({ ...prev, [fieldName]: false }));
       }
-    }, 500);
+    }, 500); // ተጠቃሚው መጻፍ ካቆመ ከ 500 ሚሊሰከንድ በኋላ ነው API የሚጠራው
 
     return () => clearTimeout(handler);
   }, []);
@@ -112,7 +90,7 @@ function PensionerRegistration() {
       } else {
         delete errors[name];
         if ((name === 'pensionerId' || name === 'tin') && cleanValue.length === 10) {
-          debounceCheck(name, cleanValue);
+          debounceCheck(name, cleanValue); // 🔥 እዚህ ጋር ነው ደንበኛው መጻፍ ሲያቆም ቼክ የሚደረገው
         }
       }
 
@@ -122,6 +100,7 @@ function PensionerRegistration() {
       if (value < 0) return;
       setFormData(prev => ({ ...prev, [name]: value }));
     } 
+    // 📅 2. የተሰጠበት እና የማብቂያ ቀን ቫሊዴሽን ህግ
     else if (name === 'expiryDate' && formData.issueDate && value < formData.issueDate) {
       errors.expiryDate = "⚠️ የማብቂያ ቀን ከተሰጠበት ቀን ቀድሞ ሊሆን አይችልም!";
       setValidationErrors(errors);
@@ -155,11 +134,6 @@ function PensionerRegistration() {
       return;
     }
 
-    if (!modelsLoaded) {
-      setStatus('⏳ የፊት መለኪያ ሞዴሎች ገና እየጫኑ ነው፣ እባክዎ ጥቂት ሰከንዶች ይጠብቁ...');
-      return;
-    }
-
     if (duplicateErrors.pensionerId || duplicateErrors.tin || duplicateErrors.faydaNumber || validationErrors.expiryDate) {
       setStatus('❌ እባክዎ የፎርሙን ስህተቶች ያስተካክሉ!');
       return;
@@ -181,27 +155,9 @@ function PensionerRegistration() {
     }
 
     setLoading(true);
-    setStatus('🔍 የጡረተኛውን ፊት በመተንተን ላይ...');
+    setStatus('⏳ መረጃው በመመዝገብ ላይ ነው...');
 
     try {
-      // 📷 የፊት መለኪያን ከምስሉ ላይ ማውጣት (Face Descriptor)
-      const imgElement = await faceapi.bufferToImage(image);
-      
-      // 🎯 ወደ ጠንካራው ssdMobilenetv1 ተመልሷል (ለምዝገባ ፍጹም አስተማማኝ ነው)
-      const detection = await faceapi.detectSingleFace(imgElement)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!detection) {
-        setStatus('❌ በምስሉ ላይ የሰው ፊት ማግኘት አልተቻለም! እባክዎ ግልጽ እና ፊት ለፊት የሚያሳይ ፎቶ ይምረጡ።');
-        setLoading(false);
-        return;
-      }
-
-      const descriptorArray = Array.from(detection.descriptor);
-
-      setStatus('⏳ ፎቶውን ወደ Cloud ማከማቻ በመላክ ላይ...');
-      // ☁️ ምስሉን ወደ imgBB መላክ
       const imgData = new FormData();
       imgData.append('image', image);
       
@@ -212,12 +168,9 @@ function PensionerRegistration() {
       const imgResult = await imgRes.json();
       if (!imgResult.success) throw new Error('ፎቶውን ወደ Cloud ማከማቻ መላክ አልተቻለም');
 
-      setStatus('⏳ ሙሉ መረጃውን በዳታቤዝ ላይ በመመዝገብ ላይ...');
-      // 🚀 የፊት መለኪያውን ጨምሮ ወደ Backend መላክ
       const finalData = { 
         ...formData, 
         photoUrl: imgResult.data.url, 
-        faceDescriptor: descriptorArray,
         employeeName: currentEmployee,
         lastAction: 'Created',
         lastActionTime: new Date().toISOString()
@@ -231,7 +184,7 @@ function PensionerRegistration() {
 
       const result = await response.json();
       if (result.success) {
-        setStatus('🎉 የጡረተኛው መረጃ እና የፊት አሻራ በተሳካ ሁኔታ ተመዝግቧል!');
+        setStatus('🎉 መረጃው በተሳካ ሁኔታ ተመዝግቧል!');
         setValidationErrors({});
         setDuplicateErrors({ pensionerId: false, tin: false, faydaNumber: false });
         setFormData({ 
@@ -253,7 +206,7 @@ function PensionerRegistration() {
 
   return (
     <div className="pr-reg-container">
-      <h2 className="pr-form-title">POESSA የጡረተኞች ምዝገባ (Face ID)</h2>
+      <h2 className="pr-form-title">POESSA የጡረተኞች ምዝገባ</h2>
       <p>ፈጻሚ ባለሙያ: <strong>{currentEmployee}</strong></p>
 
       <form onSubmit={handleSubmit} className="pr-main-form">
@@ -297,6 +250,7 @@ function PensionerRegistration() {
             {validationErrors.faydaNumber && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.faydaNumber}</span>}
           </div>
 
+          {/* ሌሎች ፊልዶች */}
           <div className="pr-input-group"><label>ሙሉ ስም (አማርኛ)</label><input type="text" name="nameAmh" value={formData.nameAmh} onChange={handleChange} required /></div>
           <div className="pr-input-group"><label>Full Name (English)</label><input type="text" name="nameEng" value={formData.nameEng} onChange={handleChange} required /></div>
 
@@ -316,6 +270,7 @@ function PensionerRegistration() {
           </div>
           <div className="pr-input-group"><label>የተሰጠበት ቀን</label><input type="date" name="issueDate" value={formData.issueDate} onChange={handleChange} required /></div>
           
+          {/* የማብቂያ ቀን */}
           <div className="pr-input-group">
             <label>የማብቂያ ቀን</label>
             <input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} required style={{ borderColor: validationErrors.expiryDate ? 'red' : '' }} />
@@ -329,6 +284,7 @@ function PensionerRegistration() {
 
         {status && <div className="pr-status-msg">{status}</div>}
         
+        {/* የ Submit በተን መቆጣጠሪያ */}
         <button type="submit" className="pr-submit-btn" disabled={loading || duplicateErrors.pensionerId || duplicateErrors.tin || duplicateErrors.faydaNumber || validationErrors.expiryDate}>
           {loading ? 'እየተላከ ነው...' : 'መረጃውን መዝግብ'}
         </button>
