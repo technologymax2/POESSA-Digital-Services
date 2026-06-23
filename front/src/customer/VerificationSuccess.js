@@ -11,7 +11,7 @@ function VerificationSuccess({ pensionerData }) {
   const [error, setError] = useState("");
 
   // =========================
-  // CHECK STATUS
+  // CHECK STATUS FUNCTION
   // =========================
   const checkMyStatus = async () => {
     const fayda = searchFayda.trim();
@@ -32,7 +32,7 @@ function VerificationSuccess({ pensionerData }) {
     setLoading(true);
 
     try {
-      // ✅ FIXED ROUTE (MATCH YOUR BACKEND)
+      // API call to fetch verification record
       const res = await axios.get(
         `https://poessa-digital-services-1.onrender.com/api/liveness/pensioners/${fayda}`
       );
@@ -53,40 +53,36 @@ function VerificationSuccess({ pensionerData }) {
   return (
     <div
       style={{
-        padding: 30,
-        maxWidth: 450,
+        padding: "30px",
+        maxWidth: "450px",
         margin: "30px auto",
         textAlign: "center",
         fontFamily: "sans-serif",
         background: "#fff",
-        borderRadius: 12,
+        borderRadius: "12px",
         boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
       }}
     >
-      <div style={{ fontSize: 60 }}>🎉</div>
+      <div style={{ fontSize: "60px", marginBottom: "10px" }}>🎉</div>
 
-      <h3 style={{ color: "#162447" }}>
-        Verification Completed
-      </h3>
+      <h3 style={{ color: "#162447" }}>Verification Completed</h3>
 
       <p style={{ color: "#475569" }}>
-        የጡረተኛው{" "}
-        <strong>{pensionerData?.nameAmh || "User"}</strong>{" "}
-        መረጃ ተሳክቷል
+        የጡረተኛው <strong>{pensionerData?.nameAmh || "User"}</strong> መረጃ
+        በተሳካ ሁኔታ ተመዝግቧል።
       </p>
 
-      {/* =========================
-          STATUS CHECK SECTION
-      ========================= */}
+      {/* STATUS CHECK SECTION */}
       <div
         style={{
-          marginTop: 20,
+          marginTop: "20px",
           background: "#f8fafc",
-          padding: 20,
-          borderRadius: 10,
+          padding: "20px",
+          borderRadius: "10px",
+          border: "1px solid #e2e8f0",
         }}
       >
-        <h4>🔍 Check Verification Status</h4>
+        <h4 style={{ margin: "0 0 15px 0" }}>🔍 Check Verification Status</h4>
 
         <input
           type="text"
@@ -98,9 +94,12 @@ function VerificationSuccess({ pensionerData }) {
           maxLength={16}
           style={{
             width: "100%",
-            padding: 12,
-            borderRadius: 8,
+            padding: "12px",
+            borderRadius: "8px",
             border: "1px solid #cbd5e1",
+            boxSizing: "border-box",
+            textAlign: "center",
+            fontSize: "16px",
           }}
         />
 
@@ -111,54 +110,41 @@ function VerificationSuccess({ pensionerData }) {
             width: "100%",
             background: "#162447",
             color: "#fff",
-            padding: 12,
-            borderRadius: 8,
-            marginTop: 10,
+            padding: "12px",
+            borderRadius: "8px",
+            marginTop: "10px",
             border: "none",
-            cursor: "pointer",
+            cursor: loading ? "not-allowed" : "pointer",
+            fontWeight: "bold",
           }}
         >
           {loading ? "Checking..." : "Check Status"}
         </button>
 
-        {/* ERROR */}
+        {/* ERROR DISPLAY */}
         {error && (
-          <p style={{ color: "red", marginTop: 10 }}>
+          <p style={{ color: "#dc2626", marginTop: "10px", fontSize: "14px" }}>
             {error}
           </p>
         )}
 
-        {/* RESULT */}
+        {/* RESULT DISPLAY */}
         {statusResult && (
           <div
             style={{
-              marginTop: 15,
-              padding: 15,
-              borderRadius: 8,
-              background:
-                statusResult.verificationStatus === "Verified"
-                  ? "#dcfce7"
-                  : statusResult.verificationStatus === "Failed"
-                  ? "#fee2e2"
-                  : "#fef9c3",
+              marginTop: "20px",
+              textAlign: "left",
+              background: "#f0fdf4",
+              padding: "15px",
+              borderRadius: "8px",
+              border: "1px solid #bbf7d0",
+              fontSize: "14px",
             }}
           >
-            <strong>Status: </strong>
-
-            {statusResult.verificationStatus === "Verified" &&
-              "✅ Approved"}
-
-            {statusResult.verificationStatus === "Failed" &&
-              "❌ Rejected"}
-
-            {statusResult.verificationStatus === "Pending" &&
-              "⏳ Pending"}
-
-            {statusResult.comment && (
-              <p style={{ fontSize: 12, marginTop: 5 }}>
-                Reason: {statusResult.comment}
-              </p>
-            )}
+            <p style={{ margin: "5px 0" }}><strong>✅ ስም:</strong> {statusResult.nameAmh || statusResult.name}</p>
+            <p style={{ margin: "5px 0" }}><strong>✅ ፋይዳ ቁጥር:</strong> {statusResult.faydaNumber}</p>
+            <p style={{ margin: "5px 0" }}><strong>✅ የሁኔታ ማረጋገጫ:</strong> <span style={{color: "#16a34a", fontWeight: "bold"}}>የተረጋገጠ</span></p>
+            <p style={{ margin: "5px 0" }}><strong>✅ ቀን:</strong> {new Date(statusResult.createdAt).toLocaleDateString()}</p>
           </div>
         )}
       </div>
