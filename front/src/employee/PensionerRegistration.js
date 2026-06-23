@@ -24,24 +24,25 @@ function PensionerRegistration() {
   const [checkingStatus, setCheckingStatus] = useState({ pensionerId: false, tin: false, faydaNumber: false });
   const [modelsLoaded, setModelsLoaded] = useState(false); // 🔥 የሞዴል መጫኛ ስቴት
 
-  // 🔄 የ face-api.js ሞዴሎችን በ tinyFaceDetector መጫኛ
+  // 🔄 የ face-api.js ሞዴሎችን ከ CDN መጫኛ
   useEffect(() => {
     const loadModels = async () => {
       try {
-        // Vercel ላይ በደህንነት እንዲያነበው የ absolute path አጠቃቀም
-        const MODEL_URL = `${window.location.origin}/models`;
-        console.log("ሞዴሎችን ከዚህ በመጫን ላይ፦", MODEL_URL);
+        // 🌍 የ Vercelን ፋይል ሲስተም ሙሉ በሙሉ ትተን ከኦፊሴላዊው የ GitHub CDN እንጭናለን
+        const MODEL_URL = "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights";
+        console.log("ሞዴሎችን ከ CDN በመጫን ላይ፦", MODEL_URL);
         
-        // 🔥 በ GitHub ባሉህ ፋይሎች መሰረት ወደ tinyFaceDetector ተቀይሯል
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        // በ CDN ላይ ዋናው ssdMobilenetv1 በደንብ ስላለ እሱን እንጠቀማለን (ትክክለኛነቱ እጅግ ከፍተኛ ነው)
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
         
         setModelsLoaded(true);
-        console.log("Face-api.js ሞዴሎች በተሳካ ሁኔታ ተጭነዋል!");
+        setStatus('');
+        console.log("Face-api.js ሞዴሎች ከ CDN በተሳካ ሁኔታ ተጭነዋል!");
       } catch (err) {
         console.error("የሞዴል መጫን ስህተት፦", err);
-        setStatus(`❌ የፊት መለኪያ ሞዴሎችን መጫን አልተቻለም! ዝርዝር፡ ${err.message}`);
+        setStatus(`❌ የፊት መለኪያ ሞዴሎችን መጫን አልተቻለም! ከኢንተርኔት መስመርህ ጋር ተያያዥ ችግር ሊሆን ይችላል።`);
       }
     };
 
@@ -183,11 +184,11 @@ function PensionerRegistration() {
     setStatus('🔍 የጡረተኛውን ፊት በመተንተን ላይ...');
 
     try {
-      // 📷 1. የፊት መለኪያን ከምስሉ ላይ ማውጣት (Face Descriptor)
+      // 📷 የፊት መለኪያን ከምስሉ ላይ ማውጣት (Face Descriptor)
       const imgElement = await faceapi.bufferToImage(image);
       
-      // 🔥 እዚህ ጋር በ TinyFaceDetectorOptions ተቀይሯል
-      const detection = await faceapi.detectSingleFace(imgElement, new faceapi.TinyFaceDetectorOptions())
+      // 🎯 ወደ ጠንካራው ssdMobilenetv1 ተመልሷል (ለምዝገባ ፍጹም አስተማማኝ ነው)
+      const detection = await faceapi.detectSingleFace(imgElement)
         .withFaceLandmarks()
         .withFaceDescriptor();
 
@@ -200,7 +201,7 @@ function PensionerRegistration() {
       const descriptorArray = Array.from(detection.descriptor);
 
       setStatus('⏳ ፎቶውን ወደ Cloud ማከማቻ በመላክ ላይ...');
-      // ☁️ 2. ምስሉን ወደ imgBB መላክ
+      // ☁️ ምስሉን ወደ imgBB መላክ
       const imgData = new FormData();
       imgData.append('image', image);
       
@@ -212,7 +213,7 @@ function PensionerRegistration() {
       if (!imgResult.success) throw new Error('ፎቶውን ወደ Cloud ማከማቻ መላክ አልተቻለም');
 
       setStatus('⏳ ሙሉ መረጃውን በዳታቤዝ ላይ በመመዝገብ ላይ...');
-      // 🚀 3. የፊት መለኪያውን ጨምሮ ወደ Backend መላክ
+      // 🚀 የፊት መለኪያውን ጨምሮ ወደ Backend መላክ
       const finalData = { 
         ...formData, 
         photoUrl: imgResult.data.url, 
