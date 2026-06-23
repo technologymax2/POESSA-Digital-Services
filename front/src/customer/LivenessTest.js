@@ -1,16 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 
-function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
+function LivenessTest({ faydaNumber, onSuccess }) {
   const videoRef = useRef(null);
-  const [statusMessage, setStatusMessage] = useState("⏳ የህያውነት ፈተናን በማዘጋጀት ላይ...");
+  const [statusMessage, setStatusMessage] = useState("⏳ ካሜራውን በማዘጋጀት ላይ...");
   const [loading, setLoading] = useState(true);
-  
-  const smilePassedRef = useRef(false);
-  const nodPassedRef = useRef(false);
-  const isFinishedRef = useRef(false);
-
   const [checks, setChecks] = useState({ smilePassed: false, nodPassed: false });
-  const [currentInstruction, setCurrentInstruction] = useState("እባክዎ ካሜራውን ቀጥ ብለው ይመልከቱ");
+  const [currentInstruction, setCurrentInstruction] = useState("እባክዎ ካሜራውን ይመልከቱ");
 
   useEffect(() => {
     let stream = null;
@@ -19,99 +14,61 @@ function LivenessTest({ faydaNumber, matchPercentage, onSuccess }) {
     const startLiveness = async () => {
       try {
         const faceapi = window.faceapi;
-        if (!faceapi) {
-          setStatusMessage("❌ የፊት መለያው ስክሪፕት አልተጫነም፤ ገጹን ያድሱ።");
-          return;
-        }
-
-        setStatusMessage("⏳ ሞዴሎችን በመጫን ላይ...");
+        if (!faceapi) { setStatusMessage("❌ የፊት መለያው አልተጫነም"); return; }
+        
         await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-          faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
-          faceapi.nets.faceExpressionNet.loadFromUri("/models"),
+          faceapi.nets.tinyFaceDetector.loadFromUri("https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model"),
+          faceapi.nets.faceLandmark68Net.loadFromUri("https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model"),
+          faceapi.nets.faceExpressionNet.loadFromUri("https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model"),
         ]);
 
-        setStatusMessage("⏳ ካሜራውን በመክፈት ላይ...");
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user", width: { ideal: 320 }, height: { ideal: 320 } }
-        });
-
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = async () => {
-            await videoRef.current.play();
-            setLoading(false);
-            setStatusMessage("🟢 ፈተናው ተጀምሯል!");
-            setCurrentInstruction("😊 እባክዎ ለካሜራው በግልጽ ፈገግ ይበሉ...");
-          };
+          videoRef.current.play().then(() => setLoading(false));
+          setStatusMessage("🟢 ፈተናው ተጀምሯል!");
+          setCurrentInstruction("😊 እባክዎ ፈገግ ይበሉ...");
         }
 
         intervalId = setInterval(async () => {
-          if (isFinishedRef.current || !videoRef.current || videoRef.current.paused) return;
+          if (!videoRef.current || videoRef.current.paused) return;
+          const det = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions();
+          if (!det) return;
 
-          const detection = await faceapi.detectSingleFace(
-            videoRef.current, 
-            new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 })
-          )
-          .withFaceLandmarks()
-          .withFaceExpressions();
-
-          if (!detection) return;
-
-          // 1. ፈገግታ ማረጋገጫ
-          if (!smilePassedRef.current && detection.expressions.happy > 0.35) {
-            smilePassedRef.current = true;
-            setChecks(prev => ({ ...prev, smilePassed: true }));
-            setCurrentInstruction("👋 አሁን ደግሞ ራስዎን ወደ ጎን ቀስ ብለው ያንቀሳቅሱ...");
+          if (!checks.smilePassed && det.expressions.happy > 0.4) {
+            setChecks(p => ({ ...p, smilePassed: true }));
+            setCurrentInstruction("👋 አሁን ራስዎን ወደ ጎን ያንቀሳቅሱ...");
           }
 
-          // 2. የእንቅስቃሴ ማረጋገጫ (Nod/Turn)
-          if (smilePassedRef.current && !nodPassedRef.current) {
-            const landmarks = detection.landmarks;
-            const nose = landmarks.getNose()[0];
-            const leftEye = landmarks.getLeftEye()[0];
-            const rightEye = landmarks.getRightEye()[0];
-            const ratio = (nose.x - leftEye.x) / (rightEye.x - nose.x);
-
-            if (ratio < 0.75 || ratio > 1.30) {
-              nodPassedRef.current = true;
-              isFinishedRef.current = true;
-              setChecks(prev => ({ ...prev, nodPassed: true }));
-              setStatusMessage("🎉 ፈተናው ተጠናቋል!");
+          if (checks.smilePassed && !checks.nodPassed) {
+            const nose = det.landmarks.getNose()[0];
+            const left = det.landmarks.getLeftEye()[0];
+            const right = det.landmarks.getRightEye()[0];
+            const ratio = (nose.x - left.x) / (right.x - nose.x);
+            if (ratio < 0.7 || ratio > 1.3) {
+              setChecks(p => ({ ...p, nodPassed: true }));
               clearInterval(intervalId);
-
-              setTimeout(() => {
-                if (stream) stream.getTracks().forEach(t => t.stop());
-                if (onSuccess) onSuccess({ smilePassed: true, nodPassed: true, turnPassed: true });
-              }, 1000);
+              if (stream) stream.getTracks().forEach(t => t.stop());
+              onSuccess({ faceMatched: true, smilePassed: true, nodPassed: true });
             }
           }
         }, 500);
       } catch (err) {
-        console.error(err);
-        setStatusMessage("❌ የካሜራ ፈቃድ ተከልክሏል ወይም ስህተት ተፈጥሯል።");
-        setLoading(false);
+        setStatusMessage("❌ ካሜራ ፈቃድ ተከልክሏል");
       }
     };
-
     startLiveness();
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-      if (stream) stream.getTracks().forEach(track => track.stop());
-    };
+    return () => { clearInterval(intervalId); if (stream) stream.getTracks().forEach(t => t.stop()); };
   }, []);
 
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>
-      <h3>🎯 የህያውነት ፈተና (Liveness Test)</h3>
-      <div style={{ background: "#000", width: "260px", height: "260px", margin: "0 auto", borderRadius: "12px", overflow: "hidden" }}>
-        <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      </div>
-      <div style={{ margin: "15px", fontWeight: "bold" }}>{currentInstruction}</div>
-      <div style={{ color: "blue" }}>{statusMessage}</div>
+      <h3>🎯 የህያውነት ፈተና</h3>
+      <video ref={videoRef} autoPlay playsInline muted style={{ width: "260px", height: "260px", background: "#000", borderRadius: "12px", objectFit: "cover" }} />
+      <p style={{ fontWeight: "bold" }}>{currentInstruction}</p>
+      <div style={{ color: checks.smilePassed ? "green" : "gray" }}>{checks.smilePassed ? "✅" : "⭕"} ፈገግታ</div>
+      <div style={{ color: checks.nodPassed ? "green" : "gray" }}>{checks.nodPassed ? "✅" : "⭕"} እንቅስቃሴ</div>
     </div>
   );
 }
-
 export default LivenessTest;
