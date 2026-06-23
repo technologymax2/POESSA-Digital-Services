@@ -1,180 +1,219 @@
 import React, { useState } from "react";
 import axios from "axios";
-import "./Verification.css";
 
-// የደረጃ ክፍሎቹን ማስገባት
 import CaptureIDCard from "./CaptureIDCard";
 import CaptureSelfie from "./CaptureSelfie";
-import FaceMatch from "./FaceMatch";
 import LivenessTest from "./LivenessTest";
+import FaceMatch from "./FaceMatch";
 import VerificationSuccess from "./VerificationSuccess";
-
-// 🔥 [ሙሉ የኮድ ክፍል] ምስሎችን አሳንሶ የሚልክ ፈንክሽን
-const compressImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
-  return new Promise((resolve, reject) => {
-    if (!base64Str || typeof base64Str !== "string") {
-      resolve(""); 
-      return;
-    }
-    
-    // በ Vercel ላይ ያለውን የ 413 ስህተት ለመከላከል ከመጠን በላይ ትላልቅ ዳታዎችን አስቀድሞ መለየት
-    if (base64Str.length > 5 * 1024 * 1024) { 
-       maxWidth = 300; maxHeight = 300; 
-    }
-
-    const img = new Image();
-    img.src = base64Str;
-    img.onload = () => {
-      let width = img.width;
-      let height = img.height;
-
-      // ተስማሚ መጠንን ማስላት
-      if (width > maxWidth) {
-        height = Math.round((height * maxWidth) / width);
-        width = maxWidth;
-      }
-      if (height > maxHeight) {
-        width = Math.round((width * maxHeight) / height);
-        height = maxHeight;
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, width, height);
-
-      // በ 0.65 ጥራት (Quality) ወደ JPEG መቀየር
-      resolve(canvas.toDataURL("image/jpeg", 0.65));
-    };
-    img.onerror = (e) => reject(e);
-  });
-};
 
 function VerificationWizard() {
   const [step, setStep] = useState(1);
-  const [faydaNumber, setFaydaNumber] = useState("");
-  const [dbPensionerData, setDbPensionerData] = useState(null); 
-  const [selfiePhoto, setSelfiePhoto] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
 
-  // ደረጃ 1፡ የፋይዳ ቁጥሩን ከዳታቤዝ ጋር ማመሳሰል
-  const verifyIdWithDatabase = async (scannedData) => {
-    setLoading(true);
-    setErrorMessage("");
+  const [faydaNumber, setFaydaNumber] = useState("");
+  const [pensionerData, setPensionerData] = useState(null);
+
+  const [selfieUrl, setSelfieUrl] = useState("");
+  const [livenessResult, setLivenessResult] = useState({});
+
+  const [matchPercent, setMatchPercent] = useState(0);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // ==================================
+  // STEP 1 - ID CARD OCR SUCCESS
+  // ==================================
+  const handleIdSuccess = async (data) => {
     try {
-      const response = await axios.get(`https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${scannedData.faydaNumber}`);
-      
-      if (response.data && response.data.success) {
-        setFaydaNumber(scannedData.faydaNumber);
-        setDbPensionerData(response.data.data); 
-        setStep(2);
-      } else {
-        setErrorMessage("❌ ይህ የፋይዳ ቁጥር በስርዓቱ ላይ አልተመዘገበም!");
+      setLoading(true);
+      setError("");
+
+      const fayda = data?.faydaNumber;
+
+      if (!fayda) {
+        setError("❌ Fayda number not found");
+        return;
       }
-    } catch (err) {
-      console.error("DB Verification Error:", err);
-      setErrorMessage("❌ መረጃውን ከዳታቤዝ ጋር ማመሳሰል አልተቻለም። እባክዎ ኢንተርኔት ይፈትሹ።");
+
+      const res = await axios.get(
+        `https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${fayda}`
+      );
+
+      if (!res.data?.success) {
+        setError("❌ Pensioner not found");
+        return;
+      }
+
+      const pensioner = res.data.data;
+
+      console.log("PENSIONER:", pensioner);
+
+      if (!pensioner?.photoUrl) {
+        setError("❌ Registered photo not found");
+        return;
+      }
+
+      setFaydaNumber(fayda);
+      setPensionerData(pensioner);
+
+      setStep(2);
+    } catch (error) {
+      console.error(error);
+      setError("❌ Failed to fetch pensioner");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔥 [ሙሉ የኮድ ክፍል] የመጨረሻውን የደህንነት ማረጋገጫ ምስሎችን አሳንሶ ወደ ሰርቨር መላክ
-  const handleFinalSuccess = async (livenessResults) => {
-    setLoading(true);
+  // ==================================
+  // SAVE FINAL RESULT
+  // ==================================
+  const handleFinal = async (match) => {
     try {
-      const exactFayda = faydaNumber || livenessResults.faydaNumber || dbPensionerData?.fayda || dbPensionerData?.faydaNumber;
-      
-      // ምስሎቹን ለሰርቨር ከመላክ በፊት አሳንሶ ማዘጋጀት
-      const compressedSelfie = selfiePhoto ? await compressImage(selfiePhoto) : "";
-      
+      setLoading(true);
+      setError("");
+
+      if (!pensionerData) {
+        setError("❌ Missing pensioner data");
+        return;
+      }
+
       const payload = {
-        faydaNumber: exactFayda,
-        dbPhotoUrl: dbPensionerData?.photoUrl || dbPensionerData?.photo || "", 
-        selfiePhotoUrl: compressedSelfie, 
-        faceMatched: true,
-        smilePassed: livenessResults.smilePassed || false, 
-        nodPassed: livenessResults.nodPassed || false,
-        turnPassed: livenessResults.turnPassed || false,
-        verificationStatus: "Pending", // ሪፖርት ገጽ ላይ እንዲታይ
-        verifiedAt: new Date().toISOString()
+        faydaNumber,
+
+        dbPhotoUrl: pensionerData.photoUrl,
+
+        selfiePhotoUrl: selfieUrl,
+
+        matchPercentage: match,
+
+        smilePassed: !!livenessResult?.smilePassed,
+
+        nodPassed: !!livenessResult?.nodPassed,
+
+        turnPassed: !!livenessResult?.turnPassed,
       };
 
-      console.log(`🚀 ምስሉ ከቀነሰ በኋላ Payload መጠን: ${Math.round(JSON.stringify(payload).length / 1024)} KB`);
+      console.log("VERIFY PAYLOAD:", payload);
 
-      const response = await axios.post("https://poessa-digital-services-1.onrender.com/api/liveness/verify-success", payload);
+      const res = await axios.post(
+        "https://poessa-digital-services-1.onrender.com/api/liveness/verify-success",
+        payload
+      );
 
-      if (response.data && response.data.success) {
+      if (res.data?.success) {
         setStep(5);
       } else {
-        alert(`⚠️ ሰርቨር ምላሽ አልሰጠም፦ ${response.data?.message || "ያልታወቀ ስህተት"}`);
+        setError("❌ Verification save failed");
       }
-    } catch (err) {
-      console.error("Verification Save Error Details:", err.response?.data || err.message);
-      
-      if (err.response?.status === 413) {
-        alert("⚠️ ስህተት 413 (Payload Too Large): ምስሎቹን ማሳነስ አልተቻለም። እባክዎ ካሜራውን አርቀው እንደገና ሞክሩ።");
-      } else {
-        alert(`የማረጋገጫ መረጃን ለማስቀመጥ ስህተት ተፈጥሯል፦ ${err.response?.data?.message || err.message}`);
-      }
+    } catch (error) {
+      console.error(error);
+      setError("❌ Verification error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="verification-wizard-container">
-      
-      {errorMessage && <div className="verification-error-banner">{errorMessage}</div>}
-      {loading && <div className="verification-loading-spinner">⏳ ሂደቱን በመፈጸም ላይ...</div>}
+    <div className="wizard-container">
 
-      {/* ደረጃ 1 */}
-      {step === 1 && (
-        <CaptureIDCard 
-          onSuccess={(data) => {
-            verifyIdWithDatabase(data); 
-          }} 
-        />
-      )}
-
-      {/* ደረጃ 2 */}
-      {step === 2 && (
-        <CaptureSelfie 
-          onSuccess={(image) => {
-            setSelfiePhoto(image);
-            setStep(3);
-          }} 
-        />
-      )}
-
-      {/* ደረጃ 3 */}
-      {step === 3 && dbPensionerData && (
-        <FaceMatch 
-          idPhoto={dbPensionerData.photoUrl || dbPensionerData.photo} 
-          selfiePhoto={selfiePhoto} 
-          onSuccess={() => setStep(4)} 
-        />
-      )}
-
-      {/* ደረጃ 4 */}
-      {step === 4 && (
-        <LivenessTest 
-          faydaNumber={faydaNumber}
-          idPhoto={dbPensionerData?.photoUrl || dbPensionerData?.photo}
-          selfiePhoto={selfiePhoto}
-          onSuccess={(results) => handleFinalSuccess(results)} 
-        />
-      )}
-
-      {/* ደረጃ 5 */}
-      {step === 5 && <VerificationSuccess pensionerData={dbPensionerData} />}
-      
-      {step < 5 && (
-        <div className="verification-wizard-step-info">
-          ደረጃ {step} ከ 5 | እባክዎ መመሪያዎችን ይከተሉ
+      {loading && (
+        <div
+          style={{
+            padding: "10px",
+            background: "#fff3cd",
+            marginBottom: "10px",
+          }}
+        >
+          ⏳ Processing...
         </div>
+      )}
+
+      {error && (
+        <div
+          style={{
+            color: "red",
+            marginBottom: "10px",
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {step < 5 && (
+        <div
+          style={{
+            marginBottom: "15px",
+            fontWeight: "bold",
+          }}
+        >
+          Step {step} / 5
+        </div>
+      )}
+
+      {/* STEP 1 */}
+      {step === 1 && (
+        <CaptureIDCard
+          onSuccess={handleIdSuccess}
+        />
+      )}
+
+      {/* STEP 2 */}
+      {step === 2 && (
+        <CaptureSelfie
+          onSuccess={(url) => {
+            console.log("SELFIE URL:", url);
+
+            setSelfieUrl(url);
+
+            setStep(3);
+          }}
+        />
+      )}
+
+      {/* STEP 3 */}
+      {step === 3 && (
+        <LivenessTest
+          onSuccess={(result) => {
+            console.log("LIVENESS:", result);
+
+            setLivenessResult(result);
+
+            setStep(4);
+          }}
+        />
+      )}
+
+      {/* STEP 4 */}
+      {step === 4 &&
+        pensionerData &&
+        pensionerData.photoUrl &&
+        selfieUrl && (
+          <FaceMatch
+            idPhoto={pensionerData.photoUrl}
+            selfiePhoto={selfieUrl}
+            onSuccess={(percent) => {
+              console.log(
+                "FACE MATCH SUCCESS:",
+                percent
+              );
+
+              setMatchPercent(percent);
+
+              handleFinal(percent);
+            }}
+          />
+        )}
+
+      {/* STEP 5 */}
+      {step === 5 && (
+        <VerificationSuccess
+          data={{
+            ...pensionerData,
+            matchPercent,
+          }}
+        />
       )}
     </div>
   );
