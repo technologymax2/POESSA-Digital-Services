@@ -1,253 +1,94 @@
 import React, { useEffect, useState } from "react";
 import * as faceapi from "face-api.js";
 
-let modelsLoaded = false;
-
-function FaceMatch({
-  idPhoto,
-  registeredPhoto,
-  selfiePhoto,
-  onSuccess,
-}) {
+function FaceMatch({ idPhoto, selfiePhoto, onSuccess }) { // idPhoto እዚህ ጋር የሚገባው 'registeredData.photoUrl' ነው
   const [matchPercentage, setMatchPercentage] = useState(null);
-  const [statusMessage, setStatusMessage] = useState(
-    "⏳ Starting AI..."
-  );
   const [loading, setLoading] = useState(true);
+  const [statusMessage, setStatusMessage] = useState("⏳ AI ሞዴሎችን በመጫን ላይ...");
   const [isMatched, setIsMatched] = useState(false);
 
-  const actualPhoto = idPhoto || registeredPhoto;
-
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
 
-    const run = async () => {
+    const runFaceMatch = async () => {
       try {
-        console.log("ID PHOTO =", actualPhoto);
-        console.log("SELFIE PHOTO =", selfiePhoto);
-
-        if (!actualPhoto || !selfiePhoto) {
-          setStatusMessage("❌ Missing images");
-          return;
-        }
-
-        const MODEL_URL = "/models";
-
-        setStatusMessage("⏳ Loading AI models...");
-
-        if (!modelsLoaded) {
-          await Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri(
-              MODEL_URL
-            ),
-            faceapi.nets.faceLandmark68Net.loadFromUri(
-              MODEL_URL
-            ),
-            faceapi.nets.faceRecognitionNet.loadFromUri(
-              MODEL_URL
-            ),
-          ]);
-
-          modelsLoaded = true;
-        }
+        setStatusMessage("⏳ AI ሞዴሎችን በመጫን ላይ...");
+        const MODEL_URL = "/models"; 
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+        ]);
 
         const loadImage = (src) =>
           new Promise((resolve, reject) => {
             const img = new Image();
-
             img.crossOrigin = "anonymous";
-
-            img.onload = () => resolve(img);
-
-            img.onerror = () =>
-              reject(
-                new Error(
-                  `Failed to load image: ${src}`
-                )
-              );
-
             img.src = src;
+            img.onload = () => resolve(img);
+            img.onerror = reject;
           });
 
-        setStatusMessage("⏳ Loading images...");
-
+        setStatusMessage("⏳ ምስሎችን በማዘጋጀት ላይ...");
         const [img1, img2] = await Promise.all([
-          loadImage(actualPhoto),
-          loadImage(selfiePhoto),
+          loadImage(idPhoto), // ይህ ኦሪጅናል ፎቶ ነው
+          loadImage(selfiePhoto), // ይህ ሴልፊ ነው
         ]);
 
-        setStatusMessage("⏳ Detecting faces...");
+        setStatusMessage("⏳ ፊቶችን በመለየት ላይ...");
+        const detectorOptions = new faceapi.TinyFaceDetectorOptions({
+          inputSize: 224, 
+          scoreThreshold: 0.5,
+        });
 
-        const options =
-          new faceapi.TinyFaceDetectorOptions({
-            inputSize: 224,
-            scoreThreshold: 0.5,
-          });
+        const face1 = await faceapi.detectSingleFace(img1, detectorOptions).withFaceLandmarks().withFaceDescriptor();
+        const face2 = await faceapi.detectSingleFace(img2, detectorOptions).withFaceLandmarks().withFaceDescriptor();
 
-        const face1 = await faceapi
-          .detectSingleFace(img1, options)
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-
-        const face2 = await faceapi
-          .detectSingleFace(img2, options)
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-
-        if (!face1) {
-          setStatusMessage(
-            "❌ No face detected in ID photo"
-          );
+        if (!face1 || !face2) {
+          setStatusMessage("❌ ፊት አልተገኘም! እባክዎ ጥርት ያለ ፎቶ ይጠቀሙ።");
+          setLoading(false);
           return;
         }
 
-        if (!face2) {
-          setStatusMessage(
-            "❌ No face detected in selfie"
-          );
-          return;
-        }
+        const distance = faceapi.euclideanDistance(face1.descriptor, face2.descriptor);
+        const similarity = Math.round((1 - distance) * 100);
+        const safeSimilarity = Math.max(0, Math.min(100, similarity));
 
-        setStatusMessage("⏳ Comparing faces...");
+        if (!isMounted) return;
 
-        const distance =
-          faceapi.euclideanDistance(
-            face1.descriptor,
-            face2.descriptor
-          );
+        setMatchPercentage(safeSimilarity);
 
-        console.log("FACE DISTANCE =", distance);
-
-        const similarity = Math.max(
-          0,
-          Math.min(
-            100,
-            Math.round((1 - distance / 0.6) * 100)
-          )
-        );
-
-        if (!mounted) return;
-
-        setMatchPercentage(similarity);
-
-        if (distance < 0.6) {
+        if (safeSimilarity >= 50) {
           setIsMatched(true);
-
-          setStatusMessage(
-            `✅ Face Match Success (${similarity}%)`
-          );
-
-          setTimeout(() => {
-            if (onSuccess) {
-              onSuccess(similarity);
-            }
-          }, 1000);
+          setStatusMessage(`🎉 ማረጋገጫ ተሳክቷል! (${safeSimilarity}%)`);
         } else {
           setIsMatched(false);
-
-          setStatusMessage(
-            `❌ Face Match Failed (${similarity}%)`
-          );
+          setStatusMessage(`❌ ፊቱ አይመሳሰልም! (${safeSimilarity}%)`);
         }
-      } catch (error) {
-        console.error(
-          "Face Match Error:",
-          error
-        );
-
-        setStatusMessage(
-          "❌ Error while comparing faces"
-        );
+      } catch (err) {
+        console.error("Face Match Error:", err);
+        setStatusMessage("❌ የ AI ስህተት ተፈጥሯል፤ እባክዎ እንደገና ይሞክሩ።");
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
 
-    run();
-
-    return () => {
-      mounted = false;
-    };
-  }, [actualPhoto, selfiePhoto, onSuccess]);
+    runFaceMatch();
+    return () => { isMounted = false; };
+  }, [idPhoto, selfiePhoto]);
 
   return (
-    <div
-      style={{
-        padding: "20px",
-        textAlign: "center",
-      }}
-    >
-      <h2>🤖 Face Verification</h2>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "20px",
-          marginTop: "20px",
-        }}
-      >
-        <div>
-          <p>ID Photo</p>
-
-          <img
-            src={actualPhoto}
-            alt="ID"
-            style={{
-              width: "140px",
-              height: "140px",
-              objectFit: "cover",
-              borderRadius: "10px",
-              border: "2px solid #ddd",
-            }}
-          />
-        </div>
-
-        <div>
-          <p>Selfie Photo</p>
-
-          <img
-            src={selfiePhoto}
-            alt="Selfie"
-            style={{
-              width: "140px",
-              height: "140px",
-              objectFit: "cover",
-              borderRadius: "10px",
-              border: "2px solid #ddd",
-            }}
-          />
-        </div>
+    <div style={{ padding: "20px", textAlign: "center" }}>
+      <h3>🤖 የፊት ማረጋገጫ</h3>
+      <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
+        <img src={idPhoto} alt="Registered" style={{ width: "120px", height: "120px", borderRadius: "50%", objectFit: "cover" }} />
+        <img src={selfiePhoto} alt="Selfie" style={{ width: "120px", height: "120px", borderRadius: "50%", objectFit: "cover" }} />
       </div>
-
-      <div
-        style={{
-          marginTop: "20px",
-          fontWeight: "bold",
-          fontSize: "18px",
-        }}
-      >
-        {statusMessage}
-      </div>
-
-      {matchPercentage !== null && (
-        <h1>{matchPercentage}% Match</h1>
-      )}
-
-      {!loading && !isMatched && (
-        <button
-          onClick={() =>
-            window.location.reload()
-          }
-          style={{
-            padding: "10px 20px",
-            marginTop: "15px",
-            cursor: "pointer",
-          }}
-        >
-          Retry
+      <div style={{ marginTop: "15px", padding: "10px", fontWeight: "bold" }}>{statusMessage}</div>
+      {matchPercentage !== null && <h2>{matchPercentage}% Match</h2>}
+      {!loading && (
+        <button onClick={() => onSuccess(matchPercentage)} disabled={!isMatched}>
+          {isMatched ? "ቀጥል →" : "ማረጋገጫ አልተሳካም"}
         </button>
       )}
     </div>
