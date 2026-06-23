@@ -1,4 +1,5 @@
-import React, { useEffect, { useState } } from "react";
+import React, { useEffect, useState } from "react";
+import * as faceapi from "face-api.js";
 
 let modelsLoaded = false;
 
@@ -9,7 +10,9 @@ function FaceMatch({
   onSuccess,
 }) {
   const [matchPercentage, setMatchPercentage] = useState(null);
-  const [statusMessage, setStatusMessage] = useState("⏳ Starting AI...");
+  const [statusMessage, setStatusMessage] = useState(
+    "⏳ Starting AI..."
+  );
   const [loading, setLoading] = useState(true);
   const [isMatched, setIsMatched] = useState(false);
 
@@ -20,15 +23,8 @@ function FaceMatch({
 
     const run = async () => {
       try {
-        const faceapi = window.faceapi;
-
         console.log("ID PHOTO =", actualPhoto);
         console.log("SELFIE PHOTO =", selfiePhoto);
-
-        if (!faceapi) {
-          setStatusMessage("❌ face-api.js not loaded");
-          return;
-        }
 
         if (!actualPhoto || !selfiePhoto) {
           setStatusMessage("❌ Missing images");
@@ -41,9 +37,15 @@ function FaceMatch({
 
         if (!modelsLoaded) {
           await Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-            faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+            faceapi.nets.tinyFaceDetector.loadFromUri(
+              MODEL_URL
+            ),
+            faceapi.nets.faceLandmark68Net.loadFromUri(
+              MODEL_URL
+            ),
+            faceapi.nets.faceRecognitionNet.loadFromUri(
+              MODEL_URL
+            ),
           ]);
 
           modelsLoaded = true;
@@ -58,7 +60,11 @@ function FaceMatch({
             img.onload = () => resolve(img);
 
             img.onerror = () =>
-              reject(new Error(`Failed to load image: ${src}`));
+              reject(
+                new Error(
+                  `Failed to load image: ${src}`
+                )
+              );
 
             img.src = src;
           });
@@ -72,10 +78,11 @@ function FaceMatch({
 
         setStatusMessage("⏳ Detecting faces...");
 
-        const options = new faceapi.TinyFaceDetectorOptions({
-          inputSize: 224,
-          scoreThreshold: 0.5,
-        });
+        const options =
+          new faceapi.TinyFaceDetectorOptions({
+            inputSize: 224,
+            scoreThreshold: 0.5,
+          });
 
         const face1 = await faceapi
           .detectSingleFace(img1, options)
@@ -88,23 +95,28 @@ function FaceMatch({
           .withFaceDescriptor();
 
         if (!face1) {
-          setStatusMessage("❌ No face found in ID photo");
+          setStatusMessage(
+            "❌ No face detected in ID photo"
+          );
           return;
         }
 
         if (!face2) {
-          setStatusMessage("❌ No face found in selfie");
+          setStatusMessage(
+            "❌ No face detected in selfie"
+          );
           return;
         }
 
         setStatusMessage("⏳ Comparing faces...");
 
-        const distance = faceapi.euclideanDistance(
-          face1.descriptor,
-          face2.descriptor
-        );
+        const distance =
+          faceapi.euclideanDistance(
+            face1.descriptor,
+            face2.descriptor
+          );
 
-        console.log("Face Distance =", distance);
+        console.log("FACE DISTANCE =", distance);
 
         const similarity = Math.max(
           0,
@@ -138,7 +150,10 @@ function FaceMatch({
           );
         }
       } catch (error) {
-        console.error("Face Match Error:", error);
+        console.error(
+          "Face Match Error:",
+          error
+        );
 
         setStatusMessage(
           "❌ Error while comparing faces"
@@ -191,7 +206,7 @@ function FaceMatch({
         </div>
 
         <div>
-          <p>Selfie</p>
+          <p>Selfie Photo</p>
 
           <img
             src={selfiePhoto}
@@ -218,23 +233,19 @@ function FaceMatch({
       </div>
 
       {matchPercentage !== null && (
-        <h1
-          style={{
-            marginTop: "15px",
-          }}
-        >
-          {matchPercentage}% Match
-        </h1>
+        <h1>{matchPercentage}% Match</h1>
       )}
 
       {!loading && !isMatched && (
         <button
+          onClick={() =>
+            window.location.reload()
+          }
           style={{
-            marginTop: "15px",
             padding: "10px 20px",
+            marginTop: "15px",
             cursor: "pointer",
           }}
-          onClick={() => window.location.reload()}
         >
           Retry
         </button>
