@@ -10,7 +10,11 @@
   ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/models/:path*",
+      "destination": "/models/:path*"
+    },
+    {
+      "source": "/((?!models/).*)",
       "destination": "/"
     }
   ]
