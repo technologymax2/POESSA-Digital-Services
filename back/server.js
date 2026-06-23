@@ -1,4 +1,4 @@
-const express = require("express");
+Const express = require("express");
 const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
@@ -10,7 +10,7 @@ const livenessRoute = require("./LivenessTestBack");
 const app = express();
 
 /* =========================
-   CORS CONFIGURATION (ፈታ እና አስተማማኝ የተደረገ 🔒)
+   CORS CONFIGURATION (የተስተካከለ 🔒)
 ========================= */
 const allowedOrigins = [
   "https://poessa-digital-services.vercel.app",
@@ -21,19 +21,21 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // 💡 ጥያቄው origin ባይኖረውም ወይም በተፈቀዱት ሊንኮች ውስጥ ቢገኝ ወይም በ Vercel ንዑስ ሊንክ ቢመጣ ይፈቀድ
-      if (!origin || allowedOrigins.includes(origin) || origin.includes("vercel.app")) {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
+
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"]
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"] // ✅ የተጨመረ
   })
 );
 
-// ✅ ለቪዲዮ እና ምስል አፕሎድ ትልክ ዳታ እንዲቀበል የሊሚት ማስተካከያ
+// ✅ ለቪዲዮ እና ምስል አፕሎድ ትልቅ ዳታ እንዲቀበል የሊሚት ማስተካከያ
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
@@ -41,6 +43,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
    የደህንነት HEADERS (ካሜራው በ HTTPS ላይ እንዲሰራ ፈቃድ መስጫ)
 ========================= */
 app.use((req, res, next) => {
+  // ብሮውዘሩ ካሜራን ያለ ገደብ እንዲጠቀም መፍቀጃ (Permissions Policy)
   res.setHeader("Permissions-Policy", "camera=(self), microphone=()");
   res.setHeader("X-Content-Type-Options", "nosniff");
   next();
