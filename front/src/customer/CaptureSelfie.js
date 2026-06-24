@@ -1,194 +1,162 @@
-import React, { useEffect, useState, useRef } from "react";
-import axios from "axios"; // axios ከሌለ መደበኛውን fetch ይጠቀማል
+import React, { useState, useRef, useEffect } from "react";
+import axios from "axios";
 
-function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
-  const [matchStatus, setMatchStatus] = useState("⏳ ሁለቱንም ፎቶዎች በማንበብ ላይ...");
-  const [progress, setProgress] = useState(10);
-  const hasRunRef = useRef(false);
+const IMGBB_API_KEY = process.env.REACT_APP_IMGBB_API_KEY || "ebd592608f4dba1e8271bec8e920c408";
 
-  // 1️⃣ [ደህንነት አጥር] የሲስተም ፎቶን ከተለያዩ አማራጮች የመፈትሽ ዘዴ
-  const systemPhoto = 
-    dbPensionerData?.photoUrl || 
-    dbPensionerData?.photo || 
-    idPhoto?.idUrl || 
-    (typeof idPhoto === "string" ? idPhoto : "");
-
-  // 2️⃣ [ደህንነት አጥር] የሴልፊ ፎቶን ከተለያዩ አማራጮች የመፈትሽ ዘዴ (የተሰባበረ ምስልን ለመጠገን)
-  const actualSelfie = 
-    selfiePhoto?.selfieUrl || 
-    selfiePhoto?.image || 
-    (typeof selfiePhoto === "string" ? selfiePhoto : "");
+function CaptureSelfie({ onSuccess }) {
+  const [image, setImage] = useState("");
+  const [cameraActive, setCameraActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [faceDescriptor, setFaceDescriptor] = useState(null); 
+  const [analyzerStatus, setAnalyzerStatus] = useState(""); 
+  const videoRef = useRef(null);
 
   useEffect(() => {
-    // ፎቶዎቹ ገና ካልደረሱ ወይም ባዶ ከሆኑ ሂደቱን አያስጀምርም
-    if (!systemPhoto || !actualSelfie) {
-      setMatchStatus("⚠️ የፎቶ መረጃዎች በትክክል አልደረሱም፣ እባክዎ እንደገና ይሞክሩ።");
-      return;
+    startSelfieCamera();
+    return () => stopCamera();
+  }, []);
+
+  const stopCamera = () => {
+    if (videoRef.current?.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
     }
+    setCameraActive(false);
+  };
 
-    if (hasRunRef.current) return;
-    hasRunRef.current = true;
-
-    const runFaceMatch = async () => {
-      try {
-        const faceapi = window.faceapi;
-        if (!faceapi) {
-          setMatchStatus("❌ የፊት መለያ ሲስተም አልተጫነም!");
-          setTimeout(() => onSuccess(82), 2000);
-          return;
-        }
-
-        setProgress(30);
-        setMatchStatus("⏳ የማነጻጸሪያ ሞዴሎችን በመፈተሽ ላይ...");
-
-        // አስተማማኙ የ CDN አድራሻ
-        const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
-
-        if (!faceapi.nets.tinyFaceDetector.params || !faceapi.nets.faceLandmark68Net.params || !faceapi.nets.faceRecognitionNet.params) {
-          setMatchStatus("⏳ የቪዥን AI ሞዴሎችን ከዋናው ሰርቨር ላይ በመጫን ላይ...");
-          await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-          await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-          await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-        }
-
-        setProgress(50);
-        setMatchStatus("⏳ ምስሎችን ከደህንነት አጥር (CORS) ነጻ እያደረገ ነው...");
-
-        // ምስልን በአስተማማኝ ሁኔታ መጫኛ ፈንክሽን
-        const createSafeImage = async (url) => {
-          if (!url) return null;
-          return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = "anonymous"; // የ CORS ችግርን ለመከላከል
-            img.src = url;
-            img.onload = () => resolve(img);
-            img.onerror = () => {
-              console.error("Image load failed for URL:", url);
-              resolve(null); // ምስሉ ባይጫን እንኳ ክራሽ እንዳያደርግ null ይመልሳል
-            };
-          });
-        };
-
-        const imgSystem = await createSafeImage(systemPhoto);
-        const imgSelfie = await createSafeImage(actualSelfie);
-
-        // ምስሎቹ ሙሉ በሙሉ ካልተጫኑ ወደ አውቶማቲክ ማሳለፊያ ይሄዳል (ከመቆም መሻገሪያ)
-        if (!imgSystem || !imgSelfie) {
-          setProgress(100);
-          setMatchStatus("✅ የፊት ዝግጅት በደህንነት ሞድ ተጠናቋል።");
-          setTimeout(() => onSuccess(85), 1500);
-          return;
-        }
-
-        setProgress(75);
-        setMatchStatus("📊 የፊት ገጽታዎችን እያወዳደረ ነው...");
-
-        const systemResult = await faceapi.detectSingleFace(imgSystem, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-
-        const selfieResult = await faceapi.detectSingleFace(imgSelfie, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-
-        if (!systemResult || !selfieResult) {
-          setProgress(100);
-          setMatchStatus("✅ ትንተና ተጠናቋል (አውቶማቲክ ማሳለፊያ)...");
-          setTimeout(() => onSuccess(88), 1500);
-          return;
-        }
-
-        // የፊቶች ርቀት ስሌት
-        const distance = faceapi.euclideanDistance(systemResult.descriptor, selfieResult.descriptor);
-        let calculatedPercentage = Math.round((1 - distance) * 100);
-        if (calculatedPercentage > 100) calculatedPercentage = 100;
-        if (calculatedPercentage < 0) calculatedPercentage = 15;
-
-        // የጡረተኞች ማሳለፊያ ሎጅክ (ከ 75% በታች ከሆነ በዘፈቀደ ማሳደጊያ)
-        if (calculatedPercentage < 75) {
-          calculatedPercentage = Math.floor(Math.random() * (92 - 80 + 1)) + 80; 
-        }
-
-        // ባክ-ኤንድን Active ማድረጊያ
-        if (dbPensionerData?.faydaNumber) {
-          setMatchStatus("🔄 የጡረተኛውን የህይወት ሁኔታ በዳታቤዝ ላይ እያደሰ ነው...");
-          try {
-            await fetch("https://poessa-digital-services-1.onrender.com/api/pensioners/verify-face", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                query: dbPensionerData.faydaNumber,
-                currentDescriptor: Array.from(selfieResult.descriptor)
-              })
-            });
-          } catch (dbErr) {
-            console.error("ዳታቤዝ ማደስ አልተቻለም ነገር ግን ሂደቱን አናቆምም፦", dbErr);
-          }
-        }
-
-        setProgress(100);
-        setMatchStatus(`✅ ማነጻጸሩ ተጠናቋል! ውጤት፦ ${calculatedPercentage}%`);
-
-        setTimeout(() => {
-          onSuccess(calculatedPercentage);
-        }, 1500);
-
-      } catch (err) {
-        console.error("FaceMatch Main Error:", err);
-        setProgress(100);
-        setMatchStatus("✅ ማነጻጸሩ በስኬት ተጠናቋል።");
-        setTimeout(() => onSuccess(86), 1500);
+  const startSelfieCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setCameraActive(true);
       }
-    };
+    } catch (err) {
+      console.error("Camera error:", err);
+    }
+  };
 
-    runFaceMatch();
-  }, [systemPhoto, actualSelfie, onSuccess, dbPensionerData]);
+  const captureSelfie = async () => {
+    const video = videoRef.current;
+    if (!video || video.readyState !== 4) return alert("⏳ ካሜራ በመጫን ላይ...");
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
+    const base64Image = canvas.toDataURL("image/jpeg", 0.7);
+
+    setUploading(true);
+    setAnalyzerStatus("⏳ ፎቶውን ወደ ደመና እየሰቀልን እና ፊቱን እየመረመርን ነው...");
+    
+    try {
+      // 1️⃣ ፎቶውን ወደ ImgBB መጫን
+      const formData = new FormData();
+      formData.append("image", base64Image.split(",")[1]);
+      const res = await axios.post(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, formData);
+      const uploadedUrl = res.data.data.url;
+      setImage(uploadedUrl);
+      stopCamera();
+
+      // 2️⃣ የፊት አሻራውን (Descriptor) መለካት
+      if (window.faceapi) {
+        setAnalyzerStatus("🔍 የፊት ገጽታን በቪዥን AI በመተንተን ላይ...");
+        
+        const imgElement = new Image();
+        imgElement.src = base64Image;
+        imgElement.onload = async () => {
+          try {
+            const faceapi = window.faceapi;
+            // 🌟 [ዋና ማሻሻያ] ትክክለኛውን የ CDN ሞዴል አድራሻ እዚህም መጠቀም
+            const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
+
+            // ሞዴሎቹ አስቀድመው ካልተጫኑ እዚህ ላይ መጫን
+            if (!faceapi.nets.tinyFaceDetector.params || !faceapi.nets.faceLandmark68Net.params || !faceapi.nets.faceRecognitionNet.params) {
+              await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+              await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+              await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+            }
+
+            const detection = await faceapi
+              .detectSingleFace(imgElement, new faceapi.TinyFaceDetectorOptions())
+              .withFaceLandmarks()
+              .withFaceDescriptor();
+
+            if (detection && detection.descriptor) {
+              const descriptorArray = Array.from(detection.descriptor);
+              setFaceDescriptor(descriptorArray);
+              setAnalyzerStatus("🟢 የፊት ገጽታ ትንተና በተሳካ ሁኔታ ተጠናቋል!");
+            } else {
+              setAnalyzerStatus("⚠️ ፎቶው ተነስቷል ነገር ግን ፊት በግልጽ አልታየም። እባክዎ ድጋሚ ይሞክሩ።");
+              // ሴፍቲ ኔት፡ ፊት ባይገኝ እንኳ ተጠቃሚው እንዲያልፍ ባዶ አሻራ መፍቀድ
+              setFaceDescriptor([]); 
+            }
+          } catch (innerErr) {
+            console.error("Face Analysis Inner Error:", innerErr);
+            setAnalyzerStatus("⚠️ የፊት መለኪያው ዘገየ፤ ነገር ግን 'Face Match'ን ተጭነው ማለፍ ይችላሉ።");
+            setFaceDescriptor([]); // ሴፍቲ ኔት
+          } finally {
+            setUploading(false); // ስፒነሩን እዚህ ማቆም
+          }
+        };
+      } else {
+        setAnalyzerStatus("⚠️ የፊት መለያ ሲስተም (Script) አልተጫነም።");
+        setFaceDescriptor([]); 
+        setUploading(false);
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("❌ አፕሎድ ወይም የፊት ትንተና አልተሳካም");
+      setAnalyzerStatus("❌ ስህተት አጋጥሟል!");
+      setUploading(false);
+    }
+  };
 
   return (
-    <div style={{ padding: "25px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
-      <h3 style={{ color: "#162447", marginBottom: "10px" }}>🤖 ደረጃ 3፦ የፊት ባዮሜትሪክስ ማነፃፀሪያ</h3>
-      <p style={{ color: "#64748b", fontSize: "14px", marginBottom: "20px" }}>
-        በሲስተሙ ፎቶ እና በአዲሱ ሴልፊ መካከል ያለውን አንድነት ማረጋገጫ
-      </p>
+    <div style={{ padding: "20px", textAlign: "center", maxWidth: "400px", margin: "0 auto", fontFamily: "sans-serif" }}>
+      <h3>👤 ደረጃ 2 - Selfie Capture</h3>
 
-      <div style={{ display: "flex", justifyContent: "space-around", gap: "10px", marginBottom: "25px" }}>
-        <div style={{ flex: 1, textAlign: "center" }}>
-          <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 5px 0", fontWeight: "bold" }}>የሲስተም ፎቶ (DB)</p>
-          {systemPhoto ? (
-            <img 
-              src={systemPhoto} 
-              alt="System DB" 
-              style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "8px", border: "2px solid #f59e0b" }} 
-              onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=System+Photo"; }}
-            />
-          ) : (
-            <div style={{ width: "100px", height: "100px", background: "#cbd5e1", borderRadius: "8px", margin: "0 auto" }}></div>
-          )}
-        </div>
-        <div style={{ flex: 1, textAlign: "center" }}>
-          <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 5px 0", fontWeight: "bold" }}>የአሁኑ ሴልፊ</p>
-          {actualSelfie ? (
-            <img 
-              src={actualSelfie} 
-              alt="Selfie" 
-              style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "8px", border: "2px solid #10b981" }} 
-              onError={(e) => { e.target.src = "https://via.placeholder.com/100?text=Selfie+Photo"; }}
-            />
-          ) : (
-            <div style={{ width: "100px", height: "100px", background: "#cbd5e1", borderRadius: "8px", margin: "0 auto" }}></div>
-          )}
-        </div>
+      <div style={{ width: "220px", height: "220px", margin: "20px auto", borderRadius: "50%", overflow: "hidden", border: "4px solid #162447", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {uploading ? (
+            <div style={{ fontWeight: "bold", color: "#162447" }}>⏳ እባክዎ ይጠብቁ...</div>
+        ) : image ? (
+            <img src={image} alt="Selfie" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+            <video ref={videoRef} autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        )}
       </div>
 
-      <div style={{ width: "100%", background: "#e2e8f0", height: "8px", borderRadius: "4px", overflow: "hidden", marginBottom: "15px" }}>
-        <div style={{ width: `${progress}%`, background: "#2563eb", height: "100%", transition: "width 0.4s ease" }}></div>
-      </div>
+      {analyzerStatus && (
+        <p style={{ fontSize: "13px", fontWeight: "500", color: faceDescriptor ? "#16a34a" : "#b45309", backgroundColor: "#f8fafc", padding: "8px", borderRadius: "6px" }}>
+          {analyzerStatus}
+        </p>
+      )}
 
-      <div style={{ background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "14px", color: "#1e293b", fontWeight: "bold" }}>
-        {matchStatus}
-      </div>
+      {!image && !uploading && (
+        <button onClick={captureSelfie} style={{ width: "100%", padding: "15px", background: "#22c55e", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>
+            📸 Capture Photo
+        </button>
+      )}
+
+      {image && (
+        <>
+            <button 
+              onClick={() => onSuccess({ selfieUrl: image, currentDescriptor: faceDescriptor })} 
+              disabled={uploading}
+              style={{ width: "100%", padding: "15px", background: "#162447", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
+            >
+                Face Match →
+            </button>
+            <button onClick={() => { setImage(""); setFaceDescriptor(null); setAnalyzerStatus(""); startSelfieCamera(); }} style={{ width: "100%", padding: "10px", marginTop: "10px", background: "none", border: "1px solid #ccc", borderRadius: "8px", cursor: "pointer" }}>
+                🔄 እንደገና አንሳ
+            </button>
+        </>
+      )}
     </div>
   );
 }
 
-export default FaceMatch;
+export default CaptureSelfie;
