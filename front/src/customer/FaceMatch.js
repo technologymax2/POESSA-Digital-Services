@@ -7,7 +7,7 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
   const [progress, setProgress] = useState(10);
   const hasRun = useRef(false);
 
-  // 1. ሞዴሎችን የመጫኛ ክፍል
+  // 1. ሞዴሎችን ከ /models ማውጫ የመጫኛ ክፍል
   useEffect(() => {
     async function loadModels() {
       try {
@@ -18,7 +18,7 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         
         setLoadingModels(false);
         setProgress(40);
-        setMatchStatus("📸 ምስሎችን በማዘጋጀት ላይ...");
+        setMatchStatus("📸 ምስሎችን ለማነጻጸር በማዘጋጀት ላይ...");
       } catch (err) {
         console.error("Model Load Error:", err);
         setMatchStatus("❌ የፊት ማነጻጸሪያ ሞዴሎችን መጫን አልተቻለም!");
@@ -27,7 +27,7 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
     loadModels();
   }, []);
 
-  // 2. ፊትን የማነጻጸር ዋናው ስራ
+  // 2. ፊትን የማነጻጸር እና የማረጋገጥ ዋናው ስራ
   useEffect(() => {
     if (loadingModels || hasRun.current) return;
     hasRun.current = true;
@@ -37,17 +37,18 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         setProgress(60);
         setMatchStatus("🧠 የፊት ገጽታዎችን በጥልቀት በመተንተን ላይ...");
 
-        // የቆየውን/የመታወቂያ ፎቶ ማዘጋጀት
+        // 🌟 [CORS ጥበቃ ማሻሻያ] የመታወቂያ ፎቶ ማዘጋጀትና Cache መከላከል
         const imgSystem = new Image();
-        imgSystem.crossOrigin = "anonymous";
-        imgSystem.src = idPhoto;
+        imgSystem.crossOrigin = "anonymous"; 
+        imgSystem.src = idPhoto + (idPhoto.includes("?") ? "&" : "?") + "t=" + new Date().getTime();
 
-        // አዲሱን ሴልፊ ማዘጋጀት
+        // 🌟 [CORS ጥበቃ ማሻሻያ] የአሁን ሴልፊ ማዘጋጀትና Cache መከላከል
         const imgSelfie = new Image();
-        imgSelfie.crossOrigin = "anonymous";
-        // selfiePhoto ኦብጀክት ከሆነ የውስጡን ሊንክ ይለያል
-        imgSelfie.src = selfiePhoto?.selfieUrl || selfiePhoto;
+        imgSelfie.crossOrigin = "anonymous"; 
+        const cleanSelfie = selfiePhoto?.selfieUrl || selfiePhoto;
+        imgSelfie.src = cleanSelfie + (cleanSelfie.includes("?") ? "&" : "?") + "t=" + new Date().getTime();
 
+        // ሁለቱም ምስሎች ሙሉ በሙሉ እስኪጫኑ መጠበቂያ
         await Promise.all([
           new Promise((r) => (imgSystem.onload = r)),
           new Promise((r) => (imgSelfie.onload = r)),
@@ -56,7 +57,7 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         setProgress(75);
         setMatchStatus("📊 ሁለቱንም ፎቶዎች እያወዳደረ ነው...");
 
-        // 🌟 ይበልጥ ፈጣንና ጥብቅ ለሆነ አፈጻጸም TinyFaceDetector ተጠቅመናል
+        // የፊት ገጽታዎችን ማውጣት (TinyFaceDetector)
         const systemResult = await faceapi
           .detectSingleFace(imgSystem, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
           .withFaceLandmarks()
@@ -67,7 +68,7 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
           .withFaceLandmarks()
           .withFaceDescriptor();
 
-        // አንደኛው ፊት በትክክል ካልታየ ውድቅ ያደርጋል
+        // ፊት ካልተገኘ ወዲያውኑ በ 0% ውድቅ ያደርጋል
         if (!systemResult || !selfieResult) {
           setMatchStatus("❌ የፊት ገጽታን ከፎቶው ላይ ማንበብ አልተቻለም! እባክዎ በቂ ብርሃን ባለበት ቦታ ይሞክሩ።");
           setProgress(100);
@@ -75,18 +76,18 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
           return;
         }
 
-        // 🌟 [እውነተኛው የኢዩክሊዲያን ርቀት ስሌት]
+        // እውነተኛውን የኢዩክሊዲያን ርቀት (Euclidean Distance) ማስላት
         const distance = faceapi.euclideanDistance(systemResult.descriptor, selfieResult.descriptor);
         
-        // ርቀቱን ወደ ፐርሰንት (Percentage) መቀየሪያ ፎርሙላ
+        // ርቀቱን ወደ መቶኛ (Percentage) መቀየሪያ
         let calculatedPercentage = Math.round((1 - distance) * 100);
         if (calculatedPercentage > 100) calculatedPercentage = 100;
         if (calculatedPercentage < 0) calculatedPercentage = 0;
 
-        // ⚠️ [ደህንነት] የነበረው የፊክ ሬንደም ማሳለፊያ መስመር ሙሉ በሙሉ ተወግዷል!
-        // አሁን ሁለት የተለያየ ሰው ሲመጣ ውጤቱ በቀጥታ በጣም ዝቅተኛ (ከ30% - 50% በታች) ይሆናል።
+        // 🔒 የነበረው የሀሰት ማሳለፊያ (Math.random) ሙሉ በሙሉ ተወግዷል!
+        // አሁን ሁለት የተለያየ ሰው ሲመጣ እውነተኛውን ዝቅተኛ ውጤት ብቻ ይሰጣል።
 
-        // የጡረተኛውን የፊት ዴስክሪፕተር በባክኤንድ ለማደስ (ካስፈለገ)
+        // የጡረተኛውን የፊት ዴስክሪፕተር በባክኤንድ ለማደስ
         if (dbPensionerData?.faydaNumber) {
           try {
             await fetch("https://poessa-digital-services-1.onrender.com/api/pensioners/verify-face", {
