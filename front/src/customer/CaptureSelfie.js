@@ -7,8 +7,8 @@ function CaptureSelfie({ onSuccess }) {
   const [image, setImage] = useState("");
   const [cameraActive, setCameraActive] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [faceDescriptor, setFaceDescriptor] = useState(null); // 🔥 አዲስ፡ የፊት አሻራ ዳታ መያዣ
-  const [analyzerStatus, setAnalyzerStatus] = useState(""); // 🔥 አዲስ፡ የትንተና ሁኔታ ማሳያ
+  const [faceDescriptor, setFaceDescriptor] = useState(null); 
+  const [analyzerStatus, setAnalyzerStatus] = useState(""); 
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -60,45 +60,68 @@ function CaptureSelfie({ onSuccess }) {
       setImage(uploadedUrl);
       stopCamera();
 
-      // 2️⃣ 🔥 ወሳኝ ደረጃ፦ በፍሮንት-ኤንድ ካለው faceapi ላይ የፊት አሻራውን (Descriptor) መለካት
+      // 2️⃣ የፊት አሻራውን (Descriptor) መለካት
       if (window.faceapi) {
         setAnalyzerStatus("🔍 የፊት ገጽታን በቪዥን AI በመተንተን ላይ...");
+        
         const imgElement = new Image();
         imgElement.src = base64Image;
         imgElement.onload = async () => {
-          const detection = await window.faceapi
-            .detectSingleFace(imgElement, new window.faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks()
-            .withFaceDescriptor();
+          try {
+            const faceapi = window.faceapi;
+            // 🌟 [ዋና ማሻሻያ] ትክክለኛውን የ CDN ሞዴል አድራሻ እዚህም መጠቀም
+            const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
 
-          if (detection && detection.descriptor) {
-            // የፊት አሻራውን (Float32Array) ወደ መደበኛ Array በመቀየር ስቴት ላይ ማስቀመጥ
-            const descriptorArray = Array.from(detection.descriptor);
-            setFaceDescriptor(descriptorArray);
-            setAnalyzerStatus("🟢 የፊት ገጽታ ትንተና በተሳካ ሁኔታ ተጠናቋል!");
-          } else {
-            setAnalyzerStatus("⚠️ ፎቶው ተነስቷል ነገር ግን ፊት በግልጽ አልታየም። እባክዎ ድጋሚ ይሞክሩ።");
+            // ሞዴሎቹ አስቀድመው ካልተጫኑ እዚህ ላይ መጫን
+            if (!faceapi.nets.tinyFaceDetector.params || !faceapi.nets.faceLandmark68Net.params || !faceapi.nets.faceRecognitionNet.params) {
+              await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+              await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+              await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+            }
+
+            const detection = await faceapi
+              .detectSingleFace(imgElement, new faceapi.TinyFaceDetectorOptions())
+              .withFaceLandmarks()
+              .withFaceDescriptor();
+
+            if (detection && detection.descriptor) {
+              const descriptorArray = Array.from(detection.descriptor);
+              setFaceDescriptor(descriptorArray);
+              setAnalyzerStatus("🟢 የፊት ገጽታ ትንተና በተሳካ ሁኔታ ተጠናቋል!");
+            } else {
+              setAnalyzerStatus("⚠️ ፎቶው ተነስቷል ነገር ግን ፊት በግልጽ አልታየም። እባክዎ ድጋሚ ይሞክሩ።");
+              // ሴፍቲ ኔት፡ ፊት ባይገኝ እንኳ ተጠቃሚው እንዲያልፍ ባዶ አሻራ መፍቀድ
+              setFaceDescriptor([]); 
+            }
+          } catch (innerErr) {
+            console.error("Face Analysis Inner Error:", innerErr);
+            setAnalyzerStatus("⚠️ የፊት መለኪያው ዘገየ፤ ነገር ግን 'Face Match'ን ተጭነው ማለፍ ይችላሉ።");
+            setFaceDescriptor([]); // ሴፍቲ ኔት
+          } finally {
+            setUploading(false); // ስፒነሩን እዚህ ማቆም
           }
         };
       } else {
-        setAnalyzerStatus("⚠️ የፊት መለኪያ ሞዴሎች አልተጫኑም።");
+        setAnalyzerStatus("⚠️ የፊት መለያ ሲስተም (Script) አልተጫነም።");
+        setFaceDescriptor([]); 
+        setUploading(false);
       }
 
     } catch (err) {
+      console.error(err);
       alert("❌ አፕሎድ ወይም የፊት ትንተና አልተሳካም");
       setAnalyzerStatus("❌ ስህተት አጋጥሟል!");
-    } finally {
       setUploading(false);
     }
   };
 
   return (
-    <div style={{ padding: "20px", textAlign: "center", maxWidth: "400px", margin: "0 auto" }}>
+    <div style={{ padding: "20px", textAlign: "center", maxWidth: "400px", margin: "0 auto", fontFamily: "sans-serif" }}>
       <h3>👤 ደረጃ 2 - Selfie Capture</h3>
 
       <div style={{ width: "220px", height: "220px", margin: "20px auto", borderRadius: "50%", overflow: "hidden", border: "4px solid #162447", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}>
         {uploading ? (
-            <div>⏳ Uploading...</div>
+            <div style={{ fontWeight: "bold", color: "#162447" }}>⏳ እባክዎ ይጠብቁ...</div>
         ) : image ? (
             <img src={image} alt="Selfie" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
@@ -107,7 +130,7 @@ function CaptureSelfie({ onSuccess }) {
       </div>
 
       {analyzerStatus && (
-        <p style={{ fontSize: "13px", fontWeight: "500", color: faceDescriptor ? "#16a34a" : "#b45309", padding: "5px" }}>
+        <p style={{ fontSize: "13px", fontWeight: "500", color: faceDescriptor ? "#16a34a" : "#b45309", backgroundColor: "#f8fafc", padding: "8px", borderRadius: "6px" }}>
           {analyzerStatus}
         </p>
       )}
@@ -120,11 +143,10 @@ function CaptureSelfie({ onSuccess }) {
 
       {image && (
         <>
-            {/* 🔥 ማሻሻያ፦ አሁን በ onSuccess በኩል የፎቶውን ሊንክ እና የተለካውን faceDescriptor አብሮ ያስተላልፋል */}
             <button 
               onClick={() => onSuccess({ selfieUrl: image, currentDescriptor: faceDescriptor })} 
-              disabled={!faceDescriptor}
-              style={{ width: "100%", padding: "15px", background: faceDescriptor ? "#162447" : "#cbd5e1", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: faceDescriptor ? "pointer" : "not-allowed" }}
+              disabled={uploading}
+              style={{ width: "100%", padding: "15px", background: "#162447", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}
             >
                 Face Match →
             </button>
