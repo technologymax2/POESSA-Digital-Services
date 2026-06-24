@@ -36,9 +36,9 @@ function VerificationWizard() {
         return;
       }
 
-     const res = await axios.get(
-  `https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${fayda}`
-);
+      const res = await axios.get(
+        `https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${fayda}`
+      );
 
       if (!res.data?.success) {
         setError("❌ Pensioner not found");
@@ -46,7 +46,6 @@ function VerificationWizard() {
       }
 
       const pensioner = res.data.data;
-
       console.log("PENSIONER:", pensioner);
 
       if (!pensioner?.photoUrl) {
@@ -56,7 +55,6 @@ function VerificationWizard() {
 
       setFaydaNumber(fayda);
       setPensionerData(pensioner);
-
       setStep(2);
     } catch (error) {
       console.error(error);
@@ -79,19 +77,16 @@ function VerificationWizard() {
         return;
       }
 
+      // 🌟 [ማሻሻያ] selfieUrl ኦብጀክት ከሆነ የውስጡን ሊንክ ይወስዳል
+      const finalSelfieUrl = selfieUrl?.selfieUrl || selfieUrl;
+
       const payload = {
         faydaNumber,
-
         dbPhotoUrl: pensionerData.photoUrl,
-
-        selfiePhotoUrl: selfieUrl,
-
+        selfiePhotoUrl: finalSelfieUrl, 
         matchPercentage: match,
-
         smilePassed: !!livenessResult?.smilePassed,
-
         nodPassed: !!livenessResult?.nodPassed,
-
         turnPassed: !!livenessResult?.turnPassed,
       };
 
@@ -117,56 +112,34 @@ function VerificationWizard() {
 
   return (
     <div className="wizard-container">
-
       {loading && (
-        <div
-          style={{
-            padding: "10px",
-            background: "#fff3cd",
-            marginBottom: "10px",
-          }}
-        >
+        <div style={{ padding: "10px", background: "#fff3cd", marginBottom: "10px" }}>
           ⏳ Processing...
         </div>
       )}
 
       {error && (
-        <div
-          style={{
-            color: "red",
-            marginBottom: "10px",
-          }}
-        >
+        <div style={{ color: "red", marginBottom: "10px" }}>
           {error}
         </div>
       )}
 
       {step < 5 && (
-        <div
-          style={{
-            marginBottom: "15px",
-            fontWeight: "bold",
-          }}
-        >
+        <div style={{ marginBottom: "15px", fontWeight: "bold" }}>
           Step {step} / 5
         </div>
       )}
 
       {/* STEP 1 */}
-      {step === 1 && (
-        <CaptureIDCard
-          onSuccess={handleIdSuccess}
-        />
-      )}
+      {step === 1 && <CaptureIDCard onSuccess={handleIdSuccess} />}
 
       {/* STEP 2 */}
       {step === 2 && (
         <CaptureSelfie
-          onSuccess={(url) => {
-            console.log("SELFIE URL:", url);
-
-            setSelfieUrl(url);
-
+          onSuccess={(data) => {
+            console.log("SELFIE CAPTURE DATA:", data);
+            // 🌟 [ዋና ማሻሻያ] የ CaptureSelfie ውጤት ኦብጀክት ስለሆነ ሙሉውን ዳታ እዚህ እናስቀምጣለን
+            setSelfieUrl(data);
             setStep(3);
           }}
         />
@@ -177,33 +150,25 @@ function VerificationWizard() {
         <LivenessTest
           onSuccess={(result) => {
             console.log("LIVENESS:", result);
-
             setLivenessResult(result);
-
             setStep(4);
           }}
         />
       )}
-[6/23/2026 7:56 PM] Mamex: {/* STEP 4 */}
-      {step === 4 &&
-        pensionerData &&
-        pensionerData.photoUrl &&
-        selfieUrl && (
-          <FaceMatch
-            idPhoto={pensionerData.photoUrl}
-            selfiePhoto={selfieUrl}
-            onSuccess={(percent) => {
-              console.log(
-                "FACE MATCH SUCCESS:",
-                percent
-              );
 
-              setMatchPercent(percent);
-
-              handleFinal(percent);
-            }}
-          />
-        )}
+      {/* STEP 4 */}
+      {step === 4 && pensionerData && pensionerData.photoUrl && selfieUrl && (
+        <FaceMatch
+          idPhoto={pensionerData.photoUrl}
+          selfiePhoto={selfieUrl} // 🌟 ኦብጀክቱ ሙሉ በሙሉ ለ FaceMatch ይተላለፋል
+          dbPensionerData={pensionerData} // ለደህንነት ሲባል ሙሉውን የፔንሲዮነር ዳታም እንልካለን
+          onSuccess={(percent) => {
+            console.log("FACE MATCH SUCCESS:", percent);
+            setMatchPercent(percent);
+            handleFinal(percent);
+          }}
+        />
+      )}
 
       {/* STEP 5 */}
       {step === 5 && (
