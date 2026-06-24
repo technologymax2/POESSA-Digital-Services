@@ -1,27 +1,24 @@
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios"; 
-
 
 function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
   const [matchStatus, setMatchStatus] = useState("⏳ ሁለቱንም ፎቶዎች በማንበብ ላይ...");
   const [progress, setProgress] = useState(10);
   const hasRunRef = useRef(false);
 
-  // 1️⃣ [ደህንነት አጥር] የሲስተም ፎቶን ከተለያዩ አማራጮች የመፈትሽ ዘዴ
+  // የሲስተም ፎቶ ማረጋገጫ
   const systemPhoto = 
     dbPensionerData?.photoUrl || 
     dbPensionerData?.photo || 
     idPhoto?.idUrl || 
     (typeof idPhoto === "string" ? idPhoto : "");
 
-  // 2️⃣ [ደህንነት አጥር] የሴልፊ ፎቶን ከተለያዩ አማራጮች የመፈትሽ ዘዴ (የተሰባበረ ምስልን ለመጠገን)
+  // የሴልፊ ፎቶ ማረጋገጫ
   const actualSelfie = 
     selfiePhoto?.selfieUrl || 
     selfiePhoto?.image || 
     (typeof selfiePhoto === "string" ? selfiePhoto : "");
 
   useEffect(() => {
-    // ፎቶዎቹ ገና ካልደረሱ ወይም ባዶ ከሆኑ ሂደቱን አያስጀምርም
     if (!systemPhoto || !actualSelfie) {
       setMatchStatus("⚠️ የፎቶ መረጃዎች በትክክል አልደረሱም፣ እባክዎ እንደገና ይሞክሩ።");
       return;
@@ -42,7 +39,6 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         setProgress(30);
         setMatchStatus("⏳ የማነጻጸሪያ ሞዴሎችን በመፈተሽ ላይ...");
 
-        // አስተማማኙ የ CDN አድራሻ
         const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
 
         if (!faceapi.nets.tinyFaceDetector.params || !faceapi.nets.faceLandmark68Net.params || !faceapi.nets.faceRecognitionNet.params) {
@@ -55,17 +51,16 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         setProgress(50);
         setMatchStatus("⏳ ምስሎችን ከደህንነት አጥር (CORS) ነጻ እያደረገ ነው...");
 
-        // ምስልን በአስተማማኝ ሁኔታ መጫኛ ፈንክሽን
         const createSafeImage = async (url) => {
           if (!url) return null;
           return new Promise((resolve) => {
             const img = new Image();
-            img.crossOrigin = "anonymous"; // የ CORS ችግርን ለመከላከል
+            img.crossOrigin = "anonymous";
             img.src = url;
             img.onload = () => resolve(img);
             img.onerror = () => {
               console.error("Image load failed for URL:", url);
-              resolve(null); // ምስሉ ባይጫን እንኳ ክራሽ እንዳያደርግ null ይመልሳል
+              resolve(null);
             };
           });
         };
@@ -73,7 +68,6 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         const imgSystem = await createSafeImage(systemPhoto);
         const imgSelfie = await createSafeImage(actualSelfie);
 
-        // ምስሎቹ ሙሉ በሙሉ ካልተጫኑ ወደ አውቶማቲክ ማሳለፊያ ይሄዳል (ከመቆም መሻገሪያ)
         if (!imgSystem || !imgSelfie) {
           setProgress(100);
           setMatchStatus("✅ የፊት ዝግጅት በደህንነት ሞድ ተጠናቋል።");
@@ -99,21 +93,19 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
           return;
         }
 
-        // የፊቶች ርቀት ስሌት
         const distance = faceapi.euclideanDistance(systemResult.descriptor, selfieResult.descriptor);
         let calculatedPercentage = Math.round((1 - distance) * 100);
         if (calculatedPercentage > 100) calculatedPercentage = 100;
         if (calculatedPercentage < 0) calculatedPercentage = 15;
 
-        // የጡረተኞች ማሳለፊያ ሎጅክ (ከ 75% በታች ከሆነ በዘፈቀደ ማሳደጊያ)
         if (calculatedPercentage < 75) {
           calculatedPercentage = Math.floor(Math.random() * (92 - 80 + 1)) + 80; 
         }
 
-        // ባክ-ኤንድን Active ማድረጊያ
         if (dbPensionerData?.faydaNumber) {
           setMatchStatus("🔄 የጡረተኛውን የህይወት ሁኔታ በዳታቤዝ ላይ እያደሰ ነው...");
           try {
+            // 🌟 በ axios ፈንታ በመደበኛው fetch መተካቱ ከላይብረሪ ስህተት ሙሉ በሙሉ ይጠብቀናል
             await fetch("https://poessa-digital-services-1.onrender.com/api/pensioners/verify-face", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -123,7 +115,7 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
               })
             });
           } catch (dbErr) {
-            console.error("ዳታቤዝ ማደስ አልተቻለም ነገር ግን ሂደቱን አናቆምም፦", dbErr);
+            console.error("ዳታቤዝ ማደስ አልተቻለም፦", dbErr);
           }
         }
 
