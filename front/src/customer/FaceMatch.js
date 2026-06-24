@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 
-function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
+function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess, smilePassed, nodPassed, turnPassed }) {
   const [matchStatus, setMatchStatus] = useState("⏳ ምስሎችን ወደ ድርጅቱ ሰርቨር በመላክ ላይ...");
   const [progress, setProgress] = useState(20);
   const hasRun = useRef(false);
@@ -12,42 +12,45 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
     async function sendToBackend() {
       try {
         setProgress(50);
-        setMatchStatus("🧠 ሰርቨሩ የፊት ገጽታዎችን እያነጻጸረ ነው (ይህ ጥቂት ሰከንዶች ሊወስድ ይችላል)...");
+        setMatchStatus("🧠 ሰርቨሩ የፊት ገጽታዎችን እያነጻጸረ ነው...");
 
         const cleanSelfie = selfiePhoto?.selfieUrl || selfiePhoto;
         
-        // 🌐 ወደ እናንተ የ Render ሰርቨር አዲሱ Endpoint መላክ
-        const response = await fetch("https://poessa-digital-services-1.onrender.com/api/pensioners/verify-face-server", {
+        // 🌐 እውነተኛውን እና ሁሉንም ዳታ በአንድ ላይ የሚይዘውን /verify-success መስመር መጥራት
+        const response = await fetch("https://poessa-digital-services-1.onrender.com/api/pensioners/verify-success", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             faydaNumber: dbPensionerData?.faydaNumber,
-            idPhotoUrl: idPhoto,
-            selfiePhotoUrl: cleanSelfie
+            dbPhotoUrl: idPhoto,
+            selfiePhotoUrl: cleanSelfie,
+            smilePassed: smilePassed ?? true, // የሊቨነስ ውጤቶች ካሉህ እዚህ ይተካሉ
+            nodPassed: nodPassed ?? true,
+            turnPassed: turnPassed ?? true
           })
         });
 
-        const data = await response.json();
+        const resData = await response.json();
 
-        if (response.ok && data.success) {
+        if (response.ok && resData.success) {
+          const realPercent = resData.data.matchPercentage;
           setProgress(100);
-          setMatchStatus(`📊 ማነጻጸሩ ተጠናቋል! ውጤት፦ ${data.matchPercentage}%`);
-          setTimeout(() => onSuccess(data.matchPercentage), 2000);
+          setMatchStatus(`📊 ማነጻጸሩ ተጠናቋል! እውነተኛ ውጤት፦ ${realPercent}%`);
+          setTimeout(() => onSuccess(realPercent), 2000);
         } else {
-          throw new Error(data.message || "የሰርቨር ማነጻጸር ስህተት");
+          throw new Error(resData.message || "የሰርቨር ማነጻጸር ስህተት");
         }
 
       } catch (err) {
         console.error("Backend Verification Error:", err);
-        setMatchStatus("⚠️ ማሳሰቢያ፦ የፊት ማነጻጸሩ ዘግይቷል (በደህንነት መርህ ወደ ቀጣዩ እያለፈ ነው...)");
+        setMatchStatus("⚠️ ማሳሰቢያ፦ የፊት ማነጻጸር ስህተት አጋጥሟል!");
         setProgress(100);
-        // ሰርቨር ላይ ችግር ቢኖር እንኳ የጡረተኛው ስራ እንዳይስተጓጎል በ 65% ማሳለፍ
-        setTimeout(() => onSuccess(65), 2500);
+        setTimeout(() => onSuccess(0), 2500); // ስህተት ከሆነ 0% ይሰጣል
       }
     }
 
     sendToBackend();
-  }, [idPhoto, selfiePhoto, dbPensionerData, onSuccess]);
+  }, [idPhoto, selfiePhoto, dbPensionerData, onSuccess, smilePassed, nodPassed, turnPassed]);
 
   return (
     <div style={{ padding: "30px", textAlign: "center", background: "#fff", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", maxWidth: "450px", margin: "30px auto", fontFamily: "sans-serif" }}>
