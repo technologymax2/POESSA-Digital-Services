@@ -36,9 +36,9 @@ function VerificationWizard() {
         return;
       }
 
-      const res = await axios.get(
-        https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${fayda}
-      );
+     const res = await axios.get(
+  `https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${fayda}`
+);
 
       if (!res.data?.success) {
         setError("❌ Pensioner not found");
