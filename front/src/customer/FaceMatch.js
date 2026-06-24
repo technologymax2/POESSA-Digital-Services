@@ -13,25 +13,31 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
     hasRunRef.current = true;
 
     const runFaceMatch = async () => {
-      try {
-        const faceapi = window.faceapi;
-        if (!faceapi) {
-          setMatchStatus("❌ የፊት መለያ ሲስተም አልተጫነም!");
-          setTimeout(() => onSuccess(80), 2000);
-          return;
-        }
+  try {
+    const faceapi = window.faceapi;
+    if (!faceapi) {
+      setMatchStatus("❌ የፊት መለያ ሲስተም አልተጫነም!");
+      setTimeout(() => onSuccess(80), 2000);
+      return;
+    }
 
-        setProgress(30);
-        setMatchStatus("⏳ የማነጻጸሪያ ሞዴሎችን በመፈተሽ ላይ...");
+    setProgress(30);
+    setMatchStatus("⏳ የማነጻጸሪያ ሞዴሎችን በመፈተሽ ላይ...");
 
-        if (!faceapi.nets.tinyFaceDetector.params || !faceapi.nets.faceLandmark68Net.params || !faceapi.nets.faceRecognitionNet.params) {
-          await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
-          await faceapi.nets.faceLandmark68Net.loadFromUri("/models");
-          await faceapi.nets.faceRecognitionNet.loadFromUri("/models");
-        }
+    // 🌟 [ዋና ማሻሻያ] ፍጹም አስተማማኝ የሆነውን ይፋዊ የ face-api.js CDN ሞዴል አድራሻ መጠቀም
+    // ይህ ዘዴ በ Vercel ላይ የሚመጣውን የ 404 (Not Found) ወይም የፋይል ስም መሳሳት ችግር ያቀልላል።
+    const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
 
-        setProgress(50);
-        setMatchStatus("⏳ ምስሎችን ከደህንነት አጥር (CORS) ነጻ እያደረገ ነው...");
+    if (!faceapi.nets.tinyFaceDetector.params || !faceapi.nets.faceLandmark68Net.params || !faceapi.nets.faceRecognitionNet.params) {
+      setMatchStatus("⏳ የቪዥን AI ሞዴሎችን ከዋናው ሰርቨር ላይ በመጫን ላይ...");
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    }
+
+    setProgress(50);
+    setMatchStatus("⏳ ምስሎችን ከደህንነት አጥር (CORS) ነጻ እያደረገ ነው...");
+
 
         const createSafeImage = async (url) => {
           try {
