@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import axios from "axios";
 
 import CaptureIDCard from "./CaptureIDCard";
@@ -65,29 +65,29 @@ function VerificationWizard() {
   };
 
   // ==================================
-  // SAVE FINAL RESULT
+  // SAVE FINAL RESULT (🌟 በ useCallback የተጠበቀ)
   // ==================================
-  const handleFinal = async (match) => {
+  const handleFinal = useCallback(async (match, currentSelfie, currentPensioner, currentFayda, currentLiveness) => {
     try {
       setLoading(true);
       setError("");
 
-      if (!pensionerData) {
+      if (!currentPensioner) {
         setError("❌ Missing pensioner data");
         return;
       }
 
-      // 🌟 [ማሻሻያ] selfieUrl ኦብጀክት ከሆነ የውስጡን ሊንክ ይወስዳል
-      const finalSelfieUrl = selfieUrl?.selfieUrl || selfieUrl;
+      // selfieUrl ኦብጀክት ከሆነ የውስጡን ሊንክ ይለያል
+      const finalSelfieUrl = currentSelfie?.selfieUrl || currentSelfie;
 
       const payload = {
-        faydaNumber,
-        dbPhotoUrl: pensionerData.photoUrl,
+        faydaNumber: currentFayda,
+        dbPhotoUrl: currentPensioner.photoUrl,
         selfiePhotoUrl: finalSelfieUrl, 
         matchPercentage: match,
-        smilePassed: !!livenessResult?.smilePassed,
-        nodPassed: !!livenessResult?.nodPassed,
-        turnPassed: !!livenessResult?.turnPassed,
+        smilePassed: !!currentLiveness?.smilePassed,
+        nodPassed: !!currentLiveness?.nodPassed,
+        turnPassed: !!currentLiveness?.turnPassed,
       };
 
       console.log("VERIFY PAYLOAD:", payload);
@@ -108,7 +108,7 @@ function VerificationWizard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return (
     <div className="wizard-container">
@@ -138,7 +138,6 @@ function VerificationWizard() {
         <CaptureSelfie
           onSuccess={(data) => {
             console.log("SELFIE CAPTURE DATA:", data);
-            // 🌟 [ዋና ማሻሻያ] የ CaptureSelfie ውጤት ኦብጀክት ስለሆነ ሙሉውን ዳታ እዚህ እናስቀምጣለን
             setSelfieUrl(data);
             setStep(3);
           }}
@@ -160,12 +159,13 @@ function VerificationWizard() {
       {step === 4 && pensionerData && pensionerData.photoUrl && selfieUrl && (
         <FaceMatch
           idPhoto={pensionerData.photoUrl}
-          selfiePhoto={selfieUrl} // 🌟 ኦብጀክቱ ሙሉ በሙሉ ለ FaceMatch ይተላለፋል
-          dbPensionerData={pensionerData} // ለደህንነት ሲባል ሙሉውን የፔንሲዮነር ዳታም እንልካለን
+          selfiePhoto={selfieUrl}
+          dbPensionerData={pensionerData}
           onSuccess={(percent) => {
             console.log("FACE MATCH SUCCESS:", percent);
             setMatchPercent(percent);
-            handleFinal(percent);
+            // 🌟 የቅርብ ጊዜዎቹን ስቴቶች በቀጥታ ወደ ማከማቻው እንልካለን
+            handleFinal(percent, selfieUrl, pensionerData, faydaNumber, livenessResult);
           }}
         />
       )}
