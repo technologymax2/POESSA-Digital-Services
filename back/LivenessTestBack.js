@@ -115,47 +115,81 @@ router.post("/verify-face-server", async (req, res) => {
 /* ==========================================
    MAIN VERIFY (ID + SELFIE + LIVENESS FINAL SAVE)
 ========================================== */
+/* ==========================================
+   🔥 [የተስተካከለ] MAIN VERIFY WITH SERVER-SIDE FACE MATCHING
+========================================== */
 router.post("/verify-success", async (req, res) => {
   try {
     const {
       faydaNumber,
       dbPhotoUrl,
       selfiePhotoUrl,
-      matchPercentage,
       smilePassed,
       nodPassed,
       turnPassed
     } = req.body;
 
     if (!faydaNumber) {
-      return res.status(400).json({
-        success: false,
-        message: "Fayda number is required"
-      });
+      return res.status(400).json({ success: false, message: "Fayda number is required" });
     }
 
+    // 1. ጡረተኛውን በፋይዳ ቁጥር መፈለግ
     const pensioner = await UserPensioner.findOne({ faydaNumber });
-
     if (!pensioner) {
-      return res.status(404).json({
-        success: false,
-        message: "Pensioner not found"
-      });
+      return res.status(404).json({ success: false, message: "Pensioner not found" });
     }
 
+    // 2. ፎቶዎቹን ማዘጋጀት
     let finalDbPhotoUrl = dbPhotoUrl || pensioner.photoUrl || "";
+    let finalSelfieUrl = selfiePhotoUrl || "";
+
+    // 3. 🚨 ሰርቨር-ሳይድ የፊት ማነጻጸር ስራ (SERVER-SIDE FACE MATCHING)
+    let finalMatch = 65; // ማንኛውም ችግር ቢፈጠር መከላከያ ቁጥር
+    
+    try {
+      await loadServerModels();
+      console.log("⏳ ምስሎችን በ Axios አውርዶ እያነጻጸረ ነው...");
+      
+      const [idResponse, selfieResponse] = await Promise.all([
+        axios.get(finalDbPhotoUrl, { responseType: "arraybuffer" }),
+        axios.get(finalSelfieUrl, { responseType: "arraybuffer" })
+      ]);
+
+      const idBuffer = Buffer.from(idResponse.data);
+      const selfieBuffer = Buffer.from(selfieResponse.data);
+
+      const imgId = await canvas.loadImage(idBuffer);
+      const imgSelfie = await canvas.loadImage(selfieBuffer);
+
+      const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.3 });
+
+      const idResult = await faceapi.detectSingleFace(imgId, detectorOptions).withFaceLandmarks().withFaceDescriptor();
+      const selfieResult = await faceapi.detectSingleFace(imgSelfie, detectorOptions).withFaceLandmarks().withFaceDescriptor();
+
+      if (idResult && selfieResult) {
+        const distance = faceapi.euclideanDistance(idResult.descriptor, selfieResult.descriptor);
+        finalMatch = Math.round((1 - distance) * 100);
+        finalMatch = Math.max(0, Math.min(100, finalMatch));
+        console.log(`📊 እውነተኛ የፊት ማነጻጸር ውጤት ተገኝቷል፦ ${finalMatch}%`);
+      } else {
+        console.warn("⚠️ በምስሎቹ ላይ ፊት አልተገኘም፣ Fallback 65% ጥቅም ላይ ውሏል።");
+      }
+    } catch (faceErr) {
+      console.error("የፊት ማነጻጸር መስመር ላይ ስህተት አጋጥሟል፦", faceErr.message);
+      // ሞዴሉ ባይጭን እንኳ የጡረተኛው ስራ እንዳይቆም 65% መከላከያውን መያዝ
+      finalMatch = 65;
+    }
+
+    // 4. ImgBB ላይ በባክግራውንድ እንዲጫኑ ማድረግ (Data:image ከሆኑ)
     if (finalDbPhotoUrl.startsWith("data:image")) {
       finalDbPhotoUrl = await uploadToImgBB(finalDbPhotoUrl);
     }
-
-    let finalSelfieUrl = selfiePhotoUrl || "";
     if (finalSelfieUrl.startsWith("data:image")) {
       finalSelfieUrl = await uploadToImgBB(finalSelfieUrl);
     }
 
-    const finalMatch = Number(matchPercentage) || 0;
+    // 5. የማለፊያ መስፈርት ማረጋገጫ (ከ 70% በላይ መሆን አለበት)
     const faceMatched = finalMatch >= 70;
-
     const livenessPassed = !!smilePassed && !!nodPassed && !!turnPassed;
 
     let verificationStatus = "Failed";
@@ -163,6 +197,7 @@ router.post("/verify-success", async (req, res) => {
       verificationStatus = "Verified";
     }
 
+    // 6. ዳታቤዝ ላይ መመዝገብ
     const record = new LivenessVerification({
       faydaNumber,
       name: pensioner.nameAmh || pensioner.nameEng || pensioner.name || "ስም አልተጠቀሰም",
@@ -177,18 +212,14 @@ router.post("/verify-success", async (req, res) => {
     });
 
     await record.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Liveness verification completed",
-      data: record
-    });
+    return res.status(200).json({ success: true, message: "Liveness verification completed", data: record });
 
   } catch (error) {
     console.error("Liveness Error:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 });
+
 
 /* ==========================================
    GET ALL VERIFICATIONS (EMPLOYEE DASHBOARD)
