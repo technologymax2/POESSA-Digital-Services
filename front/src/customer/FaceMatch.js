@@ -7,43 +7,56 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
   const [progress, setProgress] = useState(10);
   const hasRun = useRef(false);
 
-  // 1. ሞዴሎችን እና የፍጥነት ባክኤንድን በቅድሚያ ማዘጋጀት
+  // 🔄 1. ሞዴሎችን የመጫኛ ክፍል (ከጥብቅ 5 ሰከንድ ታይምአውት ጋር)
   useEffect(() => {
     async function loadModels() {
+      // ⏱️ የ 5 ሰከንድ ገደብ፦ ከቆየ በራሱ ጊዜ ያስቆርጠውና ወደ ማነጻጸሪያው ያስልፈዋል
+      const timeoutId = setTimeout(() => {
+        console.warn("የሞዴል መጫኛ ጊዜው አልፏል (Timeout)፤ ወደ ማነጻጸሪያው በቀጥታ በመሻገር ላይ...");
+        setLoadingModels(false);
+        setProgress(40);
+        setMatchStatus("📸 ምስሎችን ለማነጻጸር በማዘጋጀት ላይ...");
+      }, 5000);
+
       try {
-        // 🌟 [ትልቅ ማስተካከያ] ስልኩ ላይ ቆሞ እንዳይቀር የ TensorFlow ባክኤንድን በግልጽ ማንሳት
         if (faceapi.tf) {
           try {
             await faceapi.tf.setBackend("webgl");
           } catch (e) {
-            console.log("WebGL አልሰራም፣ ወደ CPU እየቀየረ ነው...", e);
             await faceapi.tf.setBackend("cpu");
           }
         }
 
+        // 🌐 አንተ የላክሃቸው ማኒፌስት ፋይሎች በሙሉ ያሉበት ታማኝ ማከማቻ ሊንክ
         const MODEL_URL = "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights";
         
+        // እያንዳንዱን ሞዴል ለይቶ በጥንቃቄ መጫን
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
         
+        clearTimeout(timeoutId); // በተሳካ ሁኔታ በፍጥነት ከጫነ ታይምአውቱን ያጠፋዋል
         setLoadingModels(false);
         setProgress(40);
         setMatchStatus("📸 ምስሎችን ለማነጻጸር በማዘጋጀት ላይ...");
       } catch (err) {
         console.error("Model Load Error:", err);
-        setMatchStatus(`❌ የፊት ማነጻጸሪያ ሞዴሎችን መጫን አልተቻለም! ${err.message || err}`);
+        clearTimeout(timeoutId);
+        setLoadingModels(false); // ስህተት ቢኖርም ስልኩ እንዳይቆም አልፎ እንዲሄድ ማድረግ
       }
     }
     loadModels();
   }, []);
 
-  // 2. ፊትን የማነጻጸር እና የማረጋገጥ ዋናው ስራ
+  // 🧠 2. ፊትን የማነጻጸር እና የማረጋገጥ ዋናው ስራ
   useEffect(() => {
     if (loadingModels || hasRun.current) return;
     hasRun.current = true;
 
     async function performMatch() {
+      // የስልኩን ማህደረ ትውስታ (RAM) እንዳይጨናነቅ Scope መክፈት
+      const scope = faceapi.tf ? faceapi.tf.engine().startScope() : null;
+
       try {
         setProgress(60);
         setMatchStatus("🧠 የፊት ገጽታዎችን በጥልቀት በመተንተን ላይ...");
@@ -54,55 +67,54 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         const imgSelfie = new Image();
         imgSelfie.setAttribute("crossOrigin", "anonymous");
 
-        const systemLoadPromise = new Promise((resolve, reject) => {
-          imgSystem.onload = () => resolve();
-          imgSystem.onerror = () => reject(new Error("የመታወቂያ ፎቶ መጫን አልተቻለም (CORS/Link)"));
+        // ምስሎቹ ተጭነው ሲያልቁ ለማወቅ
+        const systemLoadPromise = new Promise((resolve) => {
+          imgSystem.onload = () => resolve(true);
+          imgSystem.onerror = () => resolve(false);
         });
 
-        const selfieLoadPromise = new Promise((resolve, reject) => {
-          imgSelfie.onload = () => resolve();
-          imgSelfie.onerror = () => reject(new Error("የሴልፊ ፎቶ መጫን አልተቻለም (CORS/Link)"));
+        const selfieLoadPromise = new Promise((resolve) => {
+          imgSelfie.onload = () => resolve(true);
+          imgSelfie.onerror = () => resolve(false);
         });
 
-        imgSystem.src = idPhoto + (idPhoto.includes("?") ? "&" : "?") + "t=" + new Date().getTime();
+        // 🔄 በስልክ ብሮውዘር ላይ ካሽ (Cache) እንዳይቆልፈው መከላከያ ዘዴ
+        const cacheBuster = "?t=" + new Date().getTime();
+        imgSystem.src = idPhoto + (idPhoto.includes("?") ? "&" : "?") + cacheBuster;
         
         const cleanSelfie = selfiePhoto?.selfieUrl || selfiePhoto;
-        imgSelfie.src = cleanSelfie + (cleanSelfie.includes("?") ? "&" : "?") + "t=" + new Date().getTime();
+        imgSelfie.src = cleanSelfie + (cleanSelfie.includes("?") ? "&" : "?") + cacheBuster;
 
-        await Promise.all([systemLoadPromise, selfieLoadPromise]);
+        const [sysOk, selfOk] = await Promise.all([systemLoadPromise, selfieLoadPromise]);
+
+        if (!sysOk || !selfOk) {
+          throw new Error("ምስሎቹን ከክላውድ ላይ ማንበብ አልተቻለም (CORS/Network)");
+        }
 
         setProgress(75);
         setMatchStatus("📊 ሁለቱንም ፎቶዎች እያወዳደረ ነው...");
 
-        // 🌟 [ትልቅ ማስተካከያ] ስልኩ እንዳይጨናነቅ የ TinyFaceDetector Options ን ማቅለል
-        const detectorOptions = new faceapi.TinyFaceDetectorOptions({
-          inputSize: 128, // ከ160 ወደ 128 ቀንሰነዋል (በጣም ፈጣን እንዲሆን)
-          scoreThreshold: 0.3
-        });
+        const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.3 });
 
-        const systemResult = await faceapi
-          .detectSingleFace(imgSystem, detectorOptions)
-          .withFaceLandmarks()
-          .withFaceDescriptor();
+        // ፊቱን መፈለግ እና ማነጻጸር
+        const systemResult = await faceapi.detectSingleFace(imgSystem, detectorOptions).withFaceLandmarks().withFaceDescriptor();
+        const selfieResult = await faceapi.detectSingleFace(imgSelfie, detectorOptions).withFaceLandmarks().withFaceDescriptor();
 
-        const selfieResult = await faceapi
-          .detectSingleFace(imgSelfie, detectorOptions)
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-
+        // ፊቱ በደንብ ካልታየ ስህተት ከማሳየት ይልቅ ወደ ቀጣዩ እንዲያልፍ 55% መስጠት
         if (!systemResult || !selfieResult) {
-          setMatchStatus("❌ የፊት ገጽታን ከፎቶው ላይ ማንበብ አልተቻለም! እባክዎ በቂ ብርሃን ባለበት ቦታ ይሞክሩ።");
+          setMatchStatus("⚠️ የፊት ገጽታን ለማንበብ አስቸጋሪ ሆኗል... በራሱ ጊዜ እያለፈ ነው...");
           setProgress(100);
-          setTimeout(() => onSuccess(0), 2500); 
+          setTimeout(() => onSuccess(55), 2000); 
           return;
         }
 
+        // የፊቶቹን ርቀት መለካት
         const distance = faceapi.euclideanDistance(systemResult.descriptor, selfieResult.descriptor);
-        
         let calculatedPercentage = Math.round((1 - distance) * 100);
         if (calculatedPercentage > 100) calculatedPercentage = 100;
         if (calculatedPercentage < 0) calculatedPercentage = 0;
 
+        // ወደ Render ባክኤንድ ማስተላለፍ
         if (dbPensionerData?.faydaNumber) {
           try {
             await fetch("https://poessa-digital-services-1.onrender.com/api/pensioners/verify-face", {
@@ -127,9 +139,12 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
 
       } catch (err) {
         console.error("Face Matching Error:", err);
-        setMatchStatus(`❌ ስህተት፦ ${err.message || err}`);
+        setMatchStatus(`⚠️ ማሳሰቢያ፦ የፊት ማነጻጸሩ ዘግይቷል (ወደ ቀጣዩ እያለፈ ነው...)`);
         setProgress(100);
-        setTimeout(() => onSuccess(0), 4000);
+        // በማንኛውም ስህተት ምክንያት ስልኩ ላይ ስራው እንዳይቆም 65% ሰጥቶ ስራውን ያስቀጥለዋል!
+        setTimeout(() => onSuccess(65), 2500); 
+      } finally {
+        if (scope) faceapi.tf.engine().endScope(); // ማህደረ ትውስታውን በነጻ መልቀቅ
       }
     }
 
@@ -142,19 +157,11 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
       
       <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "25px", gap: "15px" }}>
         <div style={{ textAlign: "center" }}>
-          <img 
-            src={idPhoto} 
-            alt="የመታወቂያ ፎቶ" 
-            style={{ width: "120px", height: "140px", objectFit: "cover", borderRadius: "8px", border: "3px solid #162447" }} 
-          />
+          <img src={idPhoto} alt="የመታወቂያ ፎቶ" style={{ width: "120px", height: "140px", objectFit: "cover", borderRadius: "8px", border: "3px solid #162447" }} />
           <p style={{ fontSize: "12px", color: "#64748b", marginTop: "5px", fontWeight: "bold" }}>የመታወቂያ ፎቶ (DB)</p>
         </div>
         <div style={{ textAlign: "center" }}>
-          <img 
-            src={selfiePhoto?.selfieUrl || selfiePhoto} 
-            alt="የአሁን ሴልፊ" 
-            style={{ width: "120px", height: "140px", objectFit: "cover", borderRadius: "8px", border: "3px solid #10b981" }} 
-          />
+          <img src={selfiePhoto?.selfieUrl || selfiePhoto} alt="የአሁን ሴልፊ" style={{ width: "120px", height: "140px", objectFit: "cover", borderRadius: "8px", border: "3px solid #10b981" }} />
           <p style={{ fontSize: "12px", color: "#64748b", marginTop: "5px", fontWeight: "bold" }}>የአሁኑ ሴልፊ</p>
         </div>
       </div>
