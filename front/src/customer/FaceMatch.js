@@ -7,11 +7,13 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
   const [progress, setProgress] = useState(10);
   const hasRun = useRef(false);
 
-  // 1. ሞዴሎችን ከ /models ማውጫ የመጫኛ ክፍል
+  // 1. ሞዴሎችን ከ CDN (Cloud) በቀጥታ የመጫኛ ክፍል - ፈጣን እና አስተማማኝ
   useEffect(() => {
     async function loadModels() {
       try {
-        const MODEL_URL = "/models";
+        // 🌟 በ Vercel ላይ 404 እንዳይል በቀጥታ ከታመነ የክላውድ ማከማቻ ይጭነዋል (ብሮውዘር ላይ Cache ይደረጋል)
+        const MODEL_URL = "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights";
+        
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
         await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
@@ -37,12 +39,12 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         setProgress(60);
         setMatchStatus("🧠 የፊት ገጽታዎችን በጥልቀት በመተንተን ላይ...");
 
-        // 🌟 [CORS ጥበቃ ማሻሻያ] የመታወቂያ ፎቶ ማዘጋጀትና Cache መከላከል
+        // 🌟 [CORS ጥበቃ] የመታወቂያ ፎቶ ማዘጋጀትና Cache መከላከል
         const imgSystem = new Image();
         imgSystem.crossOrigin = "anonymous"; 
         imgSystem.src = idPhoto + (idPhoto.includes("?") ? "&" : "?") + "t=" + new Date().getTime();
 
-        // 🌟 [CORS ጥበቃ ማሻሻያ] የአሁን ሴልፊ ማዘጋጀትና Cache መከላከል
+        // 🌟 [CORS ጥበቃ] የአሁን ሴልፊ ማዘጋጀትና Cache መከላከል
         const imgSelfie = new Image();
         imgSelfie.crossOrigin = "anonymous"; 
         const cleanSelfie = selfiePhoto?.selfieUrl || selfiePhoto;
@@ -83,9 +85,6 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         let calculatedPercentage = Math.round((1 - distance) * 100);
         if (calculatedPercentage > 100) calculatedPercentage = 100;
         if (calculatedPercentage < 0) calculatedPercentage = 0;
-
-        // 🔒 የነበረው የሀሰት ማሳለፊያ (Math.random) ሙሉ በሙሉ ተወግዷል!
-        // አሁን ሁለት የተለያየ ሰው ሲመጣ እውነተኛውን ዝቅተኛ ውጤት ብቻ ይሰጣል።
 
         // የጡረተኛውን የፊት ዴስክሪፕተር በባክኤንድ ለማደስ
         if (dbPensionerData?.faydaNumber) {
