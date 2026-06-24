@@ -22,12 +22,12 @@ function CheckStatus() {
     setPensioner(null);
 
     try {
-      // 🌟 [ዋና ማሻሻያ] የሁሉንም ሰው ዳታ ከማውረድ ይልቅ የተፈለገውን የሊቭነስ ሪከርድ ብቻ በቀጥታ ከባክኤንድ መፈለግ
+      // 🔗 አዲሱን የሊቭነስ ማረጋገጫ ሰሌዳ ኤፒአይ በቀጥታ መጥራት
       const response = await axios.get(
         `https://poessa-digital-services-1.onrender.com/api/liveness/${faydaNumber.trim()}`
       );
       
-      // ባክኤንድህ መረጃውን የሚያወጣው { success: true, data: {...} } አድርጎ ነው
+      // 🌟 [ዋና ማሻሻያ] ባክኤንድህ በቀጥታ አንድ ኦብጀክት ስለሚመልስ (.find ሳይደረግ) ውጤቱን በቀጥታ መጫን
       if (response.data && response.data.success && response.data.data) {
         setPensioner(response.data.data);
       } else {
@@ -35,7 +35,6 @@ function CheckStatus() {
       }
     } catch (err) {
       console.error("Status Check Error:", err);
-      // ስህተት ሲኖር ወይም መረጃው ሳይገኝ ሲቀር ማጽጃ
       setPensioner(null);
     } finally {
       setLoading(false);
@@ -43,7 +42,7 @@ function CheckStatus() {
   };
 
   return (
-    <div style={{ padding: "40px 20px", maxWidth: "500px", margin: "50px auto", textAlign: "center", fontFamily: "sans-serif", background: "#fff", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", boxSizing: "border-box" }}>
+    <div style={{ padding: "40px 20px", maxWidth: "500px", margin: "20px auto", textAlign: "center", fontFamily: "sans-serif", background: "#fff", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", boxSizing: "border-box" }}>
       <h2 style={{ color: "#162447", marginBottom: "10px", fontWeight: "700" }}>🔍 የጡረታ ማረጋገጫ ሁኔታ መከታተያ</h2>
       <p style={{ color: "#64748b", fontSize: "14px", marginBottom: "30px" }}>የፋይዳ ቁጥርዎን በማስገባት የማረጋገጫ ሂደትዎ የት ደረጃ ላይ እንደደረሰ ይከታተሉ</p>
 
@@ -75,9 +74,9 @@ function CheckStatus() {
           <h4 style={{ margin: "0 0 15px 0", color: "#162447", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px", fontWeight: "700" }}>📋 የባለቤት መረጃ</h4>
           <p style={{ margin: "8px 0" }}><strong>ስም፦</strong> {pensioner.name}</p>
           <p style={{ margin: "8px 0" }}><strong>የፋይዳ ቁጥር፦</strong> {pensioner.faydaNumber}</p>
-          <p style={{ margin: "8px 0" }}><strong>ስልክ ቁጥር፦</strong> {pensioner.phone || "የለም"}</p>
+          <p style={{ margin: "8px 0" }}><strong>የፊት አንድነት ደረጃ፦</strong> {pensioner.matchPercentage || 0}%</p>
           
-          {/* 🌟 እዚህ ጋር በባክኤንድህ ላይ ካለው 'Verified'፣ 'Failed' እና 'Pending' ሁኔታ ጋር ፍጹም ተጣጥሟል */}
+          {/* 🌟 ከባለሙያ የተሰጠውን እውነተኛ የቪው ስታተስ ያሳያል */}
           <div style={{ marginTop: "20px", padding: "15px", borderRadius: "8px", textAlign: "center", fontWeight: "bold", fontSize: "15px",
             background: pensioner.verificationStatus === "Verified" ? "#dcfce7" : pensioner.verificationStatus === "Failed" ? "#fee2e2" : "#fef9c3",
             color: pensioner.verificationStatus === "Verified" ? "#15803d" : pensioner.verificationStatus === "Failed" ? "#b91c1c" : "#a16207"
@@ -85,7 +84,7 @@ function CheckStatus() {
             የአሁኑ የሂደት ሁኔታ፦ {pensioner.verificationStatus === "Verified" ? "✅ ተረጋግጧል (Verified)" : pensioner.verificationStatus === "Failed" ? "❌ ውድቅ ተደርጓል (Failed)" : "⏳ በሂደት ላይ (Pending)"}
           </div>
 
-          {/* ⚠️ ከባለሙያ የተላከ ማሳሰቢያ ምክንያት ካለ እዚህ ይወጣል */}
+          {/* ⚠️ ውድቅ የተደረገበት ምክንያት ካለ */}
           {pensioner.verificationStatus === "Failed" && pensioner.comment && (
             <div style={{ marginTop: "15px", padding: "12px", borderRadius: "6px", background: "#fff5f5", borderLeft: "4px solid #ef4444", color: "#991b1b", fontSize: "14px" }}>
               <strong>⚠️ ውድቅ የተደረገበት ምክንያት፦</strong> "{pensioner.comment}"
