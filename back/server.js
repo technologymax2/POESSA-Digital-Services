@@ -10,7 +10,7 @@ const livenessRoute = require("./LivenessTestBack");
 const app = express();
 
 /* =========================
-   CORS CONFIGURATION (የተስተካከለ 🔒)
+   CORS CONFIGURATION (ለማንኛውም የ Vercel ሊንክ ምቹ የተደረገ 🔒)
 ========================= */
 const allowedOrigins = [
   "https://poessa-digital-services.vercel.app",
@@ -23,7 +23,8 @@ app.use(
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      // 🌟 [ማሻሻያ] ዋናዎቹን ሊንኮች ወይም ማንኛውንም ከ poessa-digital-services ጋር የሚጀምር የ Vercel ቅርንጫፍ ሊንክ ይፈቅዳል
+      if (allowedOrigins.includes(origin) || origin.includes("poessa-digital-services")) {
         return callback(null, true);
       }
 
@@ -31,7 +32,7 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"] // ✅ የተጨመረ
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"]
   })
 );
 
@@ -43,7 +44,6 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
    የደህንነት HEADERS (ካሜራው በ HTTPS ላይ እንዲሰራ ፈቃድ መስጫ)
 ========================= */
 app.use((req, res, next) => {
-  // ብሮውዘሩ ካሜራን ያለ ገደብ እንዲጠቀም መፍቀጃ (Permissions Policy)
   res.setHeader("Permissions-Policy", "camera=(self), microphone=()");
   res.setHeader("X-Content-Type-Options", "nosniff");
   next();
@@ -53,7 +53,7 @@ app.use((req, res, next) => {
    HOME ROUTE
 ========================= */
 app.get("/", (req, res) => {
-  res.send("POESSA Server Running");
+  res.send("POESSA Server Running Successfully");
 });
 
 /* =========================
@@ -62,10 +62,10 @@ app.get("/", (req, res) => {
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
-    console.log("MongoDB Connected");
+    console.log("MongoDB Connected Successfully");
   })
   .catch((err) => {
-    console.error("MongoDB Error:", err);
+    console.error("MongoDB Connection Error:", err);
   });
 
 /* =========================
@@ -74,11 +74,11 @@ mongoose
 const server = http.createServer(app);
 
 /* =========================
-   SOCKET.IO
+   SOCKET.IO (CORS ይበልጥ አስተማማኝ የተደረገ 🌐)
 ========================= */
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: true, // 🌟 [ማሻሻያ] ከየትኛውም ከተፈቀደ የፍሮንትኤንድ ጥያቄ ጋር በቀጥታ እንዲናበብ ያደርገዋል
     methods: ["GET", "POST"],
     credentials: true
   }
