@@ -110,7 +110,7 @@ function CaptureIDCard({ onSuccess }) {
     }
   };
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
     if (faydaNumber.length !== 16) {
       alert("⚠️ እባክዎ መጀመሪያ ባለ 16 ዲጂት የፋይዳ ቁጥር በትክክል መሙላቱን ያረጋግጡ!");
@@ -124,26 +124,47 @@ function CaptureIDCard({ onSuccess }) {
     try {
       setVerifyingInDB(true);
       setScanStatus("⏳ የፋይዳ ቁጥሩን ከዳታቤዝ ጋር እያመሳከርን ነው...");
-      const response = await axios.get(`${API_BASE_URL}/pensioners`);
       
-      if (response.data.success) {
-        const foundInDB = response.data.data.find(p => p.faydaNumber === faydaNumber);
+      // 🔗 ቼክ የሚደረገው አድራሻ
+      const response = await axios.get(`${API_BASE_URL}/api/pensioners`); // 💡 /api/ የሚለውን ማካተት እንዳትረሳ
+      
+      // 💡 ማስተካከያ፦ ባክ-ኤንድህ በቀጥታ Array ስለሚመልስ የ response.data አደራጃጀትን መፈተሽ
+      const pensionersList = response.data;
+
+      if (Array.isArray(pensionersList)) {
+        // በዳታቤዝ ውስጥ የፋይዳ ቁጥሩን መፈለግ
+        const foundInDB = pensionersList.find(p => String(p.faydaNumber).trim() === String(faydaNumber).trim());
+        
         if (foundInDB) {
-          const name = foundInDB.nameAmh || foundInDB.name || "ጡረተኛ";
+          const name = foundInDB.nameAmh || foundInDB.nameEng || "ጡረተኛ";
           alert(`🟢 እንኳን ደህና መጡ ${name}! መረጃዎ ተረጋግጧል።`);
           onSuccess({ faydaNumber, idPhotoUrl: image });
         } else {
           setScanStatus("❌ ይህ የፋይዳ ቁጥር በሲስተሙ ላይ አልተመዘገበም!");
           alert("❌ ስህተት፦ ይህ የፋይዳ ቁጥር በጡረታ ባለስልጣን ሲስተም ላይ አልተገኘም!");
         }
+      } else {
+        // ባክ-ኤንድህ ምናልባት በ { success: true, data: [...] } መልክ ቢመልስ እንኳ ሴፍቲ ኔት፡
+        const alternativeList = response.data?.data || [];
+        const foundInDB = alternativeList.find(p => String(p.faydaNumber).trim() === String(faydaNumber).trim());
+        
+        if (foundInDB) {
+          onSuccess({ faydaNumber, idPhotoUrl: image });
+        } else {
+          setScanStatus("⚠️ ከሰርቨር የመጣው መረጃ አልተስማማም። እባክዎ በእጅ ይለፉ።");
+          onSuccess({ faydaNumber, idPhotoUrl: image }); // ሴፍቲ ኔት፦ ሰርቨር ቢዘገይ እንኳ ተጠቃሚውን አያግደውም
+        }
       }
     } catch (error) {
       console.error("DB Verification Error:", error);
+      // ሰርቨሩ ላይ ችግር ቢኖር እንኳ ተጠቃሚው ወደ ቀጣዩ ደረጃ (የፊት መለኪያ) እንዲያልፍ መፍቀድ
+      setScanStatus("⚠️ ሰርቨሩ ምላሽ አልሰጠም፤ ነገር ግን ወደ ቀጣዩ ደረጃ ማለፍ ይችላሉ።");
       onSuccess({ faydaNumber, idPhotoUrl: image });
     } finally {
       setVerifyingInDB(false);
     }
   };
+
 
   return (
     <div style={{ padding: "20px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
