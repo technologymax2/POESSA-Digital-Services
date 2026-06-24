@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios"; // ✅ ይህንን አድርገው
+import axios from "axios"; 
+
 
 function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
   const [matchStatus, setMatchStatus] = useState("⏳ ሁለቱንም ፎቶዎች በማንበብ ላይ...");
