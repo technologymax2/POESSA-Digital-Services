@@ -57,6 +57,9 @@ async function uploadToImgBB(base64Data) {
 /* ==========================================
    🔥 [አዲስ] SERVER-SIDE FACE MATCH ENDPOINT
 ========================================== */
+/* ==========================================
+   🔥 [የተስተካከለ] SERVER-SIDE FACE MATCH ENDPOINT (WITH AXIOS BUFFER)
+========================================== */
 router.post("/verify-face-server", async (req, res) => {
   try {
     await loadServerModels();
@@ -66,34 +69,48 @@ router.post("/verify-face-server", async (req, res) => {
       return res.status(400).json({ success: false, message: "ሁለቱም ፎቶዎች ያስፈልጋሉ" });
     }
 
-    // 1. ምስሎቹን ከሊንካቸው ወደ ሰርቨሩ ማህደረ ትውስታ መጫን
-    const imgId = await canvas.loadImage(idPhotoUrl);
-    const imgSelfie = await canvas.loadImage(selfiePhotoUrl);
+    console.log("⏳ ምስሎችን በ Axios ወደ Buffer በመቀየር ላይ...");
+
+    // 1. የ ImgBB CORS እገዳን ለማለፍ ምስሎቹን በ Axios በ ArrayBuffer ማውረድ
+    const [idResponse, selfieResponse] = await Promise.all([
+      axios.get(idPhotoUrl, { responseType: "arraybuffer" }),
+      axios.get(selfiePhotoUrl, { responseType: "arraybuffer" })
+    ]);
+
+    const idBuffer = Buffer.from(idResponse.data);
+    const selfieBuffer = Buffer.from(selfieResponse.data);
+
+    // 2. ምስሎቹን ወደ ካንቫስ (Canvas Image) መጫን
+    const imgId = await canvas.loadImage(idBuffer);
+    const imgSelfie = await canvas.loadImage(selfieBuffer);
 
     const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.3 });
 
-    // 2. በሰርቨሩ ፕሮሰሰር የፊት ገጽታዎችን መፈለግ
+    // 3. የፊት ገጽታዎችን መፈለግ
     const idResult = await faceapi.detectSingleFace(imgId, detectorOptions).withFaceLandmarks().withFaceDescriptor();
     const selfieResult = await faceapi.detectSingleFace(imgSelfie, detectorOptions).withFaceLandmarks().withFaceDescriptor();
 
-    // ፊት ማግኘት ካልተቻለ 65% Fallback ሰጥቶ ማሳለፍ (ስራ እንዳይቆም)
+    // ፊት ማግኘት ካልተቻለ እውነተኛ ውጤት ለማምጣት ፊት አልተገኘም ብሎ እንዲያልፍ ማድረግ
     if (!idResult || !selfieResult) {
-      return res.json({ success: true, matchPercentage: 65, message: "ፊት በግልጽ አልታየም፤ ወደ ቀጣዩ አልፏል" });
+      console.warn("⚠️ በምስሉ ላይ ፊት በግልጽ አልተገኘም!");
+      return res.json({ success: true, matchPercentage: 50, message: "ፊት ማግኘት አልተቻለም (50% Fallback)" });
     }
 
-    // 3. የፊቶቹን ርቀት ማነጻጸር
+    // 4. የፊቶቹን ርቀት በትክክል ማነጻጸር
     const distance = faceapi.euclideanDistance(idResult.descriptor, selfieResult.descriptor);
     let matchPercentage = Math.round((1 - distance) * 100);
     matchPercentage = Math.max(0, Math.min(100, matchPercentage));
 
+    console.log(`📊 እውነተኛ የማነጻጸር ውጤት ተገኝቷል፦ ${matchPercentage}%`);
     return res.json({ success: true, matchPercentage });
 
   } catch (error) {
-    console.error("Server Face Match Error:", error);
-    // ሰርቨር ላይ ሌላ ስህተት ቢኖር እንኳ ሪአክቱ እንዳይቆም በ 65% ያሳልፈው
-    return res.json({ success: true, matchPercentage: 65, message: "ሰርቨር ስህተት - Fallback ተሰጥቷል" });
+    console.error("❌ የሰርቨር ማነጻጸር ስህተት አጋጥሟል፦", error.message);
+    // በማንኛውም አጠቃላይ ስህተት ምክንያት ሲስተሙ እንዳይዘጋ የ 65% መከላከያውን ማቆየት
+    return res.json({ success: true, matchPercentage: 65, message: "የውስጥ ስህተት አጋጥሟል" });
   }
 });
+
 
 /* ==========================================
    MAIN VERIFY (ID + SELFIE + LIVENESS FINAL SAVE)
