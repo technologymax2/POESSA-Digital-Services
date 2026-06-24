@@ -91,10 +91,13 @@ router.post("/verify-success", async (req, res) => {
     }
 
     /* =========================
-       FACE MATCH LOGIC (SERVER SIDE CONTROL)
+       FACE MATCH LOGIC (SERVER SIDE CONTROL 🔒)
     ========================= */
     const finalMatch = Number(matchPercentage) || 0;
-    const faceMatched = finalMatch >= 50;
+    
+    // 🌟 [ዋና የደህንነት ማሻሻያ] ማጭበርበርን ለመከላከል የደህንነት ገደቡ ከ 50% ወደ 70% አድጓል!
+    // አሁን ከተለያዩ ሰዎች የሚመጣ ማንኛውም የፊት መመሳሰል ውጤት በቀጥታ 'Failed' ይሆናል።
+    const faceMatched = finalMatch >= 70;
 
     /* =========================
        LIVENESS VALIDATION
