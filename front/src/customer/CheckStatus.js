@@ -11,6 +11,7 @@ function CheckStatus() {
   const handleCheckStatus = async (e) => {
     e.preventDefault();
     
+    // 🔒 ጥብቅ መቆለፊያ - ቁጥሩ ልክ 16 አሃዝ ካልሆነ ፍለጋ አይጀምርም
     if (faydaNumber.trim().length !== 16) {
       alert("⚠️ እባክዎ መጀመሪያ ባለ 16 ዲጂት የፋይዳ ቁጥርዎን በትክክል ያስገቡ!");
       return;
@@ -21,12 +22,12 @@ function CheckStatus() {
     setPensioner(null);
 
     try {
-      // 🌟 [ማሻሻያ] የሁሉንም ሰው ዳታ በጅምላ ከማውረድ ይልቅ የተፈለገውን ቁጥር ብቻ ለይቶ ሰርቨር ላይ መፈለግ
+      // 🌟 [ዋና ማሻሻያ] የሁሉንም ሰው ዳታ ከማውረድ ይልቅ የተፈለገውን የሊቭነስ ሪከርድ ብቻ በቀጥታ ከባክኤንድ መፈለግ
       const response = await axios.get(
-        `https://poessa-digital-services-1.onrender.com/api/pensioners/search?query=${faydaNumber.trim()}`
+        `https://poessa-digital-services-1.onrender.com/api/liveness/${faydaNumber.trim()}`
       );
       
-      // ሰርቨርህ ዳታውን የሚመልሰው { success: true, data: {...} } አድርጎ ከሆነ
+      // ባክኤንድህ መረጃውን የሚያወጣው { success: true, data: {...} } አድርጎ ነው
       if (response.data && response.data.success && response.data.data) {
         setPensioner(response.data.data);
       } else {
@@ -34,7 +35,8 @@ function CheckStatus() {
       }
     } catch (err) {
       console.error("Status Check Error:", err);
-      alert("የመረጡትን ሁኔታ መፈተሽ አልተቻለም። እባክዎ ኢንተርኔትዎን ወይም የሰርቨር መስመርዎን ያረጋግጡ።");
+      // ስህተት ሲኖር ወይም መረጃው ሳይገኝ ሲቀር ማጽጃ
+      setPensioner(null);
     } finally {
       setLoading(false);
     }
@@ -50,7 +52,7 @@ function CheckStatus() {
           type="text" 
           placeholder="ባለ 16 ዲጂት የፋይዳ ቁጥርዎን ያስገቡ..." 
           value={faydaNumber}
-          onChange={(e) => setFaydaNumber(e.target.value.replace(/\D/g, ""))}
+          onChange={(e) => setFaydaNumber(e.target.value.replace(/\D/g, ""))} // ቁጥር ብቻ እንዲቀበል ማድረጊያ
           maxLength={16}
           style={{ width: "100%", padding: "14px", borderRadius: "8px", border: "2px solid #cbd5e1", fontSize: "18px", fontWeight: "bold", letterSpacing: "1px", textAlign: "center", boxSizing: "border-box", outline: "none" }}
         />
@@ -59,6 +61,7 @@ function CheckStatus() {
         </button>
       </form>
 
+      {/* 📊 የውጤት ማሳያ ሰሌዳ */}
       {loading && <p style={{ color: "#64748b" }}>⏳ መረጃው ከሰርቨር እየተጫነ ነው... እባክዎ ይጠብቁ...</p>}
 
       {!loading && searched && !pensioner && (
@@ -74,6 +77,7 @@ function CheckStatus() {
           <p style={{ margin: "8px 0" }}><strong>የፋይዳ ቁጥር፦</strong> {pensioner.faydaNumber}</p>
           <p style={{ margin: "8px 0" }}><strong>ስልክ ቁጥር፦</strong> {pensioner.phone || "የለም"}</p>
           
+          {/* 🌟 እዚህ ጋር በባክኤንድህ ላይ ካለው 'Verified'፣ 'Failed' እና 'Pending' ሁኔታ ጋር ፍጹም ተጣጥሟል */}
           <div style={{ marginTop: "20px", padding: "15px", borderRadius: "8px", textAlign: "center", fontWeight: "bold", fontSize: "15px",
             background: pensioner.verificationStatus === "Verified" ? "#dcfce7" : pensioner.verificationStatus === "Failed" ? "#fee2e2" : "#fef9c3",
             color: pensioner.verificationStatus === "Verified" ? "#15803d" : pensioner.verificationStatus === "Failed" ? "#b91c1c" : "#a16207"
@@ -81,6 +85,7 @@ function CheckStatus() {
             የአሁኑ የሂደት ሁኔታ፦ {pensioner.verificationStatus === "Verified" ? "✅ ተረጋግጧል (Verified)" : pensioner.verificationStatus === "Failed" ? "❌ ውድቅ ተደርጓል (Failed)" : "⏳ በሂደት ላይ (Pending)"}
           </div>
 
+          {/* ⚠️ ከባለሙያ የተላከ ማሳሰቢያ ምክንያት ካለ እዚህ ይወጣል */}
           {pensioner.verificationStatus === "Failed" && pensioner.comment && (
             <div style={{ marginTop: "15px", padding: "12px", borderRadius: "6px", background: "#fff5f5", borderLeft: "4px solid #ef4444", color: "#991b1b", fontSize: "14px" }}>
               <strong>⚠️ ውድቅ የተደረገበት ምክንያት፦</strong> "{pensioner.comment}"
