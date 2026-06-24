@@ -10,8 +10,8 @@
   ],
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/"
+      "source": "/((?!models/).*)",
+      "destination": "/index.html"
     }
   ]
 }
