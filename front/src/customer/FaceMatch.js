@@ -24,8 +24,7 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
     setProgress(30);
     setMatchStatus("⏳ የማነጻጸሪያ ሞዴሎችን በመፈተሽ ላይ...");
 
-    // 🌟 [ዋና ማሻሻያ] ፍጹም አስተማማኝ የሆነውን ይፋዊ የ face-api.js CDN ሞዴል አድራሻ መጠቀም
-    // ይህ ዘዴ በ Vercel ላይ የሚመጣውን የ 404 (Not Found) ወይም የፋይል ስም መሳሳት ችግር ያቀልላል።
+    // 🌟 [መፍትሄ] በ GitHub ላይ ያለውን ፋይል ከመፈለግ ይልቅ ይህንን ዝግጁ CDN ተጠቀም
     const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
 
     if (!faceapi.nets.tinyFaceDetector.params || !faceapi.nets.faceLandmark68Net.params || !faceapi.nets.faceRecognitionNet.params) {
