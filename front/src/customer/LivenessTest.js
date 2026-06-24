@@ -77,7 +77,7 @@ function LivenessTest({ faydaNumber, onSuccess }) {
         });
 
         intervalId = setInterval(async () => {
-        if (!running || !videoRef.current) return;
+     if (!running || !videoRef.current) return;
 
           const detection = await faceapi
             .detectSingleFace(videoRef.current, options)
