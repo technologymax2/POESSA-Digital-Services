@@ -7,11 +7,10 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
   const [progress, setProgress] = useState(10);
   const hasRun = useRef(false);
 
-  // 1. ሞዴሎችን ከ CDN (Cloud) በቀጥታ የመጫኛ ክፍል - ፈጣን እና አስተማማኝ
+  // 1. ሞዴሎችን ከ CDN (Cloud) በቀጥታ የመጫኛ ክፍል
   useEffect(() => {
     async function loadModels() {
       try {
-        // 🌟 በ Vercel ላይ 404 እንዳይል በቀጥታ ከታመነ የክላውድ ማከማቻ ይጭነዋል (ብሮውዘር ላይ Cache ይደረጋል)
         const MODEL_URL = "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights";
         
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
@@ -39,14 +38,14 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         setProgress(60);
         setMatchStatus("🧠 የፊት ገጽታዎችን በጥልቀት በመተንተን ላይ...");
 
-        // 🌟 [CORS ጥበቃ] የመታወቂያ ፎቶ ማዘጋጀትና Cache መከላከል
+        // 🌟 [የተስተካከለ የ CORS ጥበቃ] የመታወቂያ ፎቶ ማዘጋጀት
         const imgSystem = new Image();
-        imgSystem.crossOrigin = "anonymous"; 
+        imgSystem.setAttribute("crossOrigin", "anonymous"); 
         imgSystem.src = idPhoto + (idPhoto.includes("?") ? "&" : "?") + "t=" + new Date().getTime();
 
-        // 🌟 [CORS ጥበቃ] የአሁን ሴልፊ ማዘጋጀትና Cache መከላከል
+        // 🌟 [የተስተካከለ የ CORS ጥበቃ] የአሁን ሴልፊ ማዘጋጀት
         const imgSelfie = new Image();
-        imgSelfie.crossOrigin = "anonymous"; 
+        imgSelfie.setAttribute("crossOrigin", "anonymous"); 
         const cleanSelfie = selfiePhoto?.selfieUrl || selfiePhoto;
         imgSelfie.src = cleanSelfie + (cleanSelfie.includes("?") ? "&" : "?") + "t=" + new Date().getTime();
 
