@@ -21,7 +21,6 @@ function PensionerRegistration() {
   const [validationErrors, setValidationErrors] = useState({});
   const [duplicateErrors, setDuplicateErrors] = useState({ pensionerId: false, tin: false, faydaNumber: false });
   
-  // 🔥 አዲስ፡ በሪል-ታይም ሰርቨር ላይ ሲፈልግ የሚታይ የLoading ስቴት
   const [checkingStatus, setCheckingStatus] = useState({ pensionerId: false, tin: false, faydaNumber: false });
 
   useEffect(() => {
@@ -29,13 +28,12 @@ function PensionerRegistration() {
     if (storedName) setCurrentEmployee(storedName);
   }, []);
 
-  // 🔄 1. Debounce የተደረገ የደገሜታ ማረጋገጫ ፈንክሽን (ሰርቨር እንዳይጨናነቅ)
+  // 🔄 1. Debounce የተደረገ የደገሜታ ማረጋገጫ ፈንክሽን
   const debounceCheck = useCallback((fieldName, value) => {
     if (!value || value.length < 5) return;
 
     setCheckingStatus(prev => ({ ...prev, [fieldName]: true }));
 
-    // የቀደመውን የቲቪ ቆጣሪ ያጠፋል
     const handler = setTimeout(async () => {
       try {
         const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/check-duplicate?field=${fieldName}&value=${value}`);
@@ -59,7 +57,7 @@ function PensionerRegistration() {
       } finally {
         setCheckingStatus(prev => ({ ...prev, [fieldName]: false }));
       }
-    }, 500); // ተጠቃሚው መጻፍ ካቆመ ከ 500 ሚሊሰከንድ በኋላ ነው API የሚጠራው
+    }, 500);
 
     return () => clearTimeout(handler);
   }, []);
@@ -90,7 +88,7 @@ function PensionerRegistration() {
       } else {
         delete errors[name];
         if ((name === 'pensionerId' || name === 'tin') && cleanValue.length === 10) {
-          debounceCheck(name, cleanValue); // 🔥 እዚህ ጋር ነው ደንበኛው መጻፍ ሲያቆም ቼክ የሚደረገው
+          debounceCheck(name, cleanValue);
         }
       }
 
@@ -100,7 +98,6 @@ function PensionerRegistration() {
       if (value < 0) return;
       setFormData(prev => ({ ...prev, [name]: value }));
     } 
-    // 📅 2. የተሰጠበት እና የማብቂያ ቀን ቫሊዴሽን ህግ
     else if (name === 'expiryDate' && formData.issueDate && value < formData.issueDate) {
       errors.expiryDate = "⚠️ የማብቂያ ቀን ከተሰጠበት ቀን ቀድሞ ሊሆን አይችልም!";
       setValidationErrors(errors);
@@ -168,6 +165,7 @@ function PensionerRegistration() {
       const imgResult = await imgRes.json();
       if (!imgResult.success) throw new Error('ፎቶውን ወደ Cloud ማከማቻ መላክ አልተቻለም');
 
+      // 🌟 የፎቶው ሊንክ 'photoUrl' ተብሎ በዳታቤዝ ውስጥ ይቀመጣል
       const finalData = { 
         ...formData, 
         photoUrl: imgResult.data.url, 
@@ -219,7 +217,6 @@ function PensionerRegistration() {
         </div>
 
         <div className="pr-grid">
-          {/* Pension ID */}
           <div className="pr-input-group">
             <label>Pension ID (10 Digits)</label>
             <input type="text" name="pensionerId" value={formData.pensionerId} onChange={handleChange} required style={{ borderColor: duplicateErrors.pensionerId ? 'red' : '' }} />
@@ -227,7 +224,6 @@ function PensionerRegistration() {
             {validationErrors.pensionerId && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.pensionerId}</span>}
           </div>
 
-          {/* TIN ቁጥር */}
           <div className="pr-input-group">
             <label>TIN ቁጥር / TIN (10 Digits)</label>
             <input type="text" name="tin" value={formData.tin} onChange={handleChange} required style={{ borderColor: duplicateErrors.tin ? 'red' : '' }} />
@@ -235,14 +231,12 @@ function PensionerRegistration() {
             {validationErrors.tin && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.tin}</span>}
           </div>
 
-          {/* ስልክ ቁጥር */}
           <div className="pr-input-group">
             <label>ስልክ ቁጥር / Phone (0... 10 Digits)</label>
             <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required />
             {validationErrors.phone && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.phone}</span>}
           </div>
 
-          {/* የፋይዳ ቁጥር */}
           <div className="pr-input-group">
             <label>የፋይዳ ቁጥር</label>
             <input type="text" name="faydaNumber" value={formData.faydaNumber} onChange={handleChange} required style={{ borderColor: duplicateErrors.faydaNumber ? 'red' : '' }} />
@@ -250,8 +244,7 @@ function PensionerRegistration() {
             {validationErrors.faydaNumber && <span className="error-text" style={{color: 'red', fontSize: '11px', display:'block', marginTop:'3px'}}>{validationErrors.faydaNumber}</span>}
           </div>
 
-          {/* ሌሎች ፊልዶች */}
-          <div className="pr-input-group"><label>ሙሉ ስም (አማርኛ)</label><input type="text" name="nameAmh" value={formData.nameAmh} onChange={handleChange} required /></div>
+          <div className="pr-input-group"><label>Profiles/ሙሉ ስም (አማርኛ)</label><input type="text" name="nameAmh" value={formData.nameAmh} onChange={handleChange} required /></div>
           <div className="pr-input-group"><label>Full Name (English)</label><input type="text" name="nameEng" value={formData.nameEng} onChange={handleChange} required /></div>
 
           <div className="pr-input-group"><label>አድራሻ (አማርኛ)</label><input type="text" name="addressAmh" value={formData.addressAmh} onChange={handleChange} required /></div>
@@ -270,7 +263,6 @@ function PensionerRegistration() {
           </div>
           <div className="pr-input-group"><label>የተሰጠበት ቀን</label><input type="date" name="issueDate" value={formData.issueDate} onChange={handleChange} required /></div>
           
-          {/* የማብቂያ ቀን */}
           <div className="pr-input-group">
             <label>የማብቂያ ቀን</label>
             <input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} required style={{ borderColor: validationErrors.expiryDate ? 'red' : '' }} />
@@ -284,7 +276,6 @@ function PensionerRegistration() {
 
         {status && <div className="pr-status-msg">{status}</div>}
         
-        {/* የ Submit በተን መቆጣጠሪያ */}
         <button type="submit" className="pr-submit-btn" disabled={loading || duplicateErrors.pensionerId || duplicateErrors.tin || duplicateErrors.faydaNumber || validationErrors.expiryDate}>
           {loading ? 'እየተላከ ነው...' : 'መረጃውን መዝግብ'}
         </button>
