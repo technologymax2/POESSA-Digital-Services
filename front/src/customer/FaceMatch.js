@@ -7,10 +7,20 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
   const [progress, setProgress] = useState(10);
   const hasRun = useRef(false);
 
-  // 1. ሞዴሎችን ከ CDN (Cloud) በቀጥታ የመጫኛ ክፍል
+  // 1. ሞዴሎችን እና የፍጥነት ባክኤንድን በቅድሚያ ማዘጋጀት
   useEffect(() => {
     async function loadModels() {
       try {
+        // 🌟 [ትልቅ ማስተካከያ] ስልኩ ላይ ቆሞ እንዳይቀር የ TensorFlow ባክኤንድን በግልጽ ማንሳት
+        if (faceapi.tf) {
+          try {
+            await faceapi.tf.setBackend("webgl");
+          } catch (e) {
+            console.log("WebGL አልሰራም፣ ወደ CPU እየቀየረ ነው...", e);
+            await faceapi.tf.setBackend("cpu");
+          }
+        }
+
         const MODEL_URL = "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights";
         
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
@@ -22,7 +32,7 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         setMatchStatus("📸 ምስሎችን ለማነጻጸር በማዘጋጀት ላይ...");
       } catch (err) {
         console.error("Model Load Error:", err);
-        setMatchStatus("❌ የፊት ማነጻጸሪያ ሞዴሎችን መጫን አልተቻለም!");
+        setMatchStatus(`❌ የፊት ማነጻጸሪያ ሞዴሎችን መጫን አልተቻለም! ${err.message || err}`);
       }
     }
     loadModels();
@@ -38,38 +48,48 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         setProgress(60);
         setMatchStatus("🧠 የፊት ገጽታዎችን በጥልቀት በመተንተን ላይ...");
 
-        // 🌟 [የተስተካከለ የ CORS ጥበቃ] የመታወቂያ ፎቶ ማዘጋጀት
         const imgSystem = new Image();
-        imgSystem.setAttribute("crossOrigin", "anonymous"); 
-        imgSystem.src = idPhoto + (idPhoto.includes("?") ? "&" : "?") + "t=" + new Date().getTime();
+        imgSystem.setAttribute("crossOrigin", "anonymous");
 
-        // 🌟 [የተስተካከለ የ CORS ጥበቃ] የአሁን ሴልፊ ማዘጋጀት
         const imgSelfie = new Image();
-        imgSelfie.setAttribute("crossOrigin", "anonymous"); 
+        imgSelfie.setAttribute("crossOrigin", "anonymous");
+
+        const systemLoadPromise = new Promise((resolve, reject) => {
+          imgSystem.onload = () => resolve();
+          imgSystem.onerror = () => reject(new Error("የመታወቂያ ፎቶ መጫን አልተቻለም (CORS/Link)"));
+        });
+
+        const selfieLoadPromise = new Promise((resolve, reject) => {
+          imgSelfie.onload = () => resolve();
+          imgSelfie.onerror = () => reject(new Error("የሴልፊ ፎቶ መጫን አልተቻለም (CORS/Link)"));
+        });
+
+        imgSystem.src = idPhoto + (idPhoto.includes("?") ? "&" : "?") + "t=" + new Date().getTime();
+        
         const cleanSelfie = selfiePhoto?.selfieUrl || selfiePhoto;
         imgSelfie.src = cleanSelfie + (cleanSelfie.includes("?") ? "&" : "?") + "t=" + new Date().getTime();
 
-        // ሁለቱም ምስሎች ሙሉ በሙሉ እስኪጫኑ መጠበቂያ
-        await Promise.all([
-          new Promise((r) => (imgSystem.onload = r)),
-          new Promise((r) => (imgSelfie.onload = r)),
-        ]);
+        await Promise.all([systemLoadPromise, selfieLoadPromise]);
 
         setProgress(75);
         setMatchStatus("📊 ሁለቱንም ፎቶዎች እያወዳደረ ነው...");
 
-        // የፊት ገጽታዎችን ማውጣት (TinyFaceDetector)
+        // 🌟 [ትልቅ ማስተካከያ] ስልኩ እንዳይጨናነቅ የ TinyFaceDetector Options ን ማቅለል
+        const detectorOptions = new faceapi.TinyFaceDetectorOptions({
+          inputSize: 128, // ከ160 ወደ 128 ቀንሰነዋል (በጣም ፈጣን እንዲሆን)
+          scoreThreshold: 0.3
+        });
+
         const systemResult = await faceapi
-          .detectSingleFace(imgSystem, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
+          .detectSingleFace(imgSystem, detectorOptions)
           .withFaceLandmarks()
           .withFaceDescriptor();
 
         const selfieResult = await faceapi
-          .detectSingleFace(imgSelfie, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
+          .detectSingleFace(imgSelfie, detectorOptions)
           .withFaceLandmarks()
           .withFaceDescriptor();
 
-        // ፊት ካልተገኘ ወዲያውኑ በ 0% ውድቅ ያደርጋል
         if (!systemResult || !selfieResult) {
           setMatchStatus("❌ የፊት ገጽታን ከፎቶው ላይ ማንበብ አልተቻለም! እባክዎ በቂ ብርሃን ባለበት ቦታ ይሞክሩ።");
           setProgress(100);
@@ -77,15 +97,12 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
           return;
         }
 
-        // እውነተኛውን የኢዩክሊዲያን ርቀት (Euclidean Distance) ማስላት
         const distance = faceapi.euclideanDistance(systemResult.descriptor, selfieResult.descriptor);
         
-        // ርቀቱን ወደ መቶኛ (Percentage) መቀየሪያ
         let calculatedPercentage = Math.round((1 - distance) * 100);
         if (calculatedPercentage > 100) calculatedPercentage = 100;
         if (calculatedPercentage < 0) calculatedPercentage = 0;
 
-        // የጡረተኛውን የፊት ዴስክሪፕተር በባክኤንድ ለማደስ
         if (dbPensionerData?.faydaNumber) {
           try {
             await fetch("https://poessa-digital-services-1.onrender.com/api/pensioners/verify-face", {
@@ -110,9 +127,9 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
 
       } catch (err) {
         console.error("Face Matching Error:", err);
-        setMatchStatus("❌ በማነጻጸር ሂደት ላይ ስህተት አጋጥሟል!");
+        setMatchStatus(`❌ ስህተት፦ ${err.message || err}`);
         setProgress(100);
-        setTimeout(() => onSuccess(0), 2000);
+        setTimeout(() => onSuccess(0), 4000);
       }
     }
 
@@ -123,7 +140,6 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
     <div style={{ padding: "30px", textAlign: "center", background: "#fff", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", maxWidth: "450px", margin: "30px auto", fontFamily: "sans-serif" }}>
       <h3 style={{ color: "#162447", marginBottom: "20px", fontWeight: "700" }}>🤖 ደረጃ 4፦ የፊት ባዮሜትሪክስ ማነጻጸሪያ</h3>
       
-      {/* የሁለቱ ምስሎች ጎን ለጎን ማሳያ እይታ */}
       <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "25px", gap: "15px" }}>
         <div style={{ textAlign: "center" }}>
           <img 
@@ -143,7 +159,6 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         </div>
       </div>
 
-      {/* የሂደት ማሳያ አሞሌ (Progress Bar) */}
       <div style={{ width: "100%", background: "#e2e8f0", height: "8px", borderRadius: "4px", overflow: "hidden", marginBottom: "15px" }}>
         <div style={{ width: `${progress}%`, background: progress === 100 ? "#10b981" : "#162447", height: "100%", transition: "0.4s ease" }}></div>
       </div>
