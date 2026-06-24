@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import axios from "react-axios"; // axios ከሌለ መደበኛውን fetch ይጠቀማል
+import axios from "axios"; // ✅ ይህንን አድርገው
 
 function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
   const [matchStatus, setMatchStatus] = useState("⏳ ሁለቱንም ፎቶዎች በማንበብ ላይ...");
