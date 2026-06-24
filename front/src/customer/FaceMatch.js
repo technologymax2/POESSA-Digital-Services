@@ -105,7 +105,6 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
         if (dbPensionerData?.faydaNumber) {
           setMatchStatus("🔄 የጡረተኛውን የህይወት ሁኔታ በዳታቤዝ ላይ እያደሰ ነው...");
           try {
-            // 🌟 በ axios ፈንታ በመደበኛው fetch መተካቱ ከላይብረሪ ስህተት ሙሉ በሙሉ ይጠብቀናል
             await fetch("https://poessa-digital-services-1.onrender.com/api/pensioners/verify-face", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -135,7 +134,8 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
     };
 
     runFaceMatch();
-  }, [systemPhoto, actualSelfie, onSuccess, dbPensionerData]);
+    // 🌟 [ማሻሻያ] Infinite loop ለመከላከል dbPensionerData በ faydaNumber ተተክቷል
+  }, [systemPhoto, actualSelfie, onSuccess, dbPensionerData?.faydaNumber]);
 
   return (
     <div style={{ padding: "25px", maxWidth: "450px", margin: "0 auto", textAlign: "center", fontFamily: "sans-serif" }}>
