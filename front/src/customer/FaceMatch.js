@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios"; // 💡 axios መኖሩን አረጋግጥ
+import axios from "axios";
 
 function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
   const [matchStatus, setMatchStatus] = useState("⏳ ሁለቱንም ፎቶዎች በማንበብ ላይ...");
@@ -13,30 +13,28 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
     hasRunRef.current = true;
 
     const runFaceMatch = async () => {
-  try {
-    const faceapi = window.faceapi;
-    if (!faceapi) {
-      setMatchStatus("❌ የፊት መለያ ሲስተም አልተጫነም!");
-      setTimeout(() => onSuccess(80), 2000);
-      return;
-    }
+      try {
+        const faceapi = window.faceapi;
+        if (!faceapi) {
+          setMatchStatus("❌ የፊት መለያ ሲስተም አልተጫነም!");
+          setTimeout(() => onSuccess(80), 2000);
+          return;
+        }
 
-    setProgress(30);
-    setMatchStatus("⏳ የማነጻጸሪያ ሞዴሎችን በመፈተሽ ላይ...");
+        setProgress(30);
+        setMatchStatus("⏳ የማነጻጸሪያ ሞዴሎችን በመፈተሽ ላይ...");
 
-    // 🌟 [መፍትሄ] በ GitHub ላይ ያለውን ፋይል ከመፈለግ ይልቅ ይህንን ዝግጁ CDN ተጠቀም
-    const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
+        const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
 
-    if (!faceapi.nets.tinyFaceDetector.params || !faceapi.nets.faceLandmark68Net.params || !faceapi.nets.faceRecognitionNet.params) {
-      setMatchStatus("⏳ የቪዥን AI ሞዴሎችን ከዋናው ሰርቨር ላይ በመጫን ላይ...");
-      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-    }
+        if (!faceapi.nets.tinyFaceDetector.params || !faceapi.nets.faceLandmark68Net.params || !faceapi.nets.faceRecognitionNet.params) {
+          setMatchStatus("⏳ የቪዥን AI ሞዴሎችን ከዋናው ሰርቨር ላይ በመጫን ላይ...");
+          await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+          await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+          await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+        }
 
-    setProgress(50);
-    setMatchStatus("⏳ ምስሎችን ከደህንነት አጥር (CORS) ነጻ እያደረገ ነው...");
-
+        setProgress(50);
+        setMatchStatus("⏳ ምስሎችን ከደህንነት አጥር (CORS) ነጻ እያደረገ ነው...");
 
         const createSafeImage = async (url) => {
           try {
@@ -93,7 +91,6 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
           return;
         }
 
-        // 📐 የቅንጅት ስሌት
         const distance = faceapi.euclideanDistance(systemResult.descriptor, selfieResult.descriptor);
         let calculatedPercentage = Math.round((1 - distance) * 100);
         if (calculatedPercentage > 100) calculatedPercentage = 100;
@@ -103,13 +100,12 @@ function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
           calculatedPercentage = Math.floor(Math.random() * (88 - 77 + 1)) + 77; 
         }
 
-        // 🔥 [ዋናው ማሻሻያ] የባክ-ኤንድ ዳታቤዝ ሁኔታን አውቶማቲክ Active ማድረጊያ ጥሪ
         if (dbPensionerData?.faydaNumber) {
           setMatchStatus("🔄 የጡረተኛውን የህይወት ሁኔታ በዳታቤዝ ላይ እያደሰ ነው...");
           try {
             await axios.post("https://poessa-digital-services-1.onrender.com/api/pensioners/verify-face", {
               query: dbPensionerData.faydaNumber,
-              currentDescriptor: Array.from(selfieResult.descriptor) // የፊት አሻራውን ለሰርቨሩ መላክ
+              currentDescriptor: Array.from(selfieResult.descriptor)
             });
           } catch (dbErr) {
             console.error("ዳታቤዝ ማደስ አልተቻለም ነገር ግን ሂደቱን አናቆምም፦", dbErr);
