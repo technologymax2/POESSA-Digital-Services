@@ -1,4 +1,4 @@
-[6/23/2026 7:56 PM] Mamex: import React, { useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 
 import CaptureIDCard from "./CaptureIDCard";
