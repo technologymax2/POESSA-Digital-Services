@@ -118,6 +118,9 @@ router.post("/verify-face-server", async (req, res) => {
 /* ==========================================
    🔥 [የተስተካከለ] MAIN VERIFY WITH SERVER-SIDE FACE MATCHING
 ========================================== */
+/* ==========================================
+   🔥 [ትክክለኛ] MAIN VERIFY - REAL MATCH PERCENTAGE ONLY
+========================================== */
 router.post("/verify-success", async (req, res) => {
   try {
     const {
@@ -133,19 +136,17 @@ router.post("/verify-success", async (req, res) => {
       return res.status(400).json({ success: false, message: "Fayda number is required" });
     }
 
-    // 1. ጡረተኛውን በፋይዳ ቁጥር መፈለግ
     const pensioner = await UserPensioner.findOne({ faydaNumber });
     if (!pensioner) {
       return res.status(404).json({ success: false, message: "Pensioner not found" });
     }
 
-    // 2. ፎቶዎቹን ማዘጋጀት
     let finalDbPhotoUrl = dbPhotoUrl || pensioner.photoUrl || "";
     let finalSelfieUrl = selfiePhotoUrl || "";
 
-    // 3. 🚨 ሰርቨር-ሳይድ የፊት ማነጻጸር ስራ (SERVER-SIDE FACE MATCHING)
-    let finalMatch = 65; // ማንኛውም ችግር ቢፈጠር መከላከያ ቁጥር
-    
+    // 🚨 እውነተኛውን ቁጥር ብቻ መያዣ (ጅማሮው በ 0)
+    let finalMatch = 0; 
+
     try {
       await loadServerModels();
       console.log("⏳ ምስሎችን በ Axios አውርዶ እያነጻጸረ ነው...");
@@ -168,19 +169,19 @@ router.post("/verify-success", async (req, res) => {
 
       if (idResult && selfieResult) {
         const distance = faceapi.euclideanDistance(idResult.descriptor, selfieResult.descriptor);
+        // እውነተኛውን የርቀት ስሌት ወደ ፐርሰንት መቀየር
         finalMatch = Math.round((1 - distance) * 100);
         finalMatch = Math.max(0, Math.min(100, finalMatch));
         console.log(`📊 እውነተኛ የፊት ማነጻጸር ውጤት ተገኝቷል፦ ${finalMatch}%`);
       } else {
-        console.warn("⚠️ በምስሎቹ ላይ ፊት አልተገኘም፣ Fallback 65% ጥቅም ላይ ውሏል።");
+        console.warn("⚠️ በምስሎቹ ላይ ፊት አልተገኘም!");
+        finalMatch = 10; // ፊት ጨርሶ ካልተገኘ 10% ብቻ ይሰጣል
       }
     } catch (faceErr) {
-      console.error("የፊት ማነጻጸር መስመር ላይ ስህተት አጋጥሟል፦", faceErr.message);
-      // ሞዴሉ ባይጭን እንኳ የጡረተኛው ስራ እንዳይቆም 65% መከላከያውን መያዝ
-      finalMatch = 65;
+      console.error("የፊት ማነጻጸር ስህተት፦", faceErr.message);
+      finalMatch = 5; // በኮድ ስህተት ምክንያት ካልሰራ 5% ብቻ ይሰጣል
     }
 
-    // 4. ImgBB ላይ በባክግራውንድ እንዲጫኑ ማድረግ (Data:image ከሆኑ)
     if (finalDbPhotoUrl.startsWith("data:image")) {
       finalDbPhotoUrl = await uploadToImgBB(finalDbPhotoUrl);
     }
@@ -188,7 +189,7 @@ router.post("/verify-success", async (req, res) => {
       finalSelfieUrl = await uploadToImgBB(finalSelfieUrl);
     }
 
-    // 5. የማለፊያ መስፈርት ማረጋገጫ (ከ 70% በላይ መሆን አለበት)
+    // ከ 70% በላይ ከሆነ ብቻ ነው የሚማሳሰሉት
     const faceMatched = finalMatch >= 70;
     const livenessPassed = !!smilePassed && !!nodPassed && !!turnPassed;
 
@@ -197,13 +198,12 @@ router.post("/verify-success", async (req, res) => {
       verificationStatus = "Verified";
     }
 
-    // 6. ዳታቤዝ ላይ መመዝገብ
     const record = new LivenessVerification({
       faydaNumber,
       name: pensioner.nameAmh || pensioner.nameEng || pensioner.name || "ስም አልተጠቀሰም",
       dbPhotoUrl: finalDbPhotoUrl,
       selfiePhotoUrl: finalSelfieUrl,
-      matchPercentage: finalMatch,
+      matchPercentage: finalMatch, // 🌟 እዚህ ጋር እውነተኛው ቁጥር ብቻ ይገባል!
       faceMatched,
       smilePassed: !!smilePassed,
       nodPassed: !!nodPassed,
@@ -219,6 +219,7 @@ router.post("/verify-success", async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 });
+
 
 
 /* ==========================================
