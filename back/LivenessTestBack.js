@@ -12,17 +12,18 @@ const LivenessVerification = require("./models/livenessSchema");
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
-// 🎯 ማስተካከያ 1፦ ሰርቨሩ ሞዴሎቹን በቀጥታ ከ front ፎልደር እንዲያነብ ማድረግ
-const MODEL_DIR = path.join(__dirname, "../front/public/models"); 
+// 🌐 ዩአርኤል ማስተካከያ፦ ሞዴሎቹን በቀጥታ ከ Vercel ዩአርኤል ላይ ለመጫን
+const MODEL_DIR = "https://poessa-digital-services.vercel.app/models"; 
 let modelsLoaded = false;
 
 async function loadServerModels() {
   if (modelsLoaded) return;
-  await faceapi.nets.tinyFaceDetector.loadFromDisk(MODEL_DIR);
-  await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_DIR);
-  await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_DIR);
+  // 🎯 loadFromDisk የነበረው ወደ loadFromUri ተቀይሯል (ከአድራሻ ስህተት ነፃ ለመሆን)
+  await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_DIR);
+  await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_DIR);
+  await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_DIR);
   modelsLoaded = true;
-  console.log("🔒 የፊት መለያ ሞዴሎች በሰርቨሩ ላይ በተሳካ ሁኔታ ተጭነዋል!");
+  console.log("🔒 የፊት መለያ ሞዴሎች ከ Vercel ላይ በተሳካ ሁኔታ ተጭነዋል!");
 }
 
 async function uploadToImgBB(base64Data) {
@@ -79,7 +80,7 @@ router.post("/verify-success", async (req, res) => {
       const imgId = await canvas.loadImage(Buffer.from(idResponse.data));
       const imgSelfie = await canvas.loadImage(Buffer.from(selfieResponse.data));
 
-      // 🎯 ማስተካከያ 2፦ scoreThreshold ወደ 0.1 ዝቅ ተደርጓል (በማንኛውም የአቀማመጥ ሁኔታ ፊትን እንዲያገኝ)
+      // 🎯 scoreThreshold ወደ 0.1 ዝቅ ተደርጓል (በማንኛውም የአቀማመጥ ሁኔታ ፊትን እንዲያገኝ)
       const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.1 });
 
       const idResult = await faceapi.detectSingleFace(imgId, detectorOptions).withFaceLandmarks().withFaceDescriptor();
@@ -95,7 +96,8 @@ router.post("/verify-success", async (req, res) => {
         finalMatch = 0; 
       }
     } catch (faceErr) {
-      console.error("የፊት ማነጻጸር ስህተት፦", faceErr.message);
+      // 🚨 ስህተቱን በዝርዝር Render ሎግ ላይ ለማየት እንዲረዳን የተደረገ ማስተካከያ
+      console.error("❌ የፊት ማነጻጸር ዝርዝር ስህተት፦", faceErr);
       finalMatch = 0; 
     }
 
