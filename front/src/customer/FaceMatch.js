@@ -1,167 +1,68 @@
 import React, { useEffect, useState, useRef } from "react";
-import * as faceapi from "face-api.js";
 
-function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess }) {
-  const [loadingModels, setLoadingModels] = useState(true);
-  const [matchStatus, setMatchStatus] = useState("⏳ የፊት ማነጻጸሪያ ሞዴሎችን በመጫን ላይ...");
-  const [progress, setProgress] = useState(10);
+function FaceMatch({ idPhoto, selfiePhoto, dbPensionerData, onSuccess, smilePassed, nodPassed, turnPassed }) {
+  const [matchStatus, setMatchStatus] = useState("⏳ ምስሎችን ወደ ድርጅቱ ሰርቨር በመላክ ላይ...");
+  const [progress, setProgress] = useState(20);
   const hasRun = useRef(false);
 
-  // 🔄 1. ሞዴሎችን የመጫኛ ክፍል (ከጥብቅ 5 ሰከንድ ታይምአውት ጋር)
   useEffect(() => {
-    async function loadModels() {
-      // ⏱️ የ 5 ሰከንድ ገደብ፦ ከቆየ በራሱ ጊዜ ያስቆርጠውና ወደ ማነጻጸሪያው ያስልፈዋል
-      const timeoutId = setTimeout(() => {
-        console.warn("የሞዴል መጫኛ ጊዜው አልፏል (Timeout)፤ ወደ ማነጻጸሪያው በቀጥታ በመሻገር ላይ...");
-        setLoadingModels(false);
-        setProgress(40);
-        setMatchStatus("📸 ምስሎችን ለማነጻጸር በማዘጋጀት ላይ...");
-      }, 5000);
-
-      try {
-        if (faceapi.tf) {
-          try {
-            await faceapi.tf.setBackend("webgl");
-          } catch (e) {
-            await faceapi.tf.setBackend("cpu");
-          }
-        }
-
-        // 🌐 አንተ የላክሃቸው ማኒፌስት ፋይሎች በሙሉ ያሉበት ታማኝ ማከማቻ ሊንክ
-        const MODEL_URL = "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights";
-        
-        // እያንዳንዱን ሞዴል ለይቶ በጥንቃቄ መጫን
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-        
-        clearTimeout(timeoutId); // በተሳካ ሁኔታ በፍጥነት ከጫነ ታይምአውቱን ያጠፋዋል
-        setLoadingModels(false);
-        setProgress(40);
-        setMatchStatus("📸 ምስሎችን ለማነጻጸር በማዘጋጀት ላይ...");
-      } catch (err) {
-        console.error("Model Load Error:", err);
-        clearTimeout(timeoutId);
-        setLoadingModels(false); // ስህተት ቢኖርም ስልኩ እንዳይቆም አልፎ እንዲሄድ ማድረግ
-      }
-    }
-    loadModels();
-  }, []);
-
-  // 🧠 2. ፊትን የማነጻጸር እና የማረጋገጥ ዋናው ስራ
-  useEffect(() => {
-    if (loadingModels || hasRun.current) return;
+    if (hasRun.current) return;
     hasRun.current = true;
 
-    async function performMatch() {
-      // የስልኩን ማህደረ ትውስታ (RAM) እንዳይጨናነቅ Scope መክፈት
-      const scope = faceapi.tf ? faceapi.tf.engine().startScope() : null;
-
+    async function sendToBackend() {
       try {
-        setProgress(60);
-        setMatchStatus("🧠 የፊት ገጽታዎችን በጥልቀት በመተንተን ላይ...");
+        setProgress(50);
+        setMatchStatus("🧠 ሰርቨሩ የፊት ገጽታዎችን እያነጻጸረ ነው...");
 
-        const imgSystem = new Image();
-        imgSystem.setAttribute("crossOrigin", "anonymous");
-
-        const imgSelfie = new Image();
-        imgSelfie.setAttribute("crossOrigin", "anonymous");
-
-        // ምስሎቹ ተጭነው ሲያልቁ ለማወቅ
-        const systemLoadPromise = new Promise((resolve) => {
-          imgSystem.onload = () => resolve(true);
-          imgSystem.onerror = () => resolve(false);
-        });
-
-        const selfieLoadPromise = new Promise((resolve) => {
-          imgSelfie.onload = () => resolve(true);
-          imgSelfie.onerror = () => resolve(false);
-        });
-
-        // 🔄 በስልክ ብሮውዘር ላይ ካሽ (Cache) እንዳይቆልፈው መከላከያ ዘዴ
-        const cacheBuster = "?t=" + new Date().getTime();
-        imgSystem.src = idPhoto + (idPhoto.includes("?") ? "&" : "?") + cacheBuster;
-        
         const cleanSelfie = selfiePhoto?.selfieUrl || selfiePhoto;
-        imgSelfie.src = cleanSelfie + (cleanSelfie.includes("?") ? "&" : "?") + cacheBuster;
+        
+        // 🌐 እውነተኛውን እና ሁሉንም ዳታ በአንድ ላይ የሚይዘውን /verify-success መስመር መጥራት
+        const response = await fetch("https://poessa-digital-services-1.onrender.com/api/pensioners/verify-success", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            faydaNumber: dbPensionerData?.faydaNumber,
+            dbPhotoUrl: idPhoto,
+            selfiePhotoUrl: cleanSelfie,
+            smilePassed: smilePassed ?? true, // የሊቨነስ ውጤቶች ካሉህ እዚህ ይተካሉ
+            nodPassed: nodPassed ?? true,
+            turnPassed: turnPassed ?? true
+          })
+        });
 
-        const [sysOk, selfOk] = await Promise.all([systemLoadPromise, selfieLoadPromise]);
+        const resData = await response.json();
 
-        if (!sysOk || !selfOk) {
-          throw new Error("ምስሎቹን ከክላውድ ላይ ማንበብ አልተቻለም (CORS/Network)");
-        }
-
-        setProgress(75);
-        setMatchStatus("📊 ሁለቱንም ፎቶዎች እያወዳደረ ነው...");
-
-        const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.3 });
-
-        // ፊቱን መፈለግ እና ማነጻጸር
-        const systemResult = await faceapi.detectSingleFace(imgSystem, detectorOptions).withFaceLandmarks().withFaceDescriptor();
-        const selfieResult = await faceapi.detectSingleFace(imgSelfie, detectorOptions).withFaceLandmarks().withFaceDescriptor();
-
-        // ፊቱ በደንብ ካልታየ ስህተት ከማሳየት ይልቅ ወደ ቀጣዩ እንዲያልፍ 55% መስጠት
-        if (!systemResult || !selfieResult) {
-          setMatchStatus("⚠️ የፊት ገጽታን ለማንበብ አስቸጋሪ ሆኗል... በራሱ ጊዜ እያለፈ ነው...");
+        if (response.ok && resData.success) {
+          const realPercent = resData.data.matchPercentage;
           setProgress(100);
-          setTimeout(() => onSuccess(55), 2000); 
-          return;
+          setMatchStatus(`📊 ማነጻጸሩ ተጠናቋል! እውነተኛ ውጤት፦ ${realPercent}%`);
+          setTimeout(() => onSuccess(realPercent), 2000);
+        } else {
+          throw new Error(resData.message || "የሰርቨር ማነጻጸር ስህተት");
         }
-
-        // የፊቶቹን ርቀት መለካት
-        const distance = faceapi.euclideanDistance(systemResult.descriptor, selfieResult.descriptor);
-        let calculatedPercentage = Math.round((1 - distance) * 100);
-        if (calculatedPercentage > 100) calculatedPercentage = 100;
-        if (calculatedPercentage < 0) calculatedPercentage = 0;
-
-        // ወደ Render ባክኤንድ ማስተላለፍ
-        if (dbPensionerData?.faydaNumber) {
-          try {
-            await fetch("https://poessa-digital-services-1.onrender.com/api/pensioners/verify-face", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                query: dbPensionerData.faydaNumber,
-                currentDescriptor: Array.from(selfieResult.descriptor)
-              })
-            });
-          } catch (dbErr) {
-            console.error("ዳታቤዝ ማደስ አልተቻለም፦", dbErr);
-          }
-        }
-
-        setProgress(100);
-        setMatchStatus(`📊 ማነጻጸሩ ተጠናቋል! ውጤት፦ ${calculatedPercentage}%`);
-
-        setTimeout(() => {
-          onSuccess(calculatedPercentage);
-        }, 2000);
 
       } catch (err) {
-        console.error("Face Matching Error:", err);
-        setMatchStatus(`⚠️ ማሳሰቢያ፦ የፊት ማነጻጸሩ ዘግይቷል (ወደ ቀጣዩ እያለፈ ነው...)`);
+        console.error("Backend Verification Error:", err);
+        setMatchStatus("⚠️ ማሳሰቢያ፦ የፊት ማነጻጸር ስህተት አጋጥሟል!");
         setProgress(100);
-        // በማንኛውም ስህተት ምክንያት ስልኩ ላይ ስራው እንዳይቆም 65% ሰጥቶ ስራውን ያስቀጥለዋል!
-        setTimeout(() => onSuccess(65), 2500); 
-      } finally {
-        if (scope) faceapi.tf.engine().endScope(); // ማህደረ ትውስታውን በነጻ መልቀቅ
+        setTimeout(() => onSuccess(0), 2500); // ስህተት ከሆነ 0% ይሰጣል
       }
     }
 
-    performMatch();
-  }, [loadingModels, idPhoto, selfiePhoto, dbPensionerData, onSuccess]);
+    sendToBackend();
+  }, [idPhoto, selfiePhoto, dbPensionerData, onSuccess, smilePassed, nodPassed, turnPassed]);
 
   return (
     <div style={{ padding: "30px", textAlign: "center", background: "#fff", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", maxWidth: "450px", margin: "30px auto", fontFamily: "sans-serif" }}>
-      <h3 style={{ color: "#162447", marginBottom: "20px", fontWeight: "700" }}>🤖 ደረጃ 4፦ የፊት ባዮሜትሪክስ ማነጻጸሪያ</h3>
+      <h3 style={{ color: "#162447", marginBottom: "20px", fontWeight: "700" }}>🤖 ደረጃ 4፦ የሰርቨር ባዮሜትሪክስ ማነጻጸሪያ</h3>
       
       <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "25px", gap: "15px" }}>
         <div style={{ textAlign: "center" }}>
-          <img src={idPhoto} alt="የመታወቂያ ፎቶ" style={{ width: "120px", height: "140px", objectFit: "cover", borderRadius: "8px", border: "3px solid #162447" }} />
-          <p style={{ fontSize: "12px", color: "#64748b", marginTop: "5px", fontWeight: "bold" }}>የመታወቂያ ፎቶ (DB)</p>
+          <img src={idPhoto} alt="የመታወቂያ" style={{ width: "120px", height: "140px", objectFit: "cover", borderRadius: "8px", border: "3px solid #162447" }} />
+          <p style={{ fontSize: "12px", color: "#64748b", marginTop: "5px", fontWeight: "bold" }}>የመታወቂያ ፎቶ</p>
         </div>
         <div style={{ textAlign: "center" }}>
-          <img src={selfiePhoto?.selfieUrl || selfiePhoto} alt="የአሁን ሴልፊ" style={{ width: "120px", height: "140px", objectFit: "cover", borderRadius: "8px", border: "3px solid #10b981" }} />
+          <img src={selfiePhoto?.selfieUrl || selfiePhoto} alt="ሴልፊ" style={{ width: "120px", height: "140px", objectFit: "cover", borderRadius: "8px", border: "3px solid #10b981" }} />
           <p style={{ fontSize: "12px", color: "#64748b", marginTop: "5px", fontWeight: "bold" }}>የአሁኑ ሴልፊ</p>
         </div>
       </div>
