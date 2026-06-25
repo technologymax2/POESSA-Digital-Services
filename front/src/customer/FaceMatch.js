@@ -1,4 +1,4 @@
-Import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react"; // 🎯 ማስተካከያ፦ import በትንሽ ፊደል ተስተካክሏል
 
 let modelsLoaded = false; // ✅ GLOBAL CACHE
 
