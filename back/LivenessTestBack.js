@@ -12,18 +12,23 @@ const LivenessVerification = require("./models/livenessSchema");
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
-// 🌐 ዩአርኤል ማስተካከያ፦ ሞዴሎቹን በቀጥታ ከ Vercel ዩአርኤል ላይ ለመጫን
-const MODEL_DIR = "https://poessa-digital-services.vercel.app/models"; 
+// 🎯 ማስተካከያ 1፦ የሞዴል ፋይሎቹ ካሉበት ከዋናው ማውጫ (Root) ጋር በትክክል ማገናኘት
+// LivenessTestBack.js ያለው 'routes' ፎልደር ውስጥ ከሆነ ሁለት ደረጃ (../) ወደ ኋላ ይወጣል
+const MODEL_DIR = path.join(__dirname, "../../models"); 
 let modelsLoaded = false;
 
 async function loadServerModels() {
   if (modelsLoaded) return;
-  // 🎯 loadFromDisk የነበረው ወደ loadFromUri ተቀይሯል (ከአድራሻ ስህተት ነፃ ለመሆን)
-  await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_DIR);
-  await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_DIR);
-  await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_DIR);
-  modelsLoaded = true;
-  console.log("🔒 የፊት መለያ ሞዴሎች ከ Vercel ላይ በተሳካ ሁኔታ ተጭነዋል!");
+  try {
+    await faceapi.nets.tinyFaceDetector.loadFromDisk(MODEL_DIR);
+    await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_DIR);
+    await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_DIR);
+    modelsLoaded = true;
+    console.log("🔒 [SUCCESS] የፊት መለያ ሞዴሎች በባክኤንድ ሰርቨሩ ላይ በተሳካ ሁኔታ ተጭነዋል!");
+  } catch (err) {
+    console.error("❌ [ERROR] ሞዴሎችን ከዲስክ ላይ መጫን አልተቻለም፦", err.message);
+    throw err;
+  }
 }
 
 async function uploadToImgBB(base64Data) {
@@ -69,18 +74,21 @@ router.post("/verify-success", async (req, res) => {
     let finalMatch = 0; 
 
     try {
+      // 1. ሞዴሎቹ መጫናቸውን ማረጋገጥ
       await loadServerModels();
       console.log("⏳ ምስሎችን በ Axios አውርዶ እያነጻጸረ ነው...");
       
+      // 2. ምስሎቹን ከአገናኝ ዩአርኤል (URL) በ Arraybuffer ማውረድ
       const [idResponse, selfieResponse] = await Promise.all([
-        axios.get(finalDbPhotoUrl, { responseType: "arraybuffer" }),
-        axios.get(finalSelfieUrl, { responseType: "arraybuffer" })
+        axios.get(finalDbPhotoUrl, { responseType: "arraybuffer", timeout: 10000 }),
+        axios.get(finalSelfieUrl, { responseType: "arraybuffer", timeout: 10000 })
       ]);
 
+      // 3. ምስሎቹን ወደ Canvas መጫን
       const imgId = await canvas.loadImage(Buffer.from(idResponse.data));
       const imgSelfie = await canvas.loadImage(Buffer.from(selfieResponse.data));
 
-      // 🎯 scoreThreshold ወደ 0.1 ዝቅ ተደርጓል (በማንኛውም የአቀማመጥ ሁኔታ ፊትን እንዲያገኝ)
+      // 4. የፊት መፈለጊያ መስፈርቱን ማስተካከል (scoreThreshold: 0.1)
       const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.1 });
 
       const idResult = await faceapi.detectSingleFace(imgId, detectorOptions).withFaceLandmarks().withFaceDescriptor();
@@ -90,20 +98,23 @@ router.post("/verify-success", async (req, res) => {
         const distance = faceapi.euclideanDistance(idResult.descriptor, selfieResult.descriptor);
         finalMatch = Math.round((1 - distance) * 100);
         finalMatch = Math.max(0, Math.min(100, finalMatch));
-        console.log(`📊 እውነተኛ የፊት ማነጻጸር ውጤት ተገኝቷል፦ ${finalMatch}%`);
+        console.log(`📊 [MATCH FOUND] እውነተኛ የፊት ማነጻጸር ውጤት ተገኝቷል፦ ${finalMatch}%`);
       } else {
-        console.warn("⚠️ በምስሎቹ ላይ ፊት አልተገኘም!");
+        if (!idResult) console.warn("⚠️ በመታወቂያው (DB) ፎቶ ላይ ፊት አልተገኘም!");
+        if (!selfieResult) console.warn("⚠️ በሴልፊው ፎቶ ላይ ፊት አልተገኘም!");
         finalMatch = 0; 
       }
     } catch (faceErr) {
-      // 🚨 ስህተቱን በዝርዝር Render ሎግ ላይ ለማየት እንዲረዳን የተደረገ ማስተካከያ
+      // 🚨 በማነጻጸር ሂደት ውስጥ የተፈጠረውን ትክክለኛ ስህተት እዚህ ላይ እናየዋለን
       console.error("❌ የፊት ማነጻጸር ዝርዝር ስህተት፦", faceErr);
       finalMatch = 0; 
     }
 
+    // ምስሎቹ የቤዝ64 ዳታ ከሆኑ ወደ ማከማቻ (ImgBB) መስቀል
     if (finalDbPhotoUrl.startsWith("data:image")) finalDbPhotoUrl = await uploadToImgBB(finalDbPhotoUrl);
     if (finalSelfieUrl.startsWith("data:image")) finalSelfieUrl = await uploadToImgBB(finalSelfieUrl);
 
+    // 🌟 የድርጅት መስፈርት ማረጋገጫ (ከ 70% በላይ ከሆነ ብቻ ነው የሚማሳሰሉት)
     const faceMatched = finalMatch >= 70;
     const livenessPassed = !!smilePassed && !!nodPassed && !!turnPassed;
 
@@ -129,11 +140,12 @@ router.post("/verify-success", async (req, res) => {
     return res.status(200).json({ success: true, message: "Liveness verification completed", data: record });
 
   } catch (error) {
-    console.error("Liveness Error:", error);
+    console.error("Liveness Global Error:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 });
 
+// የሪፖርት ማውጫ መስመሮች (Get Methods) እንዳሉ ይቀጥላሉ...
 router.get("/all", async (req, res) => {
   try {
     const data = await LivenessVerification.find().sort({ createdAt: -1 });
