@@ -11,7 +11,9 @@ const UserPensioner = require("./models/UserPensioner");
 const LivenessVerification = require("./models/livenessSchema");
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
-const MODEL_DIR = path.join(__dirname, "../models"); 
+
+// 🎯 ማስተካከያ 1፦ ሰርቨሩ ሞዴሎቹን በቀጥታ ከ front ፎልደር እንዲያነብ ማድረግ
+const MODEL_DIR = path.join(__dirname, "../front/public/models"); 
 let modelsLoaded = false;
 
 async function loadServerModels() {
@@ -63,7 +65,6 @@ router.post("/verify-success", async (req, res) => {
     let finalDbPhotoUrl = dbPhotoUrl || pensioner.photoUrl || "";
     let finalSelfieUrl = selfiePhotoUrl || "";
 
-    // የ AI ማነጻጸሪያ ፐርሰንት መነሻ
     let finalMatch = 0; 
 
     try {
@@ -78,14 +79,14 @@ router.post("/verify-success", async (req, res) => {
       const imgId = await canvas.loadImage(Buffer.from(idResponse.data));
       const imgSelfie = await canvas.loadImage(Buffer.from(selfieResponse.data));
 
-      const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.3 });
+      // 🎯 ማስተካከያ 2፦ scoreThreshold ወደ 0.1 ዝቅ ተደርጓል (በማንኛውም የአቀማመጥ ሁኔታ ፊትን እንዲያገኝ)
+      const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.1 });
 
       const idResult = await faceapi.detectSingleFace(imgId, detectorOptions).withFaceLandmarks().withFaceDescriptor();
       const selfieResult = await faceapi.detectSingleFace(imgSelfie, detectorOptions).withFaceLandmarks().withFaceDescriptor();
 
       if (idResult && selfieResult) {
         const distance = faceapi.euclideanDistance(idResult.descriptor, selfieResult.descriptor);
-        // 🚨 እውነተኛውን የ AI ስሌት ፐርሰንት ብቻ ማውጣት
         finalMatch = Math.round((1 - distance) * 100);
         finalMatch = Math.max(0, Math.min(100, finalMatch));
         console.log(`📊 እውነተኛ የፊት ማነጻጸር ውጤት ተገኝቷል፦ ${finalMatch}%`);
@@ -101,7 +102,6 @@ router.post("/verify-success", async (req, res) => {
     if (finalDbPhotoUrl.startsWith("data:image")) finalDbPhotoUrl = await uploadToImgBB(finalDbPhotoUrl);
     if (finalSelfieUrl.startsWith("data:image")) finalSelfieUrl = await uploadToImgBB(finalSelfieUrl);
 
-    // 🌟 ሉዓላዊ ማረጋገጫ (ከ 70% በላይ ከሆነ ብቻ ነው የሚማሳሰሉት)
     const faceMatched = finalMatch >= 70;
     const livenessPassed = !!smilePassed && !!nodPassed && !!turnPassed;
 
@@ -115,7 +115,7 @@ router.post("/verify-success", async (req, res) => {
       name: pensioner.nameAmh || pensioner.nameEng || pensioner.name || "ስም አልተጠቀሰም",
       dbPhotoUrl: finalDbPhotoUrl,
       selfiePhotoUrl: finalSelfieUrl,
-      matchPercentage: finalMatch, // 🌟 እውነተኛው ቁጥር ብቻ ይገባል!
+      matchPercentage: finalMatch, 
       faceMatched,
       smilePassed: !!smilePassed,
       nodPassed: !!nodPassed,
