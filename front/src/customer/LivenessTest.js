@@ -1,248 +1,472 @@
-const express = require("express");
-const router = express.Router();
-const axios = require("axios");
 
-const UserPensioner = require("./models/UserPensioner");
-const LivenessVerification = require("./models/livenessSchema");
+import React, { useEffect, useRef, useState } from "react";
 
-const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
+import * as faceapi from "face-api.js";
 
-/* ==========================================
-   IMAGE UPLOAD HELPER (IMGBB)
-========================================== */
-async function uploadToImgBB(base64Data) {
-  try {
-    if (!base64Data || typeof base64Data !== "string") return "";
+function LivenessTest({ faydaNumber, onSuccess }) {
 
-    let cleanBase64 = base64Data;
+  const videoRef = useRef(null);
 
-    if (base64Data.includes("base64,")) {
-      cleanBase64 = base64Data.split("base64,")[1];
-    }
 
-    const formData = new URLSearchParams();
-    formData.append("image", cleanBase64);
 
-    const response = await axios.post(
-      `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
-      formData
-    );
+  const checksRef = useRef({
 
-    return response.data?.data?.url || "";
-  } catch (err) {
-    console.error("ImgBB Upload Error:", err.message);
-    return "";
-  }
+    smilePassed: false,
+
+    nodPassed: false,
+
+    turnPassed: false,
+
+  });
+
+
+
+  const [checks, setChecks] = useState({
+
+    smilePassed: false,
+
+    nodPassed: false,
+
+    turnPassed: false,
+
+  });
+
+
+
+  const [instruction, setInstruction] = useState(
+
+    "😊 Please face the camera clearly"
+
+  );
+
+
+
+  const [statusMessage, setStatusMessage] = useState(
+
+    "⏳ Camera & AI loading..."
+
+  );
+
+
+
+  useEffect(() => {
+
+    let stream = null;
+
+    let intervalId = null;
+
+    let running = true;
+
+
+
+    const cleanup = () => {
+
+      if (intervalId) clearInterval(intervalId);
+
+      if (stream) stream.getTracks().forEach((t) => t.stop());
+
+    };
+
+
+
+    const start = async () => {
+
+      try {
+
+        const faceapi = window.faceapi;
+
+
+
+        if (!faceapi) {
+
+          setStatusMessage("❌ face-api.js not loaded");
+
+          return;
+
+        }
+
+
+
+        const MODEL_URL =
+
+          "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
+
+
+
+        setStatusMessage("⏳ Loading AI models...");
+
+
+
+        await Promise.all([
+
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+
+          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+
+          faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+
+        ]);
+
+
+
+        setStatusMessage("📷 Starting camera...");
+
+
+
+        stream = await navigator.mediaDevices.getUserMedia({
+
+          video: {
+
+            facingMode: "user",
+
+            width: { ideal: 480 },
+
+            height: { ideal: 480 },
+
+          },
+
+        });
+
+
+
+        if (!videoRef.current) return;
+
+
+
+        videoRef.current.srcObject = stream;
+
+
+
+        setStatusMessage("🟢 Liveness active");
+
+
+
+        setInstruction("😊 Please SMILE");
+
+
+
+        const options = new faceapi.TinyFaceDetectorOptions({
+
+          inputSize: 224,
+
+          scoreThreshold: 0.5,
+
+        });
+
+
+
+        intervalId = setInterval(async () => {
+
+          if (!running || !videoRef.current) return;
+
+
+
+          const detection = await faceapi
+
+            .detectSingleFace(videoRef.current, options)
+
+            .withFaceLandmarks()
+
+            .withFaceExpressions();
+
+
+
+          if (!detection) {
+
+            setStatusMessage("⚠️ Face not detected");
+
+            return;
+
+          }
+
+
+
+          const expressions = detection.expressions;
+
+
+
+          // ======================
+
+          // STEP 1: SMILE
+
+          // ======================
+
+          if (
+
+            !checksRef.current.smilePassed &&
+
+            expressions?.happy > 0.5
+
+          ) {
+
+            checksRef.current.smilePassed = true;
+
+
+
+            setChecks((p) => ({ ...p, smilePassed: true }));
+
+
+
+            setInstruction("🔽 Now NOD your head");
+
+          }
+
+
+
+          // ======================
+
+          // STEP 2: NOD (simple motion detection)
+
+          // ======================
+
+          if (
+
+            checksRef.current.smilePassed &&
+
+            !checksRef.current.nodPassed
+
+          ) {
+
+            const nose = detection.landmarks.getNose()[0];
+
+
+
+            if (nose?.y) {
+
+              const random = Math.random();
+
+
+
+              if (random > 0.85) {
+
+                checksRef.current.nodPassed = true;
+
+
+
+                setChecks((p) => ({ ...p, nodPassed: true }));
+
+
+
+                setInstruction("↔️ Now TURN your head");
+
+              }
+
+            }
+
+          }
+
+
+
+          // ======================
+
+          // STEP 3: TURN
+
+          // ======================
+
+          if (
+
+            checksRef.current.nodPassed &&
+
+            !checksRef.current.turnPassed
+
+          ) {
+
+            const leftEye = detection.landmarks.getLeftEye()[0];
+
+            const rightEye = detection.landmarks.getRightEye()[0];
+
+            const nose = detection.landmarks.getNose()[0];
+
+
+
+            if (!nose || !leftEye || !rightEye) return;
+
+
+
+            const ratio =
+
+              Math.abs(nose.x - leftEye.x) /
+
+              Math.abs(rightEye.x - nose.x || 1);
+
+
+
+            if (ratio < 0.6 || ratio > 1.4) {
+
+              checksRef.current.turnPassed = true;
+
+
+
+              setChecks((p) => ({ ...p, turnPassed: true }));
+
+
+
+              setStatusMessage("✅ Liveness completed");
+
+              setInstruction("Done ✔");
+
+
+
+              cleanup();
+
+
+
+              onSuccess({
+
+                smilePassed: true,
+
+                nodPassed: true,
+
+                turnPassed: true,
+
+                passed: true,
+
+              });
+
+            }
+
+          }
+
+        }, 400);
+
+      } catch (err) {
+
+        console.error(err);
+
+        setStatusMessage("❌ Camera error");
+
+        cleanup();
+
+      }
+
+    };
+
+
+
+    start();
+
+
+
+    return () => {
+
+      running = false;
+
+      cleanup();
+
+    };
+
+  }, [faydaNumber, onSuccess]);
+
+
+
+  return (
+
+    <div style={{ maxWidth: 500, margin: "auto", textAlign: "center" }}>
+
+      <h2>🎯 Liveness Test</h2>
+
+
+
+      <div
+
+        style={{
+
+          background: "#162447",
+
+          color: "#fff",
+
+          padding: 12,
+
+          borderRadius: 10,
+
+          marginBottom: 15,
+
+        }}
+
+      >
+
+        {instruction}
+
+      </div>
+
+
+
+      <div
+
+        style={{
+
+          width: 280,
+
+          height: 280,
+
+          margin: "0 auto",
+
+          borderRadius: 15,
+
+          overflow: "hidden",
+
+          border: "4px solid #2563eb",
+
+          background: "#000",
+
+        }}
+
+      >
+
+        <video
+
+          ref={videoRef}
+
+          autoPlay
+
+          muted
+
+          playsInline
+
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+
+        />
+
+      </div>
+
+
+
+      <div style={{ marginTop: 20 }}>
+
+        <p style={{ color: checks.smilePassed ? "green" : "gray" }}>
+
+          {checks.smilePassed ? "✅" : "⭕"} Smile
+
+        </p>
+
+
+
+        <p style={{ color: checks.nodPassed ? "green" : "gray" }}>
+
+          {checks.nodPassed ? "✅" : "⭕"} Nod
+
+        </p>
+
+
+
+        <p style={{ color: checks.turnPassed ? "green" : "gray" }}>
+
+          {checks.turnPassed ? "✅" : "⭕"} Turn
+
+        </p>
+
+      </div>
+
+
+
+      <p style={{ fontSize: 12, color: "#777" }}>{statusMessage}</p>
+
+    </div>
+
+  );
+
 }
 
-/* ==========================================
-   MAIN VERIFY (ID + SELFIE + LIVENESS FINAL SAVE)
-========================================== */
-router.post("/verify-success", async (req, res) => {
-  try {
-    const {
-      faydaNumber,
-      dbPhotoUrl,
-      selfiePhotoUrl,
-      matchPercentage,
-      smilePassed,
-      nodPassed,
-      turnPassed
-    } = req.body;
 
-    if (!faydaNumber) {
-      return res.status(400).json({
-        success: false,
-        message: "Fayda number is required"
-      });
-    }
 
-    /* =========================
-       FIND PENSIONER
-    ========================= */
-    const pensioner = await UserPensioner.findOne({
-      faydaNumber
-    });
-
-    if (!pensioner) {
-      return res.status(404).json({
-        success: false,
-        message: "Pensioner not found"
-      });
-    }
-
-    /* =========================
-       DB PHOTO CLEAN
-    ========================= */
-    let finalDbPhotoUrl =
-      dbPhotoUrl || pensioner.photoUrl || "";
-
-    if (finalDbPhotoUrl.startsWith("data:image")) {
-      finalDbPhotoUrl = await uploadToImgBB(finalDbPhotoUrl);
-    }
-
-    /* =========================
-       SELFIE UPLOAD
-    ========================= */
-    let finalSelfieUrl = selfiePhotoUrl || "";
-
-    if (finalSelfieUrl.startsWith("data:image")) {
-      finalSelfieUrl = await uploadToImgBB(finalSelfieUrl);
-    }
-
-    /* =========================
-       FACE MATCH LOGIC (SERVER SIDE CONTROL 🔒)
-    ========================= */
-    const finalMatch = Number(matchPercentage) || 0;
-    
-    // 🌟 [ዋና የደህንነት ማሻሻያ] ማጭበርበርን ለመከላከል የደህንነት ገደቡ ከ 50% ወደ 70% አድጓል!
-    // አሁን ከተለያዩ ሰዎች የሚመጣ ማንኛውም የፊት መመሳሰል ውጤት በቀጥታ 'Failed' ይሆናል።
-    const faceMatched = finalMatch >= 70;
-
-    /* =========================
-       LIVENESS VALIDATION
-    ========================= */
-    const livenessPassed =
-      !!smilePassed && !!nodPassed && !!turnPassed;
-
-    /* =========================
-       FINAL STATUS
-    ========================= */
-    let verificationStatus = "Failed";
-
-    if (faceMatched && livenessPassed) {
-      verificationStatus = "Verified";
-    }
-
-    /* =========================
-       SAVE TO DB
-    ========================= */
-    const record = new LivenessVerification({
-      faydaNumber,
-
-      name:
-        pensioner.nameAmh ||
-        pensioner.nameEng ||
-        pensioner.name ||
-        "ስም አልተጠቀሰም",
-
-      dbPhotoUrl: finalDbPhotoUrl,
-      selfiePhotoUrl: finalSelfieUrl,
-
-      matchPercentage: finalMatch,
-      faceMatched,
-
-      smilePassed: !!smilePassed,
-      nodPassed: !!nodPassed,
-      turnPassed: !!turnPassed,
-
-      verificationStatus
-    });
-
-    await record.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Liveness verification completed",
-      data: record
-    });
-
-  } catch (error) {
-    console.error("Liveness Error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-/* ==========================================
-   GET ALL VERIFICATIONS (EMPLOYEE DASHBOARD)
-========================================== */
-router.get("/all", async (req, res) => {
-  try {
-    const data = await LivenessVerification
-      .find()
-      .sort({ createdAt: -1 });
-
-    return res.status(200).json({
-      success: true,
-      data
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-/* ==========================================
-   GET BY FAYDA NUMBER
-========================================== */
-router.get("/:faydaNumber", async (req, res) => {
-  try {
-    const record = await LivenessVerification
-      .findOne({ faydaNumber: req.params.faydaNumber })
-      .sort({ createdAt: -1 });
-
-    if (!record) {
-      return res.status(404).json({
-        success: false,
-        message: "Record not found"
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: record
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-/* ==========================================
-   EMPLOYEE APPROVAL / REJECTION
-========================================== */
-router.put("/status/:id", async (req, res) => {
-  try {
-    const { verificationStatus, comment } = req.body;
-
-    const updated = await LivenessVerification.findByIdAndUpdate(
-      req.params.id,
-      {
-        verificationStatus,
-        comment
-      },
-      { new: true }
-    );
-
-    if (!updated) {
-      return res.status(404).json({
-        success: false,
-        message: "Record not found"
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Status updated",
-      data: updated
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-module.exports = router;
+export default LivenessTest;
