@@ -13,19 +13,18 @@ const LivenessVerification = require("./models/livenessSchema");
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
 // 🎯 ማስተካከያ 1፦ የሞዴል ፋይሎቹ ካሉበት ከዋናው ማውጫ (Root) ጋር በትክክል ማገናኘት
-// routes ፎልደር ውስጥ ስለሆነ ሁለት ደረጃ (../) ወደ ኋላ ይወጣል
 const MODEL_DIR = path.join(__dirname, "../../models"); 
 let modelsLoaded = false;
 
 async function loadServerModels() {
   if (modelsLoaded) return;
   try {
-    // 🎯 ለድርጅት ደረጃ ሥራ የሚሆነውን ጠንካራውን SSD Mobilenet V1 ሞዴል እንጭናለን
-    await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_DIR);
+    // 🎯 በዲስክህ ላይ ያሉትን የነባሮቹን TinyFaceDetector ፋይሎች እንጠቀማለን
+    await faceapi.nets.tinyFaceDetector.loadFromDisk(MODEL_DIR);
     await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_DIR);
     await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_DIR);
     modelsLoaded = true;
-    console.log("🔒 [SUCCESS] የድርጅት ደረጃ SSD የፊት መለያ ሞዴሎች በተካ ሁኔታ ተጭነዋል!");
+    console.log("🔒 [SUCCESS] የፊት መለያ ሞዴሎች በባክኤንድ ሰርቨሩ ላይ በተሳካ ሁኔታ ተጭነዋል!");
   } catch (err) {
     console.error("❌ [ERROR] ሞዴሎችን ከዲስክ ላይ መጫን አልተቻለም፦", err.message);
     throw err;
@@ -69,7 +68,7 @@ router.post("/verify-success", async (req, res) => {
       return res.status(404).json({ success: false, message: "Pensioner not found" });
     }
 
-    // 🎯 ማስተካከያ 2፦ የ ID ፎቶን ትተን በቀጥታ በዳታቤዝ ያለውን እውነተኛ የሲስተም ፎቶ (System Photo) ብቻ እንወስዳለን
+    // 🎯 ማስተካከያ 2፦ በቀጥታ በዳታቤዝ ያለውን እውነተኛ የሲስተም ፎቶ (System Photo) ብቻ እንወስዳለን
     let finalDbPhotoUrl = pensioner.photoUrl || ""; 
     let finalSelfieUrl = selfiePhotoUrl || "";
 
@@ -94,8 +93,8 @@ router.post("/verify-success", async (req, res) => {
       const imgId = await canvas.loadImage(Buffer.from(idResponse.data));
       const imgSelfie = await canvas.loadImage(Buffer.from(selfieResponse.data));
 
-      // የ SSD Mobilenet V1 መፈለጊያ መስፈርት (minConfidence: 0.1 ደካማ ፎቶዎችንም እንዲያገኝ)
-      const detectorOptions = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.1 });
+      // የ TinyFaceDetector መፈለጊያ መስፈርት (scoreThreshold: 0.1 ፊትን በፍጥነት እንዲያገኝ)
+      const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.1 });
 
       const idResult = await faceapi.detectSingleFace(imgId, detectorOptions).withFaceLandmarks().withFaceDescriptor();
       const selfieResult = await faceapi.detectSingleFace(imgSelfie, detectorOptions).withFaceLandmarks().withFaceDescriptor();
@@ -131,7 +130,7 @@ router.post("/verify-success", async (req, res) => {
     const record = new LivenessVerification({
       faydaNumber,
       name: pensioner.nameAmh || pensioner.nameEng || pensioner.name || "ስም አልተጠቀሰም",
-      dbPhotoUrl: finalDbPhotoUrl, // አሁን የዳታቤዙ/የሲስተሙ ፎቶ እዚህ ይቀመጣል
+      dbPhotoUrl: finalDbPhotoUrl, 
       selfiePhotoUrl: finalSelfieUrl,
       matchPercentage: finalMatch, 
       faceMatched,
