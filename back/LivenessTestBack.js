@@ -13,18 +13,19 @@ const LivenessVerification = require("./models/livenessSchema");
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
 // 🎯 ማስተካከያ 1፦ የሞዴል ፋይሎቹ ካሉበት ከዋናው ማውጫ (Root) ጋር በትክክል ማገናኘት
-// LivenessTestBack.js ያለው 'routes' ፎልደር ውስጥ ከሆነ ሁለት ደረጃ (../) ወደ ኋላ ይወጣል
+// routes ፎልደር ውስጥ ስለሆነ ሁለት ደረጃ (../) ወደ ኋላ ይወጣል
 const MODEL_DIR = path.join(__dirname, "../../models"); 
 let modelsLoaded = false;
 
 async function loadServerModels() {
   if (modelsLoaded) return;
   try {
-    await faceapi.nets.tinyFaceDetector.loadFromDisk(MODEL_DIR);
+    // 🎯 ለድርጅት ደረጃ ሥራ የሚሆነውን ጠንካራውን SSD Mobilenet V1 ሞዴል እንጭናለን
+    await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_DIR);
     await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_DIR);
     await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_DIR);
     modelsLoaded = true;
-    console.log("🔒 [SUCCESS] የፊት መለያ ሞዴሎች በባክኤንድ ሰርቨሩ ላይ በተሳካ ሁኔታ ተጭነዋል!");
+    console.log("🔒 [SUCCESS] የድርጅት ደረጃ SSD የፊት መለያ ሞዴሎች በተካ ሁኔታ ተጭነዋል!");
   } catch (err) {
     console.error("❌ [ERROR] ሞዴሎችን ከዲስክ ላይ መጫን አልተቻለም፦", err.message);
     throw err;
@@ -52,7 +53,6 @@ router.post("/verify-success", async (req, res) => {
   try {
     const {
       faydaNumber,
-      dbPhotoUrl,
       selfiePhotoUrl,
       smilePassed,
       nodPassed,
@@ -63,33 +63,39 @@ router.post("/verify-success", async (req, res) => {
       return res.status(400).json({ success: false, message: "Fayda number is required" });
     }
 
+    // 1. ጡረተኛውን ከዳታቤዝ መፈለግ
     const pensioner = await UserPensioner.findOne({ faydaNumber });
     if (!pensioner) {
       return res.status(404).json({ success: false, message: "Pensioner not found" });
     }
 
-    let finalDbPhotoUrl = dbPhotoUrl || pensioner.photoUrl || "";
+    // 🎯 ማስተካከያ 2፦ የ ID ፎቶን ትተን በቀጥታ በዳታቤዝ ያለውን እውነተኛ የሲስተም ፎቶ (System Photo) ብቻ እንወስዳለን
+    let finalDbPhotoUrl = pensioner.photoUrl || ""; 
     let finalSelfieUrl = selfiePhotoUrl || "";
+
+    if (!finalDbPhotoUrl) {
+      return res.status(400).json({ success: false, message: "System photo (pensioner.photoUrl) is missing in database" });
+    }
 
     let finalMatch = 0; 
 
     try {
-      // 1. ሞዴሎቹ መጫናቸውን ማረጋገጥ
+      // ሞዴሎቹ መጫናቸውን ማረጋገጥ
       await loadServerModels();
-      console.log("⏳ ምስሎችን በ Axios አውርዶ እያነጻጸረ ነው...");
+      console.log(`⏳ የሲስተም ፎቶን (${finalDbPhotoUrl}) እና ሴልፊን አውርዶ እያነጻጸረ ነው...`);
       
-      // 2. ምስሎቹን ከአገናኝ ዩአርኤል (URL) በ Arraybuffer ማውረድ
+      // ምስሎቹን ከአገናኝ ዩአርኤል (URL) በ Arraybuffer ማውረድ
       const [idResponse, selfieResponse] = await Promise.all([
-        axios.get(finalDbPhotoUrl, { responseType: "arraybuffer", timeout: 10000 }),
-        axios.get(finalSelfieUrl, { responseType: "arraybuffer", timeout: 10000 })
+        axios.get(finalDbPhotoUrl, { responseType: "arraybuffer", timeout: 15000 }),
+        axios.get(finalSelfieUrl, { responseType: "arraybuffer", timeout: 15000 })
       ]);
 
-      // 3. ምስሎቹን ወደ Canvas መጫን
+      // ምስሎቹን ወደ Canvas መጫን
       const imgId = await canvas.loadImage(Buffer.from(idResponse.data));
       const imgSelfie = await canvas.loadImage(Buffer.from(selfieResponse.data));
 
-      // 4. የፊት መፈለጊያ መስፈርቱን ማስተካከል (scoreThreshold: 0.1)
-      const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.1 });
+      // የ SSD Mobilenet V1 መፈለጊያ መስፈርት (minConfidence: 0.1 ደካማ ፎቶዎችንም እንዲያገኝ)
+      const detectorOptions = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.1 });
 
       const idResult = await faceapi.detectSingleFace(imgId, detectorOptions).withFaceLandmarks().withFaceDescriptor();
       const selfieResult = await faceapi.detectSingleFace(imgSelfie, detectorOptions).withFaceLandmarks().withFaceDescriptor();
@@ -98,14 +104,13 @@ router.post("/verify-success", async (req, res) => {
         const distance = faceapi.euclideanDistance(idResult.descriptor, selfieResult.descriptor);
         finalMatch = Math.round((1 - distance) * 100);
         finalMatch = Math.max(0, Math.min(100, finalMatch));
-        console.log(`📊 [MATCH FOUND] እውነተኛ የፊት ማነጻጸር ውጤት ተገኝቷል፦ ${finalMatch}%`);
+        console.log(`📊 [MATCH FOUND] ከሲስተም ፎቶ ጋር ያለው የንጽጽር ውጤት፦ ${finalMatch}%`);
       } else {
-        if (!idResult) console.warn("⚠️ በመታወቂያው (DB) ፎቶ ላይ ፊት አልተገኘም!");
+        if (!idResult) console.warn("⚠️ በዳታቤዙ (System) ፎቶ ላይ ፊት አልተገኘም!");
         if (!selfieResult) console.warn("⚠️ በሴልፊው ፎቶ ላይ ፊት አልተገኘም!");
         finalMatch = 0; 
       }
     } catch (faceErr) {
-      // 🚨 በማነጻጸር ሂደት ውስጥ የተፈጠረውን ትክክለኛ ስህተት እዚህ ላይ እናየዋለን
       console.error("❌ የፊት ማነጻጸር ዝርዝር ስህተት፦", faceErr);
       finalMatch = 0; 
     }
@@ -114,7 +119,7 @@ router.post("/verify-success", async (req, res) => {
     if (finalDbPhotoUrl.startsWith("data:image")) finalDbPhotoUrl = await uploadToImgBB(finalDbPhotoUrl);
     if (finalSelfieUrl.startsWith("data:image")) finalSelfieUrl = await uploadToImgBB(finalSelfieUrl);
 
-    // 🌟 የድርጅት መስፈርት ማረጋገጫ (ከ 70% በላይ ከሆነ ብቻ ነው የሚማሳሰሉት)
+    // የድርጅት መስፈርት ማረጋገጫ (ከ 70% በላይ ከሆነ ብቻ ነው የሚማሳሰሉት)
     const faceMatched = finalMatch >= 70;
     const livenessPassed = !!smilePassed && !!nodPassed && !!turnPassed;
 
@@ -126,7 +131,7 @@ router.post("/verify-success", async (req, res) => {
     const record = new LivenessVerification({
       faydaNumber,
       name: pensioner.nameAmh || pensioner.nameEng || pensioner.name || "ስም አልተጠቀሰም",
-      dbPhotoUrl: finalDbPhotoUrl,
+      dbPhotoUrl: finalDbPhotoUrl, // አሁን የዳታቤዙ/የሲስተሙ ፎቶ እዚህ ይቀመጣል
       selfiePhotoUrl: finalSelfieUrl,
       matchPercentage: finalMatch, 
       faceMatched,
@@ -137,7 +142,7 @@ router.post("/verify-success", async (req, res) => {
     });
 
     await record.save();
-    return res.status(200).json({ success: true, message: "Liveness verification completed", data: record });
+    return res.status(200).json({ success: true, message: "Liveness verification completed with system photo", data: record });
 
   } catch (error) {
     console.error("Liveness Global Error:", error);
@@ -145,7 +150,7 @@ router.post("/verify-success", async (req, res) => {
   }
 });
 
-// የሪፖርት ማውጫ መስመሮች (Get Methods) እንዳሉ ይቀጥላሉ...
+// የሪፖርት ማውጫ መስመሮች (Get/Put Methods) እንዳሉ ይቀጥላሉ...
 router.get("/all", async (req, res) => {
   try {
     const data = await LivenessVerification.find().sort({ createdAt: -1 });
