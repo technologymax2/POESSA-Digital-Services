@@ -1,128 +1,60 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import * as faceapi from 'face-api.js';
 import './PensionerRegistration.css';
-import * as faceapi from "face-api.js";
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
 function PensionerRegistration() {
-  const [currentEmployee, setCurrentEmployee] = useState('የፖኤሳ ሰራተኛ');
-  const [modelsLoaded, setModelsLoaded] = useState(false); // ሞዴል መጫኑን ለመቆጣጠር
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState('');
-  
-  const [formData, setFormData] = useState({
-    pensionerId: '', nameAmh: '', nameEng: '', tin: '', phone: '', age: '', gender: '',
-    faydaNumber: '', poessaBranch: '', bankNameAmh: '', bankNameEng: '', bankBranch: '', pensionAmount: '',
-    addressAmh: '', addressEng: '', issueDate: '', expiryDate: ''
-  });
-
+  const [formData, setFormData] = useState({ /* ... ቀደም ሲል የነበሩት ... */ });
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const fileInputRef = useRef(null);
-  const [validationErrors, setValidationErrors] = useState({});
-  const [duplicateErrors, setDuplicateErrors] = useState({ pensionerId: false, tin: false, faydaNumber: false });
-  const [checkingStatus, setCheckingStatus] = useState({ pensionerId: false, tin: false, faydaNumber: false });
+  const [status, setStatus] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
 
-  // 1. ሞዴሎችን መጫን
   useEffect(() => {
-    async function loadModels() {
-      try {
-        const MODEL_URL = "/models";
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-        ]);
-        setModelsLoaded(true);
-      } catch (err) {
-        setStatus("❌ ሞዴል መጫን አልተቻለም። ገጹን Refresh ያድርጉ።");
-      }
-    }
+    const loadModels = async () => {
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+        faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+        faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+      ]);
+      setModelsLoaded(true);
+    };
     loadModels();
   }, []);
 
-  useEffect(() => {
-    const storedName = localStorage.getItem('fullName') || localStorage.getItem('username');
-    if (storedName) setCurrentEmployee(storedName);
-  }, []);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
-  };
-
- const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!modelsLoaded) {
-      setStatus('⏳ እባክዎ የፊት መለያ ሞዴሎች እስኪጫኑ ይጠብቁ...');
-      return;
-    }
-    if (!image) {
-      setStatus('⚠️ እባክዎ የጡረተኛውን ፎቶ ይምረጡ!');
-      return;
-    }
-
+    if (!modelsLoaded) return setStatus("⏳ ሞዴል እየተጫነ ነው...");
+    
     setLoading(true);
-    setStatus('⏳ ፊትን በመለየት ላይ...');
-
     try {
-      const imgElement = document.createElement("img");
-      imgElement.src = imagePreview;
-      await new Promise((resolve) => (imgElement.onload = resolve));
+      const img = await faceapi.fetchImage(imagePreview);
+      const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+                                     .withFaceLandmarks()
+                                     .withFaceDescriptor();
 
-      // 1. መጀመሪያ ፊትን ብቻ ይፈልጉ
-      const detection = await faceapi.detectSingleFace(
-        imgElement, 
-        new faceapi.TinyFaceDetectorOptions()
-      );
+      if (!detection) throw new Error("ፊት አልተገኘም! እባክዎ ግልጽ ፎቶ ይጠቀሙ።");
 
-      if (!detection) throw new Error("ፊት አልተገኘም! እባክዎ ግልጽ ፎቶ ይምረጡ።");
-
-      // 2. ከዚያ የፊት ምልክቶችን (Landmarks) እና መግለጫን (Descriptor) በየተራ ይስሩ
-      const fullDetection = await faceapi
-        .detectSingleFace(imgElement, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!fullDetection) throw new Error("የፊት መግለጫ (descriptor) ማውጣት አልተቻለም።");
-
-      setStatus('⏳ ፎቶ ወደ ሰርቨር በመላክ ላይ...');
       const imgData = new FormData();
       imgData.append('image', image);
-      
-      const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-        method: 'POST',
-        body: imgData,
-      });
+      const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: imgData });
       const imgResult = await imgRes.json();
-      if (!imgResult.success) throw new Error('ፎቶውን ወደ Cloud መላክ አልተቻለም');
 
-      setStatus('⏳ መረጃ በመመዝገብ ላይ...');
+      const finalData = { 
+        ...formData, 
+        photoUrl: imgResult.data.url, 
+        faceDescriptor: Array.from(detection.descriptor) 
+      };
+
       const response = await fetch('https://poessa-digital-services-1.onrender.com/api/pensioners/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          photoUrl: imgResult.data.url,
-          faceDescriptor: Array.from(fullDetection.descriptor),
-          registeredBy: currentEmployee
-        }),
+        body: JSON.stringify(finalData),
       });
 
-      const result = await response.json();
-      if (result.success) {
-        setStatus('🎉 መረጃው በተሳካ ሁኔታ ተመዝግቧል!');
-      } else {
-        throw new Error(result.message);
-      }
+      if (response.ok) setStatus('🎉 ተመዝግቧል!');
     } catch (err) {
       setStatus(`❌ ስህተት፡ ${err.message}`);
     } finally {
