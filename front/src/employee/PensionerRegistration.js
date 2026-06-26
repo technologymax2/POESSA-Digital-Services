@@ -33,20 +33,25 @@ function PensionerRegistration() {
 
 useEffect(() => {
 
- const MODEL_URL="/models";
+async function loadModels(){
 
- Promise.all([
+const MODEL_URL="/models";
 
-  faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+await Promise.all([
 
-  faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
 
-  faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
 
- ]);
+faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+
+]);
+
+}
+
+loadModels();
 
 },[]);
-
   
   // 🔄 1. Debounce የተደረገ የደገሜታ ማረጋገጫ ፈንክሽን
   const debounceCheck = useCallback((fieldName, value) => {
@@ -181,7 +186,11 @@ imgElement.src=imagePreview;
 await new Promise((resolve)=>{
  imgElement.onload=resolve;
 });
+if (!faceapi.nets.faceRecognitionNet.params) {
 
+   throw new Error("Face model not loaded");
+
+}
 const detection=await faceapi
 .detectSingleFace(
  imgElement,
@@ -217,15 +226,21 @@ Array.from(
       if (!imgResult.success) throw new Error('ፎቶውን ወደ Cloud ማከማቻ መላክ አልተቻለም');
 
       // 🌟 የፎቶው ሊንክ 'photoUrl' ተብሎ በዳታቤዝ ውስጥ ይቀመጣል
-      const finalData = { 
-        ...formData, 
-        photoUrl: imgResult.data.url, 
-        employeeName: currentEmployee,
-        lastAction: 'Created',
+      const finalData = {
+  ...formData,
 
-        faceDescriptor,
-        lastActionTime: new Date().toISOString()
-      };
+  photoUrl: imgResult.data.url,
+
+  registeredBy: currentEmployee,
+
+  employeeName: currentEmployee,
+
+  lastAction: "Created",
+
+  faceDescriptor,
+
+  lastActionTime: new Date().toISOString()
+};
 
       const response = await fetch('https://poessa-digital-services-1.onrender.com/api/pensioners/register', {
         method: 'POST',
