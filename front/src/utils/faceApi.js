@@ -1,43 +1,35 @@
-// src/utils/faceApi.js
-
 import * as faceapi from "face-api.js";
 
-export const loadModels = async () => {
+let loaded = false;
+
+export async function loadFaceModels() {
+  if (loaded) return;
 
   const MODEL_URL = "/models";
 
-  await faceapi.nets.tinyFaceDetector.loadFromUri(
-    MODEL_URL
-  );
+  await Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+  ]);
 
-  await faceapi.nets.faceLandmark68Net.loadFromUri(
-    MODEL_URL
-  );
+  loaded = true;
+}
 
-  await faceapi.nets.faceRecognitionNet.loadFromUri(
-    MODEL_URL
-  );
-};
+export async function getFaceDescriptor(image) {
+  await loadFaceModels();
 
-export const getFaceDescriptor =
-async (imageElement) => {
-
-  const detection =
-   await faceapi
-   .detectSingleFace(
-      imageElement,
+  const detection = await faceapi
+    .detectSingleFace(
+      image,
       new faceapi.TinyFaceDetectorOptions()
-   )
-   .withFaceLandmarks()
-   .withFaceDescriptor();
+    )
+    .withFaceLandmarks()
+    .withFaceDescriptor();
 
-  if(!detection){
-    throw new Error(
-      "Face not detected"
-    );
+  if (!detection) {
+    throw new Error("No face detected.");
   }
 
-  return Array.from(
-    detection.descriptor
-  );
-};
+  return Array.from(detection.descriptor);
+}
