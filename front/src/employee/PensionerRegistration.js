@@ -1,51 +1,115 @@
-import React, { useState, useRef, useEffect } from 'react';
-import * as faceapi from 'face-api.js';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import * as faceapi from 'face-api.js'; // face-api.js መጫኑን ያረጋግጡ (npm install face-api.js)
 import './PensionerRegistration.css';
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
 function PensionerRegistration() {
-  const [formData, setFormData] = useState({ /* ... ቀደም ሲል የነበሩት ... */ });
+  const [currentEmployee, setCurrentEmployee] = useState('የፖኤሳ ሰራተኛ');
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    pensionerId: '', nameAmh: '', nameEng: '', tin: '', phone: '', age: '', gender: '',
+    faydaNumber: '', poessaBranch: '', bankNameAmh: '', bankNameEng: '', bankBranch: '', pensionAmount: '',
+    addressAmh: '', addressEng: '', issueDate: '', expiryDate: ''
+  });
+
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
-  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const fileInputRef = useRef(null);
 
+  const [validationErrors, setValidationErrors] = useState({});
+  const [duplicateErrors, setDuplicateErrors] = useState({ pensionerId: false, tin: false, faydaNumber: false });
+  const [checkingStatus, setCheckingStatus] = useState({ pensionerId: false, tin: false, faydaNumber: false });
+
+  // 1. የፊት ማወቂያ ሞዴሎችን መጫን
   useEffect(() => {
     const loadModels = async () => {
+      const MODEL_URL = '/models'; // የሞዴል ፋይሎቹ በ public/models ውስጥ መኖር አለባቸው
       await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-        faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-        faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
       ]);
       setModelsLoaded(true);
     };
     loadModels();
+    
+    const storedName = localStorage.getItem('fullName') || localStorage.getItem('username');
+    if (storedName) setCurrentEmployee(storedName);
   }, []);
+
+  const debounceCheck = useCallback((fieldName, value) => {
+    if (!value || value.length < 5) return;
+    setCheckingStatus(prev => ({ ...prev, [fieldName]: true }));
+    const handler = setTimeout(async () => {
+      try {
+        const response = await fetch(`https://poessa-digital-services-1.onrender.com/api/pensioners/check-duplicate?field=${fieldName}&value=${value}`);
+        const data = await response.json();
+        if (data.exists) {
+          setDuplicateErrors(prev => ({ ...prev, [fieldName]: true }));
+          setValidationErrors(prev => ({ ...prev, [fieldName]: `⚠️ ይህ ${fieldName} ቀድሞ ተመዝግቧል!` }));
+        } else {
+          setDuplicateErrors(prev => ({ ...prev, [fieldName]: false }));
+          setValidationErrors(prev => { const newErrors = { ...prev }; delete newErrors[fieldName]; return newErrors; });
+        }
+      } catch (err) { console.error(err); } finally { setCheckingStatus(prev => ({ ...prev, [fieldName]: false })); }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (['pensionerId', 'tin', 'faydaNumber'].includes(name)) debounceCheck(name, value);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+      setImagePreview(URL.createObjectURL(file));
+      setStatus('');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!modelsLoaded) return setStatus("⏳ ሞዴል እየተጫነ ነው...");
-    
+    if (!image) return setStatus('⚠️ እባክዎ ፎቶ ይምረጡ!');
+    if (!modelsLoaded) return setStatus('⏳ ሞዴል እየተጫነ ነው፣ እባክዎ ይጠብቁ...');
+
     setLoading(true);
+    setStatus('⏳ ፊትን በመተንተን እና መረጃ በመመዝገብ ላይ...');
+
     try {
-      const img = await faceapi.fetchImage(imagePreview);
-      const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+      // 2. ፊትን መተንተን እና Face Descriptor ማውጣት
+      const imgElement = document.createElement('img');
+      imgElement.src = imagePreview;
+      await new Promise((resolve) => (imgElement.onload = resolve));
+      
+      const detection = await faceapi.detectSingleFace(imgElement, new faceapi.TinyFaceDetectorOptions())
                                      .withFaceLandmarks()
                                      .withFaceDescriptor();
 
-      if (!detection) throw new Error("ፊት አልተገኘም! እባክዎ ግልጽ ፎቶ ይጠቀሙ።");
+      if (!detection) throw new Error("ፊት በግልጽ አልተገኘም! እባክዎ ጥራት ያለው ፎቶ ይጠቀሙ።");
 
+      // 3. ፎቶን ወደ ImgBB መላክ
       const imgData = new FormData();
       imgData.append('image', image);
       const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: imgData });
       const imgResult = await imgRes.json();
+      if (!imgResult.success) throw new Error('ፎቶውን ወደ Cloud መላክ አልተቻለም');
 
+      // 4. መረጃን ከ faceDescriptor ጋር ወደ ዳታቤዝ መላክ
       const finalData = { 
         ...formData, 
         photoUrl: imgResult.data.url, 
-        faceDescriptor: Array.from(detection.descriptor) 
+        faceDescriptor: Array.from(detection.descriptor), // 🌟 ዋናው ክፍል
+        employeeName: currentEmployee,
+        lastAction: 'Created',
+        lastActionTime: new Date().toISOString()
       };
 
       const response = await fetch('https://poessa-digital-services-1.onrender.com/api/pensioners/register', {
@@ -54,7 +118,13 @@ function PensionerRegistration() {
         body: JSON.stringify(finalData),
       });
 
-      if (response.ok) setStatus('🎉 ተመዝግቧል!');
+      if (response.ok) {
+        setStatus('🎉 መረጃው በተሳካ ሁኔታ ተመዝግቧል!');
+        setFormData({ pensionerId: '', nameAmh: '', nameEng: '', tin: '', phone: '', age: '', gender: '', faydaNumber: '', poessaBranch: '', bankNameAmh: '', bankNameEng: '', bankBranch: '', pensionAmount: '', addressAmh: '', addressEng: '', issueDate: '', expiryDate: '' });
+        setImage(null); setImagePreview(null);
+      } else {
+        throw new Error("መረጃ መላክ አልተቻለም");
+      }
     } catch (err) {
       setStatus(`❌ ስህተት፡ ${err.message}`);
     } finally {
