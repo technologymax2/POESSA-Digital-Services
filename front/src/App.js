@@ -21,6 +21,8 @@ import IdCardGenerationAndSearch from "./employee/IdCardGenerationAndSearch";
 import ScanVerify from "./employee/ScanVerify";
 import CheckStatus from "./customer/CheckStatus"; // Imported correctly here
 import Report from "./employee/Report";
+import Register from "./pages/Register";
+
 import "./App.css";
 
 function App() {
@@ -82,6 +84,13 @@ function App() {
           />
               <Route path="/report" element={<Report />} />
         </Routes>
+
+<Route
+  path="/register"
+  element={<Register />}
+/>
+
+              
       </div>
     </Router>
   );
