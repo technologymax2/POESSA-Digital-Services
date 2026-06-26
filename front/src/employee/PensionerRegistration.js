@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './PensionerRegistration.css';
+import * as faceapi from "face-api.js";
+
 
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
@@ -28,6 +30,24 @@ function PensionerRegistration() {
     if (storedName) setCurrentEmployee(storedName);
   }, []);
 
+
+useEffect(() => {
+
+ const MODEL_URL="/models";
+
+ Promise.all([
+
+  faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+
+  faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+
+  faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+
+ ]);
+
+},[]);
+
+  
   // 🔄 1. Debounce የተደረገ የደገሜታ ማረጋገጫ ፈንክሽን
   const debounceCheck = useCallback((fieldName, value) => {
     if (!value || value.length < 5) return;
@@ -154,6 +174,36 @@ function PensionerRegistration() {
     setLoading(true);
     setStatus('⏳ መረጃው በመመዝገብ ላይ ነው...');
 
+const imgElement=document.createElement("img");
+
+imgElement.src=imagePreview;
+
+await new Promise((resolve)=>{
+ imgElement.onload=resolve;
+});
+
+const detection=await faceapi
+.detectSingleFace(
+ imgElement,
+ new faceapi.TinyFaceDetectorOptions()
+)
+.withFaceLandmarks()
+.withFaceDescriptor();
+
+if(!detection){
+
+ throw new Error("ፊት አልተገኘም");
+
+}
+
+const faceDescriptor=
+Array.from(
+ detection.descriptor
+);
+
+
+
+    
     try {
       const imgData = new FormData();
       imgData.append('image', image);
@@ -162,6 +212,7 @@ function PensionerRegistration() {
         method: 'POST',
         body: imgData,
       });
+      
       const imgResult = await imgRes.json();
       if (!imgResult.success) throw new Error('ፎቶውን ወደ Cloud ማከማቻ መላክ አልተቻለም');
 
@@ -171,6 +222,8 @@ function PensionerRegistration() {
         photoUrl: imgResult.data.url, 
         employeeName: currentEmployee,
         lastAction: 'Created',
+
+        faceDescriptor,
         lastActionTime: new Date().toISOString()
       };
 
