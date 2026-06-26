@@ -59,7 +59,7 @@ function PensionerRegistration() {
     }
   };
 
-  const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault();
     if (!modelsLoaded) {
       setStatus('⏳ እባክዎ የፊት መለያ ሞዴሎች እስኪጫኑ ይጠብቁ...');
@@ -78,12 +78,21 @@ function PensionerRegistration() {
       imgElement.src = imagePreview;
       await new Promise((resolve) => (imgElement.onload = resolve));
 
-      const detection = await faceapi
+      // 1. መጀመሪያ ፊትን ብቻ ይፈልጉ
+      const detection = await faceapi.detectSingleFace(
+        imgElement, 
+        new faceapi.TinyFaceDetectorOptions()
+      );
+
+      if (!detection) throw new Error("ፊት አልተገኘም! እባክዎ ግልጽ ፎቶ ይምረጡ።");
+
+      // 2. ከዚያ የፊት ምልክቶችን (Landmarks) እና መግለጫን (Descriptor) በየተራ ይስሩ
+      const fullDetection = await faceapi
         .detectSingleFace(imgElement, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks()
         .withFaceDescriptor();
 
-      if (!detection) throw new Error("ፊት አልተገኘም! እባክዎ ግልጽ ፎቶ ይምረጡ።");
+      if (!fullDetection) throw new Error("የፊት መግለጫ (descriptor) ማውጣት አልተቻለም።");
 
       setStatus('⏳ ፎቶ ወደ ሰርቨር በመላክ ላይ...');
       const imgData = new FormData();
@@ -103,7 +112,7 @@ function PensionerRegistration() {
         body: JSON.stringify({
           ...formData,
           photoUrl: imgResult.data.url,
-          faceDescriptor: Array.from(detection.descriptor),
+          faceDescriptor: Array.from(fullDetection.descriptor),
           registeredBy: currentEmployee
         }),
       });
