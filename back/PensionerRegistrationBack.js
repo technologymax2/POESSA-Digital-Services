@@ -257,19 +257,25 @@ router.post("/register", async (req, res) => {
     const creatorName = pensionerData.employeeName || "ያልታወቀ ባለሙያ";
 
     const newPensioner = new UserPensioner({
-      ...pensionerData,
-      photoUrl,
-      status: "Active",
-      statusChangedDate: new Date(),
-      age: Number(pensionerData.age) || 0,
-      pensionAmount: Number(pensionerData.pensionAmount) || 0,
-      registeredBy: creatorName,
-      editHistory: [{
-        editedBy: creatorName,
-        editedAt: new Date(),
-        details: "አዲስ የተመዘገበ መረጃ"
-      }]
-    });
+  ...pensionerData,
+  photoUrl,
+
+  faceDescriptor: pensionerData.faceDescriptor || [],
+
+  status: "Active",
+  statusChangedDate: new Date(),
+
+  age: Number(pensionerData.age) || 0,
+  pensionAmount: Number(pensionerData.pensionAmount) || 0,
+
+  registeredBy: creatorName,
+
+  editHistory: [{
+    editedBy: creatorName,
+    editedAt: new Date(),
+    details: "አዲስ የተመዘገበ መረጃ"
+  }]
+});
 
     await newPensioner.save();
 
