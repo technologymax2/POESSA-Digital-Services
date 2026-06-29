@@ -13,7 +13,7 @@ const LivenessVerification = require("./models/livenessSchema");
 const IMGBB_API_KEY = "ebd592608f4dba1e8271bec8e920c408";
 
 // 🎯 ማስተካከያ 1፦ የሞዴል ፋይሎቹ ካሉበት ከዋናው ማውጫ (Root) ጋር በትክክል ማገናኘት
-const MODEL_DIR = path.join(__dirname, "../../models"); 
+const MODEL_DIR = path.join(__dirname, "../models"); 
 let modelsLoaded = false;
 
 async function loadServerModels() {
