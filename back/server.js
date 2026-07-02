@@ -142,6 +142,10 @@ app.use(
   require("./ReportBack")
 );
 
+
+
+app.use("/api/video", require("./VideoCallBack"));
+
 /* =========================
    404
 ========================= */
