@@ -6,13 +6,14 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const { Server } = require("socket.io");
 
-const VideoCallBack = require("./socket/VideoCallBack");
+// ✅ Renamed to clearly distinguish the WebSockets architecture from HTTP Routes
+const VideoSocketHandler = require("./VideoSocketHandler");
 const livenessRoute = require("./LivenessTestBack");
 
 const app = express();
 
 /* =========================
-   CORS
+   CORS CONFIGURATION
 ========================= */
 const allowedOrigins = [
   "https://poessa-digital-services.vercel.app",
@@ -113,7 +114,8 @@ const io = new Server(server, {
 /* =========================
    VIDEO CALL SOCKET INITIALIZATION
 ========================= */
-VideoCallBack(io);
+// ✅ Binds the real-time signaling logic using the explicit handler name
+VideoSocketHandler(io);
 
 /* =========================
    EXPRESS ROUTING REST API
@@ -123,7 +125,9 @@ app.use("/api/admin", require("./AdminBack")(io));
 app.use("/api/pensioners", require("./PensionerRegistrationBack"));
 app.use("/api/liveness", livenessRoute);
 app.use("/api", require("./ReportBack"));
-app.use("/api/video", require("./VideoCallBack"));
+
+// ✅ Clean architectural separation pointing to the renamed HTTP routing file
+app.use("/api/video", require("./video/VideoRoutes"));
 
 /* =========================
    404 FALLBACK
