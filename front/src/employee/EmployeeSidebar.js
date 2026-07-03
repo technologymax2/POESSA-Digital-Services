@@ -86,6 +86,17 @@ function EmployeeSidebar({ onClose }) {
           <span className="menu-icon">🔍</span>
           <span className="menu-text">መረጃ መፈለጊያና ማስታወቂያ</span>
         </button>
+          {/* አዲሱን ሜኑ በ Sidebar ውስጥ አስገባ */}
+<button
+  className={`menu-btn-item ${activeSubPage === 'call-center' ? 'active' : ''}`}
+  onClick={() => {
+    setActiveSubPage('call-center');
+    setIsMobileMenuOpen(false);
+  }}
+>
+  {/* Videocam icon ካለህ እዚህ አስገባ */}
+  🎥 {lang === 'am' ? 'የጥሪ ማስተናገጃ' : 'Call Management'}
+</button>
       </div>
 
       {/* የቋንቋ መቀየሪያ በተን */}
@@ -94,6 +105,7 @@ function EmployeeSidebar({ onClose }) {
           <span className="globe-icon">🌐</span> English
         </button>
       </div>
+
 
       {/* 🚪 ከሲስተም ውጣ (Logout) */}
       <div className="sidebar-footer">
