@@ -87,15 +87,16 @@ function EmployeeSidebar({ onClose }) {
           <span className="menu-text">መረጃ መፈለጊያና ማስታወቂያ</span>
         </button>
           {/* አዲሱን ሜኑ በ Sidebar ውስጥ አስገባ */}
-<button
-  className={`menu-btn-item ${activeSubPage === 'call-center' ? 'active' : ''}`}
+{/* በ sidebar-menu ክፍል ውስጥ */}
+<button 
+  className={`menu-item ${location.pathname === '/agent-call-center' ? 'active' : ''}`}
   onClick={() => {
-    setActiveSubPage('call-center');
-    setIsMobileMenuOpen(false);
+    navigate('/agent-call-center'); 
+    if (onClose) onClose(); // sidebar-ውን ለመዝጋት
   }}
 >
-  {/* Videocam icon ካለህ እዚህ አስገባ */}
-  🎥 {lang === 'am' ? 'የጥሪ ማስተናገጃ' : 'Call Management'}
+  <span className="menu-icon">🎥</span>
+  <span className="menu-text">የጥሪ ማስተናገጃ</span>
 </button>
       </div>
 
