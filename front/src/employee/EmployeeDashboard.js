@@ -1,265 +1,180 @@
-/* ===================================================
-   GENERAL LAYOUT BASE RESET
-=================================================== */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Footer from '../components/Footer';
+import PensionerRegistration from './PensionerRegistration';
+import IdCardGenerationAndSearch from './IdCardGenerationAndSearch';
+import Report from './Report'; // 📊 በትክክል የመጣው የሪፖርት ኮምፖነንት
+import './EmployeeDashboard.css';
+
+function EmployeeDashboard() {
+  const navigate = useNavigate();
+
+  const [currentEmployee, setCurrentEmployee] = useState({
+    username: 'የፖኤሳ ሰራተኛ',
+    role: 'ባለሙያ',
+    profilePic: null
+  });
+
+  const [lang, setLang] = useState('am');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeSubPage, setActiveSubPage] = useState('registration');
+
+  // Load employee info
+  useEffect(() => {
+    const storedUser =
+      localStorage.getItem('fullName') ||
+      localStorage.getItem('username') ||
+      'የፖኤሳ ሰራተኛ';
+
+    const storedRole =
+      localStorage.getItem('role') ||
+      'ባለሙያ';
+
+    setCurrentEmployee({
+      username: storedUser,
+      role: storedRole,
+      profilePic: localStorage.getItem('profilePic') || null
+    });
+  }, []);
+
+  const handleLogout = () => {
+    if (
+      window.confirm(
+        lang === 'am'
+          ? 'እርግጠኛ ነዎት ከሲስተሙ መውጣት ይፈልጋሉ?'
+          : 'Are you sure you want to logout?'
+      )
+    ) {
+      localStorage.clear();
+      navigate('/login');
+    }
+  };
+
+  return (
+    <div className="employee-dashboard-page">
+
+      {/* Mobile Top Bar */}
+      <div className="mobile-top-bar no-print">
+        <button
+          className="menu-toggle-btn"
+          onClick={() => setIsMobileMenuOpen(true)}
+        >
+          ☰
+        </button>
+        <span className="mobile-portal-title">POESSA INTERNAL PORTAL</span>
+      </div>
+
+      {/* Sidebar */}
+      <div className={`employee-sidebar no-print ${isMobileMenuOpen ? 'open' : ''}`}>
+        <button
+          className="close-menu-btn"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          ✕
+        </button>
+
+        <hr className="sidebar-hr" />
+
+        {/* Employee Profile */}
+        <div className="sidebar-profile-box">
+          {currentEmployee.profilePic ? (
+            <img src={currentEmployee.profilePic} alt="Profile" className="profile-img" />
+          ) : (
+            <div className="profile-placeholder">
+              {currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : '👤'}
+            </div>
+          )}
+          <div className="profile-info">
+            <h4>{currentEmployee.username}</h4>
+            <span className="role-tag">{currentEmployee.role}</span>
+          </div>
+        </div>
+
+        <hr className="sidebar-hr" />
+
+        {/* Menu Items */}
+        <div className="sidebar-menu-items">
+          <button
+            className={`menu-btn-item ${activeSubPage === 'registration' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveSubPage('registration');
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            📝 {lang === 'am' ? 'ዳሽቦርድ / ምዝገባ' : 'Dashboard / Register'}
+          </button>
+
+          <button
+            className={`menu-btn-item ${activeSubPage === 'report' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveSubPage('report');
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            📊 {lang === 'am' ? 'የማረጋገጫ ሪፖርት' : 'Verification Report'}
+          </button>
+
+          <button
+            className={`menu-btn-item ${activeSubPage === 'search' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveSubPage('search');
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            🔍 {lang === 'am' ? 'መረጃ መፈለጊያና መታወቂያ' : 'Search & ID Card'}
+          </button>
+        </div>
+
+        <button
+          className="lang-switcher-btn"
+          onClick={() => setLang(lang === 'am' ? 'en' : 'am')}
+        >
+          🌐 {lang === 'am' ? 'English' : 'አማርኛ'}
+        </button>
+
+        <button className="sidebar-logout-button" onClick={handleLogout}>
+          🚪 {lang === 'am' ? 'ከሲስተም ውጣ' : 'Logout'}
+        </button>
+      </div>
+
+      {/* Main Content */}
+      <div className="main-content">
+        <div className="dashboard-header">
+          <div>
+            <h2>እንኳን ደህና መጡ</h2>
+            <p>{currentEmployee.username}</p>
+          </div>
+          {currentEmployee.profilePic ? (
+            <img src={currentEmployee.profilePic} alt="Profile" className="dashboard-profile-image" />
+          ) : (
+            <div className="dashboard-profile-placeholder">
+              {currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : 'U'}
+            </div>
+          )}
+        </div>
+
+        <main className="dashboard-body">
+          <div className="dynamic-content-area">
+            {activeSubPage === 'registration' && (
+              <PensionerRegistration currentEmployee={currentEmployee.username} />
+            )}
+            {activeSubPage === 'report' && (
+              <Report /> 
+            )}
+            {activeSubPage === 'search' && (
+              <IdCardGenerationAndSearch />
+            )}
+          </div>
+        </main>
+
+        <Footer />
+      </div>
+
+      {isMobileMenuOpen && (
+        <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
+    </div>
+  );
 }
 
-body {
-  background: #f4f6f9;
-  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
-  overflow-x: hidden;
-}
-
-.employee-dashboard-page {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  background: #f4f6f9;
-}
-
-/* ===================================================
-   SIDE NAVIGATION BAR
-=================================================== */
-.employee-sidebar {
-  width: 280px;
-  min-width: 280px;
-  background: #002b55;
-  color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  z-index: 1000;
-  position: relative;
-}
-
-.sidebar-hr {
-  border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  margin: 18px 0;
-}
-
-.sidebar-profile-box {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.profile-img {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #63b3ed;
-}
-
-.profile-placeholder {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: #3182ce;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 18px;
-  font-weight: bold;
-  color: #ffffff;
-}
-
-.profile-info h4 {
-  font-size: 14px;
-  margin-bottom: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 170px;
-}
-
-.role-tag {
-  font-size: 11px;
-  color: #cbd5e0;
-  background-color: rgba(49, 130, 206, 0.4);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.sidebar-menu-items {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.menu-btn-item {
-  width: 100%;
-  border: none;
-  background: none;
-  color: #cbd5e0;
-  padding: 13px 15px;
-  border-radius: 10px;
-  cursor: pointer;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: all 0.2s ease;
-}
-
-.menu-btn-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-}
-
-.menu-btn-item.active {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  border-left: 4px solid #ecc94b;
-  font-weight: 700;
-}
-
-.lang-switcher-btn, .sidebar-logout-button {
-  border: none;
-  padding: 12px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.2s;
-}
-
-.lang-switcher-btn { background: rgba(255, 255, 255, 0.08); color: #ffffff; margin-bottom: 15px; }
-.sidebar-logout-button { background: #e53e3e; color: #ffffff; width: 100%; }
-
-.close-menu-btn {
-  display: none !important;
-}
-
-/* ===================================================
-   MAIN CONTENT AREA
-=================================================== */
-.main-content {
-  flex: 1;
-  height: 100vh;
-  overflow-y: auto;
-  padding: 24px;
-}
-
-.dashboard-header {
-  background: #ffffff;
-  border-radius: 18px;
-  padding: 20px 25px;
-  margin-bottom: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-}
-
-.dashboard-profile-image {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #3182ce;
-}
-
-.dashboard-profile-placeholder {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #0d3866, #3182ce);
-  color: #ffffff;
-  font-size: 22px;
-  font-weight: bold;
-}
-
-.mobile-top-bar { display: none; }
-
-/* ===================================================
-   MEDIA QUERIES (RESPONSIVE)
-=================================================== */
-/* ===================================================
-   MEDIA QUERIES (RESPONSIVE)
-=================================================== */
-@media (max-width: 768px) {
-  .employee-dashboard-page { flex-direction: column; }
-  
-  /* 1. Make the bar span the full width of the screen */
-  .mobile-top-bar {
-    display: flex;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background: #002855;
-    color: #ffffff;
-    padding: 0 20px;
-    z-index: 999;
-    align-items: center;
-    justify-content: flex-start; /* Aligns button to the left */
-    gap: 15px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
-
-  /* 2. Style the button inside the bar */
-  .menu-toggle-btn {
-    background: transparent;
-    color: #ffffff;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    padding: 5px;
-  }
-
-  .employee-sidebar {
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    width: 280px;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    z-index: 2000;
-  }
-
-  .employee-sidebar.open { transform: translateX(0); }
-
-  .close-menu-btn {
-    display: flex !important;
-    position: absolute;
-    top: 15px; right: 15px;
-    width: 32px; height: 32px;
-    background: #ffffff;
-    border: none;
-    border-radius: 50%;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-
-  .main-content { margin-top: 60px; padding: 16px; }
-
-  .dashboard-header {
-    flex-direction: column;
-    text-align: center;
-    gap: 15px;
-  }
-
-  .dashboard-profile-image, .dashboard-profile-placeholder {
-    order: -1;
-    width: 50px !important;
-    height: 50px !important;
-  }
-
-  .sidebar-overlay {
-    position: fixed;
-    top: 0; bottom: 0; left: 0; right: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1999;
-  }
-}
+export default EmployeeDashboard;
