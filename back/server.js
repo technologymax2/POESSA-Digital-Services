@@ -6,7 +6,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const { Server } = require("socket.io");
 
-const VideoCallBack = require("./socket/VideoCallBack");
+const VideoCallBack = require("./VideoCallBack");
 const livenessRoute = require("./LivenessTestBack");
 
 const app = express();
@@ -47,7 +47,7 @@ app.use(
 );
 
 /* =========================
-   BODY LIMIT
+   BODY
 ========================= */
 
 app.use(express.json({ limit: "50mb" }));
@@ -62,12 +62,17 @@ app.use((req, res, next) => {
     "Permissions-Policy",
     "camera=(self), microphone=(self)"
   );
-  res.setHeader("X-Content-Type-Options", "nosniff");
+
+  res.setHeader(
+    "X-Content-Type-Options",
+    "nosniff"
+  );
+
   next();
 });
 
 /* =========================
-   STATIC FILES
+   STATIC
 ========================= */
 
 app.use("/uploads", express.static("uploads"));
@@ -86,7 +91,9 @@ app.get("/", (req, res) => {
 
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
+  .then(() => {
+    console.log("✅ MongoDB Connected");
+  })
   .catch((err) => {
     console.error("MongoDB Error:", err.message);
     process.exit(1);
@@ -104,14 +111,20 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: true,
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST"],
   },
+
+  transports: ["websocket", "polling"],
+
+  pingTimeout: 60000,
+
+  pingInterval: 25000,
 });
 
 /* =========================
-   VIDEO CALL SOCKET EVENTS
+   VIDEO CALL SOCKET
 ========================= */
 
 VideoCallBack(io);
@@ -142,10 +155,10 @@ app.use(
   require("./ReportBack")
 );
 
-
-
-app.use("/api/video", require("./VideoCallBack"));
-
+app.use(
+  "/api/video",
+  require("./VideoCallBack")
+);
 /* =========================
    404
 ========================= */
@@ -162,11 +175,32 @@ app.use((req, res) => {
 ========================= */
 
 app.use((err, req, res, next) => {
-  console.error(err);
+  console.error("SERVER ERROR:", err);
 
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal Server Error",
+  });
+});
+
+/* =========================
+   SOCKET STATUS
+========================= */
+
+io.on("connection", (socket) => {
+  console.log(`✅ Socket Connected : ${socket.id}`);
+
+  socket.on("disconnect", (reason) => {
+    console.log(
+      `❌ Socket Disconnected : ${socket.id} (${reason})`
+    );
+  });
+
+  socket.on("error", (err) => {
+    console.error(
+      `Socket Error (${socket.id})`,
+      err
+    );
   });
 });
 
@@ -177,8 +211,47 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 10000;
 
 server.listen(PORT, () => {
-  console.log("=================================");
-  console.log("🚀 POESSA SERVER STARTED");
-  console.log("PORT :", PORT);
-  console.log("=================================");
+  console.log("========================================");
+  console.log("🚀 POESSA DIGITAL SERVICE SERVER");
+  console.log(`PORT : ${PORT}`);
+  console.log(`TIME : ${new Date().toLocaleString()}`);
+  console.log("========================================");
+});
+
+/* =========================
+   SHUTDOWN
+========================= */
+
+process.on("SIGINT", async () => {
+  console.log("Stopping Server...");
+
+  try {
+    await mongoose.connection.close();
+    console.log("MongoDB Closed");
+  } catch (err) {
+    console.error(err);
+  }
+
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  console.log("Stopping Server...");
+
+  try {
+    await mongoose.connection.close();
+    console.log("MongoDB Closed");
+  } catch (err) {
+    console.error(err);
+  }
+
+  process.exit(0);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Promise Rejection:", err);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
 });
