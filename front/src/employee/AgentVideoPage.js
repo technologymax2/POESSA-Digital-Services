@@ -1,19 +1,10 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-} from "react";
-
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Peer from "simple-peer";
 import io from "socket.io-client";
 import axios from "axios";
-
 import "./AgentVideoPage.css";
 
-const API =
-  process.env.REACT_APP_BACKEND_URL ||
-  "https://poessa-digital-services-1.onrender.com";
+const API = process.env.REACT_APP_BACKEND_URL || "https://poessa-digital-services-1.onrender.com";
 
 const socket = io(API, {
   transports: ["websocket", "polling"],
@@ -28,57 +19,47 @@ const AgentVideoPage = () => {
   const [incomingCalls, setIncomingCalls] = useState([]);
   const [activeCall, setActiveCall] = useState(null);
   const [callConnected, setCallConnected] = useState(false);
-
   const [employeeId, setEmployeeId] = useState("");
-
   const [search, setSearch] = useState("");
   const [pensioner, setPensioner] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  /* ================= CAMERA ================= */
   const initCamera = useCallback(async () => {
     try {
       const media = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
       });
-
       setStream(media);
-
-      if (myVideo.current) {
-        myVideo.current.srcObject = media;
-      }
+      if (myVideo.current) myVideo.current.srcObject = media;
     } catch (err) {
       console.error(err);
       alert("Camera permission denied");
     }
   }, []);
 
-  /* ================= LOGIN ================= */
   useEffect(() => {
     initCamera();
 
-    const stored = localStorage.getItem("user");
+    // የተስተካከለው ክፍል፡ "user" የሚለውን ቀይረን "token" እና "userId"ን እንፈትሻለን
+    const token = localStorage.getItem("token");
+    const storedUserId = localStorage.getItem("userId") || "employee_id"; 
 
-    if (!stored) {
+    if (!token) {
       alert("Login required");
       window.location.href = "/login";
       return;
     }
 
-    const user = JSON.parse(stored);
-    setEmployeeId(user.id);
-
+    setEmployeeId(storedUserId);
     socket.emit("register-user", {
-      userId: user.id,
+      userId: storedUserId,
       role: "employee",
     });
   }, [initCamera]);
 
-  /* ================= SEARCH PENSIONER ================= */
   const searchPensioner = async () => {
     if (!search.trim()) return;
-
     try {
       setLoading(true);
       const res = await axios.get(`${API}/api/video/pensioner/${search}`);
@@ -92,17 +73,12 @@ const AgentVideoPage = () => {
     }
   };
 
-  /* ================= SOCKET EVENTS ================= */
   useEffect(() => {
     socket.on("incoming-call", handleIncomingCall);
     socket.on("call-ended", handleCallEnded);
-
     socket.on("remove-call", ({ pensionerId }) => {
-      setIncomingCalls((prev) =>
-        prev.filter((c) => c.pensionerId !== pensionerId)
-      );
+      setIncomingCalls((prev) => prev.filter((c) => c.pensionerId !== pensionerId));
     });
-
     return () => {
       socket.off("incoming-call");
       socket.off("call-ended");
@@ -123,87 +99,44 @@ const AgentVideoPage = () => {
       peerRef.current.destroy();
       peerRef.current = null;
     }
-
-    if (remoteVideo.current) {
-      remoteVideo.current.srcObject = null;
-    }
-
+    if (remoteVideo.current) remoteVideo.current.srcObject = null;
     setCallConnected(false);
     setActiveCall(null);
   };
 
-  /* ================= ANSWER CALL ================= */
   const answerCall = (callData) => {
     if (!stream) return;
-
     setActiveCall(callData);
     setCallConnected(true);
-
-    const peer = new Peer({
-      initiator: false,
-      trickle: false,
-      stream,
-    });
-
+    const peer = new Peer({ initiator: false, trickle: false, stream });
     peer.on("signal", (signal) => {
-      socket.emit("answer-call", {
-        signal,
-        pensionerId: callData.pensionerId,
-        agentId: employeeId,
-      });
+      socket.emit("answer-call", { signal, pensionerId: callData.pensionerId, agentId: employeeId });
     });
-
     peer.on("stream", (remoteStream) => {
-      if (remoteVideo.current) {
-        remoteVideo.current.srcObject = remoteStream;
-      }
+      if (remoteVideo.current) remoteVideo.current.srcObject = remoteStream;
     });
-
     peer.signal(callData.signalData);
     peerRef.current = peer;
-
-    setIncomingCalls((prev) =>
-      prev.filter((c) => c.pensionerId !== callData.pensionerId)
-    );
+    setIncomingCalls((prev) => prev.filter((c) => c.pensionerId !== callData.pensionerId));
   };
 
-  /* ================= REJECT ================= */
   const rejectCall = (callData) => {
-    socket.emit("reject-call", {
-      pensionerId: callData.pensionerId,
-    });
-
-    setIncomingCalls((prev) =>
-      prev.filter((c) => c.pensionerId !== callData.pensionerId)
-    );
+    socket.emit("reject-call", { pensionerId: callData.pensionerId });
+    setIncomingCalls((prev) => prev.filter((c) => c.pensionerId !== callData.pensionerId));
   };
 
-  /* ================= END CALL ================= */
   const endCall = () => {
-    if (peerRef.current) {
-      peerRef.current.destroy();
-      peerRef.current = null;
-    }
-
-    socket.emit("end-call", {
-      pensionerId: activeCall?.pensionerId,
-    });
-
-    if (remoteVideo.current) {
-      remoteVideo.current.srcObject = null;
-    }
-
+    if (peerRef.current) { peerRef.current.destroy(); peerRef.current = null; }
+    socket.emit("end-call", { pensionerId: activeCall?.pensionerId });
+    if (remoteVideo.current) remoteVideo.current.srcObject = null;
     setCallConnected(false);
     setActiveCall(null);
   };
 
-  /* ================= UI ================= */
   return (
     <div className="agent-page">
-      {/* LEFT */}
       <div className="queue-panel">
         <h2>Incoming Calls</h2>
-
         {incomingCalls.map((call) => (
           <div key={call.pensionerId} className="call-card">
             <p>{call.pensionerName || call.pensionerId}</p>
@@ -211,18 +144,11 @@ const AgentVideoPage = () => {
             <button onClick={() => rejectCall(call)}>Reject</button>
           </div>
         ))}
-
         <hr />
-
         <h3>Search Pensioner</h3>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} />
         <button onClick={searchPensioner}>Search</button>
-
         {loading && <p>Loading...</p>}
-
         {pensioner && (
           <div className="pensioner-card">
             <p>{pensioner.nameEng}</p>
@@ -230,24 +156,10 @@ const AgentVideoPage = () => {
           </div>
         )}
       </div>
-
-      {/* RIGHT */}
       <div className="video-section">
-        <video
-          ref={remoteVideo}
-          autoPlay
-          playsInline
-        />
-        <video
-          ref={myVideo}
-          autoPlay
-          muted
-          playsInline
-        />
-
-        {callConnected && (
-          <button onClick={endCall}>End Call</button>
-        )}
+        <video ref={remoteVideo} autoPlay playsInline />
+        <video ref={myVideo} autoPlay muted playsInline />
+        {callConnected && <button onClick={endCall}>End Call</button>}
       </div>
     </div>
   );
