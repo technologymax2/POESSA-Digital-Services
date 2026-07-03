@@ -1,28 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import './EmployeeSidebar.css';
 
 const API_URL = "https://poessa-digital-services-1.onrender.com";
 
-function EmployeeSidebar({ onClose, activeSubPage, setActiveSubPage, setIsMobileMenuOpen }) {
+function EmployeeSidebar({ onClose }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [employee, setEmployee] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`${API_URL}/api/auth/verify`, { 
-          headers: { Authorization: `Bearer ${token}` } 
+        const res = await axios.get(`${API_URL}/api/auth/verify`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
+        
         if (res.data.success) {
-          setEmployee(res.data.user);
+          setEmployee(res.data.user); 
         }
       } catch (err) {
         console.error("ዳታ መጫን አልተቻለም", err);
       }
     };
+
     fetchUserData();
   }, []);
 
@@ -31,16 +34,12 @@ function EmployeeSidebar({ onClose, activeSubPage, setActiveSubPage, setIsMobile
     navigate('/login');
   };
 
-  // ሜኑ ሲመረጥ የሚጠራ ፋንክሽን
-  const handleMenuClick = (page) => {
-    setActiveSubPage(page);
-    if (setIsMobileMenuOpen) setIsMobileMenuOpen(false);
-  };
-
   return (
     <div className="employee-sidebar">
+      {/* የሜኑ መዝጊያ ኤክስ (X) ምልክት */}
       <button className="close-sidebar-btn" onClick={onClose}>✕</button>
 
+      {/* ፕሮፋይል ክፍል */}
       <div className="sidebar-profile">
         <div className="profile-img-container">
           {employee?.profilePicture ? (
@@ -49,6 +48,7 @@ function EmployeeSidebar({ onClose, activeSubPage, setActiveSubPage, setIsMobile
             <div className="profile-icon">👤</div>
           )}
         </div>
+        
         <div className="profile-info">
           <h4 className="employee-title">{employee?.fullName || "Mamaru Anmawu"}</h4>
           <span className="role-badge">employee</span>
@@ -57,27 +57,49 @@ function EmployeeSidebar({ onClose, activeSubPage, setActiveSubPage, setIsMobile
 
       <hr className="sidebar-divider" />
       
+      {/* 📋 የሜኑ ዝርዝር ክፍል */}
       <div className="sidebar-menu">
-        <button className={`menu-item ${activeSubPage === 'registration' ? 'active' : ''}`} onClick={() => handleMenuClick('registration')}>
-          <span className="menu-icon">📝</span> <span className="menu-text">ዳሽቦርድ / ምዝገባ</span>
+        
+        {/* 📝 ዳሽቦርድ / ምዝገባ */}
+        <button 
+          className={`menu-item ${location.pathname === '/dashboard' ? 'active' : ''}`}
+          onClick={() => navigate('/dashboard')}
+        >
+          <span className="menu-icon">📝</span>
+          <span className="menu-text">ዳሽቦርድ / ምዝገባ</span>
         </button>
 
-        <button className={`menu-item ${activeSubPage === 'report' ? 'active' : ''}`} onClick={() => handleMenuClick('report')}>
-          <span className="menu-icon">📊</span> <span className="menu-text">የማረጋገጫ ሪፖርት</span>
+        {/* 📊 የማረጋገጫ ሪፖርት */}
+        <button 
+          className={`menu-item ${location.pathname === '/report' ? 'active' : ''}`}
+          onClick={() => navigate('/report')}
+        >
+          <span className="menu-icon">📊</span>
+          <span className="menu-text">የማረጋገጫ ሪፖርት</span>
         </button>
 
-        <button className={`menu-item ${activeSubPage === 'search' ? 'active' : ''}`} onClick={() => handleMenuClick('search')}>
-          <span className="menu-icon">🔍</span> <span className="menu-text">መረጃ መፈለጊያ</span>
-        </button>
-
-        <button className={`menu-item ${activeSubPage === 'call-center' ? 'active' : ''}`} onClick={() => handleMenuClick('call-center')}>
-          <span className="menu-icon">🎥</span> <span className="menu-text">የጥሪ ማስተናገጃ</span>
+        {/* 🔍 መረጃ መፈለጊያና ማስታወቂያ */}
+        <button 
+          className={`menu-item ${location.pathname === '/search' ? 'active' : ''}`}
+          onClick={() => navigate('/search')}
+        >
+          <span className="menu-icon">🔍</span>
+          <span className="menu-text">መረጃ መፈለጊያና ማስታወቂያ</span>
         </button>
       </div>
 
+      {/* የቋንቋ መቀየሪያ በተን */}
+      <div className="language-selector-container">
+        <button className="language-btn">
+          <span className="globe-icon">🌐</span> English
+        </button>
+      </div>
+
+      {/* 🚪 ከሲስተም ውጣ (Logout) */}
       <div className="sidebar-footer">
         <button className="logout-btn" onClick={handleLogout}>
-          <span className="menu-icon">🚪</span> <span className="menu-text">ከሲስተም ውጣ</span>
+          <span className="menu-icon">🚪</span>
+          <span className="menu-text">ከሲስተም ውጣ</span>
         </button>
       </div>
     </div>
