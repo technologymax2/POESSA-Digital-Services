@@ -23,8 +23,9 @@ const API =
   process.env.REACT_APP_BACKEND_URL ||
   "https://poessa-digital-services-1.onrender.com";
 
-const AgentVideoPage = () => {
+const API_URL = API;
 
+const AgentVideoPage = () => {
   const myVideo = useRef(null);
   const remoteVideo = useRef(null);
   const peerRef = useRef(null);
@@ -33,8 +34,7 @@ const AgentVideoPage = () => {
 
   const [incomingCalls, setIncomingCalls] = useState([]);
 
-  const [activeCall, setActiveCall] =
-    useState(null);
+  const [activeCall, setActiveCall] = useState(null);
 
   const [callConnected, setCallConnected] =
     useState(false);
@@ -42,16 +42,18 @@ const AgentVideoPage = () => {
   const [employeeId, setEmployeeId] =
     useState("");
 
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
   const [loadingPensioner,
     setLoadingPensioner] =
     useState(false);
 
-  const [pensioner,
-    setPensioner] =
+  const [pensioner, setPensioner] =
     useState(null);
+
+  /* ==========================
+      CAMERA
+  ========================== */
 
   const initializeMedia =
     useCallback(async () => {
@@ -75,11 +77,15 @@ const AgentVideoPage = () => {
 
         console.error(err);
 
-        alert("Camera access denied.");
+        alert("Camera permission denied.");
 
       }
 
     }, []);
+
+  /* ==========================
+      LOGIN
+  ========================== */
 
   useEffect(() => {
 
@@ -90,7 +96,7 @@ const AgentVideoPage = () => {
 
     if (!stored) {
 
-      alert("Login required");
+      alert("Please login first.");
 
       window.location.href = "/login";
 
@@ -98,85 +104,95 @@ const AgentVideoPage = () => {
 
     }
 
-    const user =
-      JSON.parse(stored);
+    const user = JSON.parse(stored);
 
     setEmployeeId(user.id);
 
     socket.emit("register-user", {
-
       userId: user.id,
-
       role: "employee",
-
     });
 
   }, [initializeMedia]);
 
-  const searchPensioner =
-    async () => {
+  /* ==========================
+      SEARCH PENSIONER
+  ========================== */
 
-      if (!search.trim()) {
+  const searchPensioner = async () => {
 
-        alert(
-          "Enter Fayda Number or Pensioner ID"
+    if (!search.trim()) {
+
+      alert(
+        "Enter Pensioner ID or Fayda Number."
+      );
+
+      return;
+
+    }
+
+    try {
+
+      setLoadingPensioner(true);
+
+      const res =
+        await axios.get(
+          `${API}/api/video/pensioner/${encodeURIComponent(
+            search
+          )}`
         );
 
-        return;
+      setPensioner(res.data.data);
 
-      }
+    } catch (err) {
 
-      try {
+      console.error(err);
 
-        setLoadingPensioner(true);
+      setPensioner(null);
 
-        const res =
-          await axios.get(
-            `${API}/api/video/pensioner/${encodeURIComponent(
-              search
-            )}`
-          );
+      alert(
+        err.response?.data?.message ||
+          "Pensioner not found."
+      );
 
-        setPensioner(res.data.data);
+    } finally {
 
-      } catch (err) {
+      setLoadingPensioner(false);
 
-        console.error(err);
+    }
 
-        setPensioner(null);
+  };
 
-        alert(
-          err.response?.data?.message ||
-            "Pensioner not found."
-        );
-
-      } finally {
-
-        setLoadingPensioner(false);
-
-      }
-
-    };
-
-    /* ===========================
+  /* ==========================
       SOCKET EVENTS
-  =========================== */
+  ========================== */
 
   useEffect(() => {
 
-    socket.on("incoming-call", handleIncomingCall);
+    socket.on(
+      "incoming-call",
+      handleIncomingCall
+    );
 
-    socket.on("call-ended", handleRemoteEnd);
+    socket.on(
+      "call-ended",
+      handleRemoteEnd
+    );
 
-    socket.on("remove-call", ({ pensionerId }) => {
+    socket.on(
+      "remove-call",
+      ({ pensionerId }) => {
 
-      setIncomingCalls((prev) =>
-        prev.filter(
-          (c) => c.pensionerId !== pensionerId
-        )
-      );
+        setIncomingCalls((prev) =>
+          prev.filter(
+            (c) =>
+              c.pensionerId !==
+              pensionerId
+          )
+        );
 
-    });
+      }
+    );
 
     return () => {
 
@@ -190,18 +206,20 @@ const AgentVideoPage = () => {
 
   }, []);
 
-  const handleIncomingCall = (callData) => {
+  /* ==========================
+      INCOMING CALL
+  ========================== */
+
+  const handleIncomingCall = (
+    callData
+  ) => {
 
     setIncomingCalls((prev) => {
 
       const exists = prev.find(
-
         (c) =>
-
           c.pensionerId ===
-
           callData.pensionerId
-
       );
 
       if (exists) return prev;
@@ -212,487 +230,40 @@ const AgentVideoPage = () => {
 
   };
 
-  const handleRemoteEnd = () => {
+        {/* ---------------- Search ---------------- */}
 
-    if (peerRef.current) {
+        {callConnected && (
 
-      peerRef.current.destroy();
+          <div className="verification-panel">
 
-      peerRef.current = null;
+            <h3>Pensioner Verification</h3>
 
-    }
+            <div className="search-row">
 
-    if (remoteVideo.current) {
-
-      remoteVideo.current.srcObject = null;
-
-    }
-
-    setCallConnected(false);
-
-    setActiveCall(null);
-
-  };
-
-  /* ===========================
-      ANSWER CALL
-  =========================== */
-
-  const answerCall = (callData) => {
-
-    if (!stream) {
-
-      alert("Camera not ready");
-
-      return;
-
-    }
-
-    if (callConnected) {
-
-      alert("Already connected.");
-
-      return;
-
-    }
-
-    setActiveCall(callData);
-
-    setCallConnected(true);
-
-    const peer = new Peer({
-
-      initiator: false,
-
-      trickle: false,
-
-      stream,
-
-    });
-
-    peer.on("signal", (signal) => {
-
-      socket.emit("answer-call", {
-
-        signal,
-
-        pensionerId:
-
-          callData.pensionerId,
-
-        agentId: employeeId,
-
-      });
-
-    });
-
-    peer.on("stream", (remoteStream) => {
-
-      if (remoteVideo.current) {
-
-        remoteVideo.current.srcObject =
-
-          remoteStream;
-
-      }
-
-    });
-
-    peer.on("error", (err) => {
-
-      console.error(err);
-
-    });
-
-    peer.signal(callData.signalData);
-
-    peerRef.current = peer;
-
-    setIncomingCalls((prev) =>
-
-      prev.filter(
-
-        (c) =>
-
-          c.pensionerId !==
-
-          callData.pensionerId
-
-      )
-
-    );
-
-  };
-
-  /* ===========================
-      REJECT CALL
-  =========================== */
-
-  const rejectCall = (callData) => {
-
-    socket.emit("reject-call", {
-
-      pensionerId:
-
-        callData.pensionerId,
-
-    });
-
-    setIncomingCalls((prev) =>
-
-      prev.filter(
-
-        (c) =>
-
-          c.pensionerId !==
-
-          callData.pensionerId
-
-      )
-
-    );
-
-  };
-
-  /* ===========================
-      END CALL
-  =========================== */
-
-  const endCall = () => {
-
-    if (peerRef.current) {
-
-      peerRef.current.destroy();
-
-      peerRef.current = null;
-
-    }
-
-    socket.emit("end-call", {
-
-      pensionerId:
-
-        activeCall?.pensionerId,
-
-    });
-
-    if (remoteVideo.current) {
-
-      remoteVideo.current.srcObject =
-
-        null;
-
-    }
-
-    setCallConnected(false);
-
-    setActiveCall(null);
-
-  };  return (
-    <div className="agent-page">
-
-      {/* ================= LEFT PANEL ================= */}
-
-      <div className="queue-panel">
-
-        <h2>Incoming Calls</h2>
-
-        <div className="call-count">
-          {incomingCalls.length} Call(s)
-        </div>
-
-        {incomingCalls.length === 0 && (
-          <div className="no-calls">
-            No Incoming Calls
-          </div>
-        )}
-
-        {incomingCalls.map((call) => (
-
-          <div
-            key={call.pensionerId}
-            className="call-card"
-          >
-
-            <h4>
-              {call.pensionerName ||
-                call.pensionerId}
-            </h4>
-
-            <div className="call-actions">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Enter Fayda Number or Pensioner ID"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
 
               <button
-                className="answer-btn"
-                disabled={callConnected}
-                onClick={() =>
-                  answerCall(call)
-                }
+                className="search-btn"
+                onClick={searchPensioner}
               >
-                Answer
-              </button>
-
-              <button
-                className="reject-btn"
-                disabled={callConnected}
-                onClick={() =>
-                  rejectCall(call)
-                }
-              >
-                Reject
+                Search
               </button>
 
             </div>
 
-          </div>
-
-        ))}
-
-        <hr />
-
-        <h3>
-          Search Pensioner
-        </h3>
-
-        <input
-          type="text"
-          placeholder="Fayda Number / Pensioner ID"
-          value={search}
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
-        />
-
-        <button
-          className="search-btn"
-          onClick={searchPensioner}
-        >
-          Search
-        </button>
-
-        {loadingPensioner && (
-          <p>Loading...</p>
-        )}
-
-        {pensioner && (
-
-          <div className="pensioner-card">
-
-            <img
-              src={
-                API +
-                pensioner.image
-              }
-              alt=""
-              className="registered-photo"
-            />
-
-            <h3>
-              {pensioner.nameEng}
-            </h3>
-
-            <p>
-              <strong>ID:</strong>
-              {" "}
-              {pensioner.pensionerId}
-            </p>
-
-            <p>
-              <strong>Fayda:</strong>
-              {" "}
-              {pensioner.faydaNumber}
-            </p>
-
-            <p>
-              <strong>TIN:</strong>
-              {" "}
-              {pensioner.tin}
-            </p>
-
-            <p>
-              <strong>Gender:</strong>
-              {" "}
-              {pensioner.gender}
-            </p>
-
-            <p>
-              <strong>Phone:</strong>
-              {" "}
-              {pensioner.phone}
-            </p>
-
-            <p>
-              <strong>Branch:</strong>
-              {" "}
-              {pensioner.poessaBranch}
-            </p>
-
-            <p>
-              <strong>Bank:</strong>
-              {" "}
-              {pensioner.bankNameEng}
-            </p>
-
-            <p>
-              <strong>Amount:</strong>
-              {" "}
-              {pensioner.pensionAmount}
-            </p>
+            {loadingPensioner && (
+              <p>Loading...</p>
+            )}
 
           </div>
 
         )}
-
-      </div>
-
-      {/* ================= RIGHT PANEL ================= */}
-
-      <div className="video-section">
-
-        <h2>
-          Employee Call Center
-        </h2>
-
-        {activeCall && (
-
-          <div className="active-user">
-
-            Current Call :
-
-            {" "}
-
-            {activeCall.pensionerId}
-
-          </div>
-
-        )}
-
-        <div className="video-wrapper">
-
-          {/* BIG VIDEO */}
-
-          <video
-            ref={remoteVideo}
-            autoPlay
-            playsInline
-            className="remote-video"
-          />
-
-          {/* SMALL VIDEO */}
-
-          <video
-            ref={myVideo}
-            autoPlay
-            muted
-            playsInline
-            className="local-video"
-          />
-
-        </div>  return (
-    <div className="agent-page">
-
-      {/* ================= LEFT PANEL ================= */}
-
-      <div className="queue-panel">
-
-        <h2>Incoming Calls</h2>
-
-        <div className="call-count">
-          {incomingCalls.length} Call(s)
-        </div>
-
-        {incomingCalls.length === 0 && (
-          <div className="no-calls">
-            No Incoming Calls
-          </div>
-        )}
-
-        {incomingCalls.map((call) => (
-
-          <div
-            key={call.pensionerId}
-            className="call-card"
-          >
-
-            <h4>
-              {call.pensionerName || call.pensionerId}
-            </h4>
-
-            <div className="call-actions">
-
-              <button
-                className="answer-btn"
-                disabled={callConnected}
-                onClick={() => answerCall(call)}
-              >
-                Answer
-              </button>
-
-              <button
-                className="reject-btn"
-                disabled={callConnected}
-                onClick={() => rejectCall(call)}
-              >
-                Reject
-              </button>
-
-            </div>
-
-          </div>
-
-        ))}
-
-      </div>
-
-      {/* ================= RIGHT PANEL ================= */}
-
-      <div className="video-section">
-
-        <h2>Employee Video Verification</h2>
-
-        {activeCall && (
-
-          <div className="active-user">
-
-            Current Call :
-            {" "}
-            {activeCall.pensionerId}
-
-          </div>
-
-        )}
-
-        {/* ---------------- Videos ---------------- */}
-
-        <div className="video-layout">
-
-          {/* Pensioner video - Large */}
-
-          <div className="remote-video-wrapper">
-
-            <video
-              ref={remoteVideo}
-              autoPlay
-              playsInline
-              className="remote-video"
-            />
-
-          </div>
-
-          {/* Employee video - Small */}
-
-          <div className="local-video-wrapper">
-
-            <video
-              ref={myVideo}
-              autoPlay
-              muted
-              playsInline
-              className="local-video"
-            />
-
-          </div>
-
-        </div>
 
         {/* ---------------- Pensioner Information ---------------- */}
 
@@ -703,7 +274,7 @@ const AgentVideoPage = () => {
             <div className="photo-section">
 
               <img
-                src={`${API_URL}${pensioner.image}`}
+                src={`${API}${pensioner.image}`}
                 alt={pensioner.nameEng}
                 className="pensioner-photo"
               />
@@ -715,86 +286,51 @@ const AgentVideoPage = () => {
               <h3>{pensioner.nameEng}</h3>
 
               <p>
-                <strong>Amharic Name:</strong>{" "}
-                {pensioner.nameAmh}
-              </p>
-
-              <p>
-                <strong>Pensioner ID:</strong>{" "}
+                <strong>Pensioner ID :</strong>{" "}
                 {pensioner.pensionerId}
               </p>
 
               <p>
-                <strong>Fayda:</strong>{" "}
+                <strong>Fayda Number :</strong>{" "}
                 {pensioner.faydaNumber}
               </p>
 
               <p>
-                <strong>Gender:</strong>{" "}
+                <strong>Gender :</strong>{" "}
                 {pensioner.gender}
               </p>
 
               <p>
-                <strong>Age:</strong>{" "}
-                {pensioner.age}
-              </p>
-
-              <p>
-                <strong>Phone:</strong>{" "}
+                <strong>Phone :</strong>{" "}
                 {pensioner.phone}
               </p>
 
               <p>
-                <strong>POESSA Branch:</strong>{" "}
+                <strong>POESSA Branch :</strong>{" "}
                 {pensioner.poessaBranch}
               </p>
 
               <p>
-                <strong>Bank:</strong>{" "}
+                <strong>Bank :</strong>{" "}
                 {pensioner.bankNameEng}
               </p>
 
               <p>
-                <strong>Bank Branch:</strong>{" "}
+                <strong>Bank Branch :</strong>{" "}
                 {pensioner.bankBranch}
               </p>
 
               <p>
-                <strong>Pension Amount:</strong>{" "}
+                <strong>Pension Amount :</strong>{" "}
                 {pensioner.pensionAmount}
               </p>
 
               <p>
-                <strong>Address:</strong>{" "}
+                <strong>Address :</strong>{" "}
                 {pensioner.addressEng}
               </p>
 
             </div>
-
-          </div>
-
-        )}
-
-        {/* ---------------- Search ---------------- */}
-
-        {callConnected && (
-
-          <div className="verification-panel">
-
-            <input
-              type="text"
-              value={search}
-              placeholder="Enter Fayda Number"
-              onChange={(e) => setSearch(e.target.value)}
-              className="search-input"
-            />
-
-            <button
-              onClick={searchPensionerData}
-              className="search-btn"
-            >
-              Search
-            </button>
 
           </div>
 
@@ -817,6 +353,8 @@ const AgentVideoPage = () => {
 
     </div>
   );
+
 };
 
 export default AgentVideoPage;
+  
