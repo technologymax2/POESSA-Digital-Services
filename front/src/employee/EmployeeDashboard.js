@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import PensionerRegistration from './PensionerRegistration';
 import IdCardGenerationAndSearch from './IdCardGenerationAndSearch';
-import Report from './Report'; // 📊 በትክክል የመጣው የሪፖርት ኮምፖነንት
+import Report from './Report'; 
+import CallCenterComponent from './CallCenterComponent'; // የጥሪ ማስተናገጃ ኮምፖነንት
+import EmployeeSidebar from './EmployeeSidebar'; // አዲሱ የተስተካከለ Sidebar
 import './EmployeeDashboard.css';
 
 function EmployeeDashboard() {
@@ -64,94 +66,21 @@ function EmployeeDashboard() {
         <span className="mobile-portal-title">POESSA INTERNAL PORTAL</span>
       </div>
 
-      {/* Sidebar */}
-      <div className={`employee-sidebar no-print ${isMobileMenuOpen ? 'open' : ''}`}>
-        <button
-          className="close-menu-btn"
-          onClick={() => setIsMobileMenuOpen(false)}
-        >
-          ✕
-        </button>
-
-        <hr className="sidebar-hr" />
-
-        {/* Employee Profile */}
-        <div className="sidebar-profile-box">
-          {currentEmployee.profilePic ? (
-            <img src={currentEmployee.profilePic} alt="Profile" className="profile-img" />
-          ) : (
-            <div className="profile-placeholder">
-              {currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : '👤'}
-            </div>
-          )}
-          <div className="profile-info">
-            <h4>{currentEmployee.username}</h4>
-            <span className="role-tag">{currentEmployee.role}</span>
-          </div>
-        </div>
-
-        <hr className="sidebar-hr" />
-
-        {/* Menu Items */}
-        <div className="sidebar-menu-items">
-          <button
-            className={`menu-btn-item ${activeSubPage === 'registration' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveSubPage('registration');
-              setIsMobileMenuOpen(false);
-            }}
-          >
-            📝 {lang === 'am' ? 'ዳሽቦርድ / ምዝገባ' : 'Dashboard / Register'}
-          </button>
-
-          <button
-            className={`menu-btn-item ${activeSubPage === 'report' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveSubPage('report');
-              setIsMobileMenuOpen(false);
-            }}
-          >
-            📊 {lang === 'am' ? 'የማረጋገጫ ሪፖርት' : 'Verification Report'}
-          </button>
-
-          <button
-            className={`menu-btn-item ${activeSubPage === 'search' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveSubPage('search');
-              setIsMobileMenuOpen(false);
-            }}
-          >
-            🔍 {lang === 'am' ? 'መረጃ መፈለጊያና መታወቂያ' : 'Search & ID Card'}
-          </button>
-            {/* በ sidebar-menu-items ውስጥ አክይ */}
-<button
-  className={`menu-btn-item ${activeSubPage === 'call-center' ? 'active' : ''}`}
-  onClick={() => {
-    setActiveSubPage('call-center'); // የዳሽቦርዱን ገጽ ይቀይራል
-    setIsMobileMenuOpen(false);
-  }}
->
-  🎥 {lang === 'am' ? 'የጥሪ ማስተናገጃ' : 'Call Management'}
-</button>
-        </div>
-
-        <button
-          className="lang-switcher-btn"
-          onClick={() => setLang(lang === 'am' ? 'en' : 'am')}
-        >
-          🌐 {lang === 'am' ? 'English' : 'አማርኛ'}
-        </button>
-
-        <button className="sidebar-logout-button" onClick={handleLogout}>
-          🚪 {lang === 'am' ? 'ከሲስተም ውጣ' : 'Logout'}
-        </button>
+      {/* Sidebar: አሁን የተስተካከሉትን props ለ EmployeeSidebar እየላክን ነው */}
+      <div className={`sidebar-container no-print ${isMobileMenuOpen ? 'open' : ''}`}>
+        <EmployeeSidebar 
+          onClose={() => setIsMobileMenuOpen(false)} 
+          activeSubPage={activeSubPage}
+          setActiveSubPage={setActiveSubPage}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
       </div>
 
       {/* Main Content */}
       <div className="main-content">
         <div className="dashboard-header">
           <div>
-            <h2>እንኳን ደህና መጡ</h2>
+            <h2>{lang === 'am' ? 'እንኳን ደህና መጡ' : 'Welcome'}</h2>
             <p>{currentEmployee.username}</p>
           </div>
           {currentEmployee.profilePic ? (
@@ -174,9 +103,9 @@ function EmployeeDashboard() {
             {activeSubPage === 'search' && (
               <IdCardGenerationAndSearch />
             )}
-              {activeSubPage === 'call-center' && (
-      <CallCenterComponent /> 
-    )}
+            {activeSubPage === 'call-center' && (
+              <CallCenterComponent /> 
+            )}
           </div>
         </main>
 
