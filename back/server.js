@@ -6,7 +6,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const { Server } = require("socket.io");
 
-const VideoCallBack = require("./VideoCallBack");
+const VideoCallBack = require("./socket/VideoCallBack");
 const livenessRoute = require("./LivenessTestBack");
 
 const app = express();
