@@ -4,7 +4,7 @@ import Footer from '../components/Footer';
 import PensionerRegistration from './PensionerRegistration';
 import IdCardGenerationAndSearch from './IdCardGenerationAndSearch';
 import Report from './Report';
-import AgentVideoPage from './AgentVideoPage'; // AgentVideoPage እንዲጠቀም ተደረገ
+import AgentVideoPage from './AgentVideoPage';
 import EmployeeSidebar from './EmployeeSidebar'; 
 import './EmployeeDashboard.css';
 
@@ -24,20 +24,12 @@ function EmployeeDashboard() {
   useEffect(() => {
     const storedUser = localStorage.getItem('fullName') || localStorage.getItem('username') || 'የፖኤሳ ሰራተኛ';
     const storedRole = localStorage.getItem('role') || 'ባለሙያ';
-
     setCurrentEmployee({
       username: storedUser,
       role: storedRole,
       profilePic: localStorage.getItem('profilePic') || null
     });
   }, []);
-
-  const handleLogout = () => {
-    if (window.confirm(lang === 'am' ? 'እርግጠኛ ነዎት ከሲስተሙ መውጣት ይፈልጋሉ?' : 'Are you sure you want to logout?')) {
-      localStorage.clear();
-      navigate('/login');
-    }
-  };
 
   return (
     <div className="employee-dashboard-page">
@@ -61,13 +53,6 @@ function EmployeeDashboard() {
             <h2>{lang === 'am' ? 'እንኳን ደህና መጡ' : 'Welcome'}</h2>
             <p>{currentEmployee.username}</p>
           </div>
-          {currentEmployee.profilePic ? (
-            <img src={currentEmployee.profilePic} alt="Profile" className="dashboard-profile-image" />
-          ) : (
-            <div className="dashboard-profile-placeholder">
-              {currentEmployee.username ? currentEmployee.username.charAt(0).toUpperCase() : 'U'}
-            </div>
-          )}
         </div>
 
         <main className="dashboard-body">
