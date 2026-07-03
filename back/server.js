@@ -127,7 +127,7 @@ app.use("/api/liveness", livenessRoute);
 app.use("/api", require("./ReportBack"));
 
 // ✅ Clean architectural separation pointing to the renamed HTTP routing file
-app.use("/api/video", require("./video/VideoRoutes"));
+app.use("/api/video", require("./VideoCallRoute")); // ✅ ተስተካከለ
 
 /* =========================
    404 FALLBACK
