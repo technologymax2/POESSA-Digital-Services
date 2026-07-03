@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const Pensioner = require("./models/Pensioner");
+const Pensioner = require("./models/UserPensioner");
 
 /* ==================================================
    SEARCH PENSIONER
