@@ -2,9 +2,9 @@ const Pensioner = require("../models/Pensioner");
 
 module.exports = (io) => {
 
-  /* ==========================================
-     MEMORY
-  ========================================== */
+  /* =====================================
+      MEMORY
+  ===================================== */
 
   const users = new Map();
 
@@ -16,15 +16,31 @@ module.exports = (io) => {
 
   const activeCalls = new Map();
 
-  /* ==========================================
-     HELPERS
-  ========================================== */
+  /* =====================================
+      HELPER FUNCTIONS
+  ===================================== */
 
   const getFreeEmployees = () => {
 
     return [...employees.values()].filter(
-      emp => emp.status === "free"
+      (employee) => employee.status === "free"
     );
+
+  };
+
+  const sendQueueUpdate = () => {
+
+    io.emit("queue-updated", {
+
+      waitingCalls: waitingQueue.length,
+
+      onlineEmployees: employees.size,
+
+      freeEmployees: getFreeEmployees().length,
+
+      activeCalls: activeCalls.size,
+
+    });
 
   };
 
@@ -33,38 +49,58 @@ module.exports = (io) => {
     pensionerId
   ) => {
 
-    const emp = employees.get(employeeId);
+    const employee =
+      employees.get(employeeId);
 
-    if (!emp) return;
+    if (!employee) return;
 
-    emp.status = "busy";
-    emp.currentCall = pensionerId;
+    employee.status = "busy";
 
-    employees.set(employeeId, emp);
+    employee.currentCall =
+      pensionerId;
 
-  };
-
-  const setEmployeeFree = (employeeId) => {
-
-    const emp = employees.get(employeeId);
-
-    if (!emp) return;
-
-    emp.status = "free";
-    emp.currentCall = null;
-
-    employees.set(employeeId, emp);
+    employees.set(
+      employeeId,
+      employee
+    );
 
   };
 
-  const removeWaitingCall = (pensionerId) => {
+  const setEmployeeFree = (
+    employeeId
+  ) => {
+
+    const employee =
+      employees.get(employeeId);
+
+    if (!employee) return;
+
+    employee.status = "free";
+
+    employee.currentCall = null;
+
+    employees.set(
+      employeeId,
+      employee
+    );
+
+  };
+
+  const removeWaitingCall = (
+    pensionerId
+  ) => {
 
     const index =
       waitingQueue.findIndex(
-        c => c.pensionerId === pensionerId
+
+        (item) =>
+
+          item.pensionerId ===
+          pensionerId
+
       );
 
-    if (index >= 0) {
+    if (index !== -1) {
 
       waitingQueue.splice(index, 1);
 
@@ -72,29 +108,9 @@ module.exports = (io) => {
 
   };
 
-  const sendQueueUpdate = () => {
-
-    io.emit("queue-updated", {
-
-      waitingCalls:
-        waitingQueue.length,
-
-      onlineEmployees:
-        employees.size,
-
-      freeEmployees:
-        getFreeEmployees().length,
-
-      activeCalls:
-        activeCalls.size,
-
-    });
-
-  };
-
-  /* ==========================================
-     SOCKET CONNECTION
-  ========================================== */
+  /* =====================================
+      SOCKET CONNECTION
+  ===================================== */
 
   io.on("connection", (socket) => {
 
@@ -102,182 +118,70 @@ module.exports = (io) => {
       "Socket Connected:",
       socket.id
     );
-
-    /* =====================================
-       REGISTER USER
+        /* =====================================
+        REGISTER USER
     ===================================== */
 
-    socket.on(
-      "register-user",
-      async ({
-        userId,
-        role,
-        fullName,
-      }) => {
+    socket.on("register-user", async (data) => {
 
-        try {
+      try {
 
-          users.set(userId, {
+        const {
+          userId,
+          role,
+          fullName,
+        } = data;
 
-            socketId:
-              socket.id,
+        users.set(userId, {
+          socketId: socket.id,
+          userId,
+          role,
+        });
 
-            role,
+        /* ----------------------------
+           EMPLOYEE
+        ---------------------------- */
 
-          });
+        if (role === "employee") {
 
-          /* -----------------------
-             EMPLOYEE
-          ----------------------- */
-
-          if (
-            role === "employee"
-          ) {
-
-            employees.set(userId, {
-
-              employeeId:
-                userId,
-
-              socketId:
-                socket.id,
-
-              fullName:
-                fullName ||
-                "Employee",
-
-              status:
-                "free",
-
-              currentCall:
-                null,
-
-            });
-
-            console.log(
-              "Employee Online:",
-              userId
-            );
-
-            sendQueueUpdate();
-
-            /* =====================
-               GIVE WAITING CALL
-            ===================== */
-
-            if (
-              waitingQueue.length > 0
-            ) {
-
-              const call =
-                waitingQueue.shift();
-
-              const pensioner =
-                pensioners.get(
-                  call.pensionerId
-                );
-
-              if (pensioner) {
-
-                socket.emit(
-                  "incoming-call",
-                  call
-                );
-
-              }
-
-            }
-
-            return;
-
-          }
-
-          /* -----------------------
-             PENSIONER
-          ----------------------- */
-
-          pensioners.set(userId, {
-
-            pensionerId:
-              userId,
-
-            socketId:
-              socket.id,
-
+          employees.set(userId, {
+            socketId: socket.id,
+            employeeId: userId,
+            fullName:
+              fullName || "Employee",
+            status: "free",
+            currentCall: null,
+            connectedAt: new Date(),
+            lastSeen: Date.now(),
           });
 
           console.log(
-            "Pensioner Online:",
+            "Employee Registered:",
             userId
           );
 
           sendQueueUpdate();
 
-        }
-
-        catch (err) {
-
-          console.error(err);
-
-        }
-
-      });
-        /* =====================================
-       REQUEST AGENT CALL
-    ===================================== */
-
-    socket.on("request-agent-call", async ({ pensionerId, signalData }) => {
-
-      try {
-
-        let pensionerData = null;
-
-        try {
-          pensionerData = await Pensioner.findOne({
-            $or: [
-              { pensionerId },
-              { faydaNumber: pensionerId }
-            ]
-          });
-        } catch {}
-
-        waitingQueue.push({
-          pensionerId,
-          signalData,
-          pensionerName:
-            pensionerData?.nameEng || pensionerId,
-        });
-
-        const freeEmployees = getFreeEmployees();
-
-        if (freeEmployees.length === 0) {
-
-          io.to(socket.id).emit(
-            "all-agents-busy",
-            {
-              message:
-                "All employees are busy."
-            }
-          );
-
-          sendQueueUpdate();
           return;
+
         }
 
-        freeEmployees.forEach((employee) => {
+        /* ----------------------------
+           PENSIONER
+        ---------------------------- */
 
-          io.to(employee.socketId).emit(
-            "incoming-call",
-            {
-              pensionerId,
-              pensionerName:
-                pensionerData?.nameEng ||
-                pensionerId,
-              signalData,
-            }
-          );
-
+        pensioners.set(userId, {
+          socketId: socket.id,
+          pensionerId: userId,
+          status: "waiting",
+          connectedAt: new Date(),
+          lastSeen: Date.now(),
         });
+
+        console.log(
+          "Pensioner Registered:",
+          userId
+        );
 
         sendQueueUpdate();
 
@@ -290,235 +194,311 @@ module.exports = (io) => {
     });
 
     /* =====================================
-       ANSWER CALL
+        REQUEST CALL
     ===================================== */
 
-    socket.on("answer-call", ({ signal, pensionerId, agentId }) => {
-
-      const employee = employees.get(agentId);
-
-      const pensioner = pensioners.get(pensionerId);
-
-      if (!employee || !pensioner) return;
-
-      removeWaitingCall(pensionerId);
-
-      setEmployeeBusy(agentId, pensionerId);
-
-      activeCalls.set(pensionerId, {
+    socket.on(
+      "request-agent-call",
+      async ({
         pensionerId,
-        agentId,
-      });
+        signalData,
+      }) => {
 
-      io.to(pensioner.socketId).emit(
-        "agent-accepted",
-        {
-          signal,
-          agentId,
-        }
-      );
+        try {
 
-      io.emit("remove-call", {
-        pensionerId,
-      });
+          let pensionerName =
+            pensionerId;
 
-      sendQueueUpdate();
+          try {
 
-    });
+            const person =
+              await Pensioner.findOne({
+                $or: [
+                  {
+                    pensionerId,
+                  },
+                  {
+                    faydaNumber:
+                      pensionerId,
+                  },
+                ],
+              });
 
-    /* =====================================
-       REJECT CALL
-    ===================================== */
+            if (person) {
 
-    socket.on("reject-call", ({ pensionerId }) => {
+              pensionerName =
+                person.nameEng ||
+                person.nameAmh ||
+                pensionerId;
 
-      io.to(
-        pensioners.get(pensionerId)?.socketId
-      ).emit("call-rejected");
+            }
 
-      removeWaitingCall(pensionerId);
+          } catch (e) {}
 
-      io.emit("remove-call", {
-        pensionerId,
-      });
+          const freeEmployees =
+            getFreeEmployees();
 
-      sendQueueUpdate();
+          if (
+            freeEmployees.length === 0
+          ) {
 
-    });    /* =====================================
-       END CALL
-    ===================================== */
+            waitingQueue.push({
 
-    socket.on("end-call", ({ pensionerId }) => {
+              pensionerId,
 
-      const call = activeCalls.get(pensionerId);
+              pensionerName,
 
-      if (!call) return;
+              signalData,
 
-      const pensioner = pensioners.get(call.pensionerId);
+              requestedAt:
+                new Date(),
 
-      const employee = employees.get(call.agentId);
+            });
 
-      if (pensioner) {
-        io.to(pensioner.socketId).emit("call-ended");
-      }
+            socket.emit(
+              "all-agents-busy",
+              {
+                message:
+                  "All employees are busy. Please wait...",
+              }
+            );
 
-      if (employee) {
-        io.to(employee.socketId).emit("call-ended");
+            sendQueueUpdate();
 
-        setEmployeeFree(call.agentId);
-      }
+            return;
 
-      activeCalls.delete(pensionerId);
+          }
 
-      sendQueueUpdate();
+          const employee =
+            freeEmployees[0];
 
-      /* ------------------------------
-         Give next waiting call
-      ------------------------------ */
-
-      if (waitingQueue.length > 0) {
-
-        const nextCall = waitingQueue.shift();
-
-        const freeEmployee = getFreeEmployees()[0];
-
-        if (freeEmployee) {
-
-          io.to(freeEmployee.socketId).emit(
+          io.to(
+            employee.socketId
+          ).emit(
             "incoming-call",
-            nextCall
+            {
+
+              pensionerId,
+
+              pensionerName,
+
+              signalData,
+
+            }
           );
 
-        } else {
+          waitingQueue.push({
 
-          waitingQueue.unshift(nextCall);
+            pensionerId,
+
+            pensionerName,
+
+            signalData,
+
+            requestedAt:
+              new Date(),
+
+          });
+
+          sendQueueUpdate();
+
+        } catch (err) {
+
+          console.error(err);
 
         }
 
       }
-
-    });
-
-    /* =====================================
-       CANCEL CALL
+    );
+        /* =====================================
+        ANSWER CALL
     ===================================== */
 
-    socket.on("cancel-call", ({ pensionerId }) => {
+    socket.on(
+      "answer-call",
+      ({ pensionerId, agentId, signal }) => {
 
-      removeWaitingCall(pensionerId);
+        const employee =
+          employees.get(agentId);
 
-      io.emit("remove-call", {
+        const pensioner =
+          pensioners.get(pensionerId);
+
+        if (!employee || !pensioner) {
+          return;
+        }
+
+        setEmployeeBusy(
+          agentId,
+          pensionerId
+        );
+
+        removeWaitingCall(
+          pensionerId
+        );
+
+        activeCalls.set(
+          pensionerId,
+          {
+            pensionerId,
+            agentId,
+            startedAt:
+              new Date(),
+          }
+        );
+
+        io.to(
+          pensioner.socketId
+        ).emit(
+          "agent-accepted",
+          {
+            agentId,
+            signal,
+          }
+        );
+
+        sendQueueUpdate();
+
+        console.log(
+          "Call Connected:",
+          pensionerId,
+          "->",
+          agentId
+        );
+
+      }
+    );
+
+    /* =====================================
+        REJECT CALL
+    ===================================== */
+
+    socket.on(
+      "reject-call",
+      ({ pensionerId }) => {
+
+        const pensioner =
+          pensioners.get(
+            pensionerId
+          );
+
+        if (pensioner) {
+
+          io.to(
+            pensioner.socketId
+          ).emit(
+            "call-rejected"
+          );
+
+        }
+
+        removeWaitingCall(
+          pensionerId
+        );
+
+        io.emit(
+          "remove-call",
+          {
+            pensionerId,
+          }
+        );
+
+        sendQueueUpdate();
+
+      }
+    );
+
+    /* =====================================
+        END CALL
+    ===================================== */
+
+    socket.on(
+      "end-call",
+      ({
         pensionerId,
-      });
+        agentId,
+      }) => {
 
-      sendQueueUpdate();
+        const call =
+          activeCalls.get(
+            pensionerId
+          );
 
-    });
+        if (!call) return;
+
+        const employee =
+          employees.get(
+            call.agentId
+          );
+
+        const pensioner =
+          pensioners.get(
+            call.pensionerId
+          );
+
+        if (employee) {
+
+          io.to(
+            employee.socketId
+          ).emit(
+            "call-ended"
+          );
+
+          setEmployeeFree(
+            call.agentId
+          );
+
+        }
+
+        if (pensioner) {
+
+          io.to(
+            pensioner.socketId
+          ).emit(
+            "call-ended"
+          );
+
+        }
+
+        activeCalls.delete(
+          pensionerId
+        );
+
+        sendQueueUpdate();
+
+        console.log(
+          "Call Ended:",
+          pensionerId
+        );
+
+      }
+    );
 
     /* =====================================
-       DISCONNECT
+        CANCEL CALL
     ===================================== */
 
-    socket.on("disconnect", () => {
+    socket.on(
+      "cancel-call",
+      ({ pensionerId }) => {
 
-      console.log(
-        "Disconnected:",
-        socket.id
-      );
+        removeWaitingCall(
+          pensionerId
+        );
 
-      let disconnectedEmployee = null;
-      let disconnectedPensioner = null;
-
-      /* -------------------------
-         Employee Disconnect
-      ------------------------- */
-
-      for (const [id, emp] of employees.entries()) {
-
-        if (emp.socketId === socket.id) {
-
-          disconnectedEmployee = id;
-
-          employees.delete(id);
-
-          users.delete(id);
-
-          break;
-
-        }
-
-      }
-
-      /* -------------------------
-         Pensioner Disconnect
-      ------------------------- */
-
-      for (const [id, pen] of pensioners.entries()) {
-
-        if (pen.socketId === socket.id) {
-
-          disconnectedPensioner = id;
-
-          pensioners.delete(id);
-
-          users.delete(id);
-
-          removeWaitingCall(id);
-
-          break;
-
-        }
-
-      }
-
-      /* -------------------------
-         Active Calls
-      ------------------------- */
-
-      for (const [pid, call] of activeCalls.entries()) {
-
-        if (
-          call.agentId === disconnectedEmployee ||
-          call.pensionerId === disconnectedPensioner
-        ) {
-
-          const otherEmployee =
-            employees.get(call.agentId);
-
-          const otherPensioner =
-            pensioners.get(call.pensionerId);
-
-          if (otherEmployee) {
-
-            io.to(otherEmployee.socketId)
-              .emit("call-ended");
-
-            setEmployeeFree(call.agentId);
-
+        io.emit(
+          "remove-call",
+          {
+            pensionerId,
           }
+        );
 
-          if (otherPensioner) {
-
-            io.to(otherPensioner.socketId)
-              .emit("call-ended");
-
-          }
-
-          activeCalls.delete(pid);
-
-        }
+        sendQueueUpdate();
 
       }
-
-      sendQueueUpdate();
-
-    });
-
-  });
-
-};
-    /* =====================================
-       GIVE NEXT WAITING CALL
+    );
+        /* =====================================
+        ASSIGN WAITING CALLS
     ===================================== */
 
     const assignWaitingCalls = () => {
@@ -556,119 +536,267 @@ module.exports = (io) => {
     };
 
     /* =====================================
-       EMPLOYEE BECAME FREE
+        EMPLOYEE READY
     ===================================== */
 
-    socket.on("employee-ready", ({ agentId }) => {
+    socket.on(
+      "employee-ready",
+      ({ agentId }) => {
 
-      setEmployeeFree(agentId);
+        setEmployeeFree(agentId);
 
-      assignWaitingCalls();
-
-    });
-
-    /* =====================================
-       HEARTBEAT
-    ===================================== */
-
-    socket.on("heartbeat", ({ userId }) => {
-
-      const employee =
-        employees.get(userId);
-
-      if (employee) {
-
-        employee.lastSeen =
-          Date.now();
-
-        employees.set(
-          userId,
-          employee
-        );
+        assignWaitingCalls();
 
       }
-
-      const pensioner =
-        pensioners.get(userId);
-
-      if (pensioner) {
-
-        pensioner.lastSeen =
-          Date.now();
-
-        pensioners.set(
-          userId,
-          pensioner
-        );
-
-      }
-
-    });
+    );
 
     /* =====================================
-       ONLINE STATUS
+        HEARTBEAT
     ===================================== */
 
-    socket.on("get-status", () => {
+    socket.on(
+      "heartbeat",
+      ({ userId }) => {
 
-      socket.emit("status", {
+        const employee =
+          employees.get(userId);
 
-        onlineEmployees:
-          employees.size,
+        if (employee) {
 
-        freeEmployees:
-          getFreeEmployees().length,
+          employee.lastSeen =
+            Date.now();
 
-        waitingCalls:
-          waitingQueue.length,
+          employees.set(
+            userId,
+            employee
+          );
 
-        activeCalls:
-          activeCalls.size,
+        }
 
-      });
+        const pensioner =
+          pensioners.get(userId);
 
-    });
+        if (pensioner) {
 
-    /* =====================================
-       CLEANUP
-    ===================================== */
+          pensioner.lastSeen =
+            Date.now();
 
-    setInterval(() => {
-
-      const now = Date.now();
-
-      for (const [id, emp] of employees) {
-
-        if (
-          emp.lastSeen &&
-          now - emp.lastSeen > 60000
-        ) {
-
-          employees.delete(id);
+          pensioners.set(
+            userId,
+            pensioner
+          );
 
         }
 
       }
+    );
 
-      for (const [id, pen] of pensioners) {
+    /* =====================================
+        STATUS
+    ===================================== */
 
-        if (
-          pen.lastSeen &&
-          now - pen.lastSeen > 60000
-        ) {
+    socket.on(
+      "get-status",
+      () => {
 
-          pensioners.delete(id);
+        socket.emit(
+          "status",
+          {
 
-          removeWaitingCall(id);
+            onlineEmployees:
+              employees.size,
+
+            freeEmployees:
+              getFreeEmployees().length,
+
+            waitingCalls:
+              waitingQueue.length,
+
+            activeCalls:
+              activeCalls.size,
+
+          }
+        );
+
+      }
+    );
+
+    /* =====================================
+        DISCONNECT
+    ===================================== */
+
+    socket.on(
+      "disconnect",
+      () => {
+
+        console.log(
+          "Disconnected:",
+          socket.id
+        );
+
+        let disconnectedId =
+          null;
+
+        let disconnectedRole =
+          null;
+
+        for (const [id, user] of users) {
+
+          if (
+            user.socketId ===
+            socket.id
+          ) {
+
+            disconnectedId = id;
+
+            disconnectedRole =
+              user.role;
+
+            users.delete(id);
+
+            break;
+
+          }
 
         }
 
+        if (
+          disconnectedRole ===
+          "employee"
+        ) {
+
+          employees.delete(
+            disconnectedId
+          );
+
+        }
+
+        if (
+          disconnectedRole ===
+          "pensioner"
+        ) {
+
+          pensioners.delete(
+            disconnectedId
+          );
+
+          removeWaitingCall(
+            disconnectedId
+          );
+
+        }
+
+        for (const [
+          pid,
+          call,
+        ] of activeCalls) {
+
+          if (
+            call.pensionerId ===
+              disconnectedId ||
+            call.agentId ===
+              disconnectedId
+          ) {
+
+            const employee =
+              employees.get(
+                call.agentId
+              );
+
+            const pensioner =
+              pensioners.get(
+                call.pensionerId
+              );
+
+            if (employee) {
+
+              io.to(
+                employee.socketId
+              ).emit(
+                "call-ended"
+              );
+
+              setEmployeeFree(
+                call.agentId
+              );
+
+            }
+
+            if (pensioner) {
+
+              io.to(
+                pensioner.socketId
+              ).emit(
+                "call-ended"
+              );
+
+            }
+
+            activeCalls.delete(
+              pid
+            );
+
+          }
+
+        }
+
+        assignWaitingCalls();
+
+        sendQueueUpdate();
+
       }
-
-      sendQueueUpdate();
-
-    }, 30000);
+    );
 
   });
+
+  /* =====================================
+      CLEANUP
+  ===================================== */
+
+  setInterval(() => {
+
+    const now = Date.now();
+
+    for (const [
+      id,
+      employee,
+    ] of employees) {
+
+      if (
+        employee.lastSeen &&
+        now -
+          employee.lastSeen >
+          60000
+      ) {
+
+        employees.delete(id);
+
+      }
+
+    }
+
+    for (const [
+      id,
+      pensioner,
+    ] of pensioners) {
+
+      if (
+        pensioner.lastSeen &&
+        now -
+          pensioner.lastSeen >
+          60000
+      ) {
+
+        pensioners.delete(id);
+
+        removeWaitingCall(id);
+
+      }
+
+    }
+
+    sendQueueUpdate();
+
+  }, 30000);
 
 };
