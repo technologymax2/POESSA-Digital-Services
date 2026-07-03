@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const Pensioner = require("./models/UserPensioner");
+const Pensioner = require("./models/UserPensioner"); // ✅ የስም ካፒታላይዜሽን ተስተካከለ
 
 /* ==================================================
    SEARCH PENSIONER
