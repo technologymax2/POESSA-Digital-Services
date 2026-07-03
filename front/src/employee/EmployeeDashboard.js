@@ -5,7 +5,7 @@ import PensionerRegistration from './PensionerRegistration';
 import IdCardGenerationAndSearch from './IdCardGenerationAndSearch';
 import Report from './Report';
 import AgentVideoPage from './AgentVideoPage'; // የቪዲዮ ጥሪ ገጽ
-import EmployeeSidebar from './EmployeeSidebar'; // አዲሱ የsidebar ኮምፖነንት
+import EmployeeSidebar from './EmployeeSidebar'; 
 import './EmployeeDashboard.css';
 
 function EmployeeDashboard() {
