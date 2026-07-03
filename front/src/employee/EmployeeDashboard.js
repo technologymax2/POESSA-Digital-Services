@@ -164,6 +164,9 @@ function EmployeeDashboard() {
             {activeSubPage === 'search' && (
               <IdCardGenerationAndSearch />
             )}
+              {activeSubPage === 'call-center' && (
+      <CallCenterComponent /> 
+    )}
           </div>
         </main>
 
