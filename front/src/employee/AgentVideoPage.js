@@ -20,7 +20,6 @@ const socket = io(API, {
 });
 
 const AgentVideoPage = () => {
-
   const myVideo = useRef(null);
   const remoteVideo = useRef(null);
   const peerRef = useRef(null);
@@ -49,7 +48,6 @@ const AgentVideoPage = () => {
       if (myVideo.current) {
         myVideo.current.srcObject = media;
       }
-
     } catch (err) {
       console.error(err);
       alert("Camera permission denied");
@@ -58,7 +56,6 @@ const AgentVideoPage = () => {
 
   /* ================= LOGIN ================= */
   useEffect(() => {
-
     initCamera();
 
     const stored = localStorage.getItem("user");
@@ -70,14 +67,12 @@ const AgentVideoPage = () => {
     }
 
     const user = JSON.parse(stored);
-
     setEmployeeId(user.id);
 
     socket.emit("register-user", {
       userId: user.id,
       role: "employee",
     });
-
   }, [initCamera]);
 
   /* ================= SEARCH PENSIONER ================= */
@@ -86,13 +81,8 @@ const AgentVideoPage = () => {
 
     try {
       setLoading(true);
-
-      const res = await axios.get(
-        `${API}/api/video/pensioner/${search}`
-      );
-
+      const res = await axios.get(`${API}/api/video/pensioner/${search}`);
       setPensioner(res.data.data);
-
     } catch (err) {
       console.error(err);
       alert("Not found");
@@ -104,7 +94,6 @@ const AgentVideoPage = () => {
 
   /* ================= SOCKET EVENTS ================= */
   useEffect(() => {
-
     socket.on("incoming-call", handleIncomingCall);
     socket.on("call-ended", handleCallEnded);
 
@@ -119,14 +108,11 @@ const AgentVideoPage = () => {
       socket.off("call-ended");
       socket.off("remove-call");
     };
-
   }, []);
 
   const handleIncomingCall = (data) => {
     setIncomingCalls((prev) => {
-      const exists = prev.find(
-        (c) => c.pensionerId === data.pensionerId
-      );
+      const exists = prev.find((c) => c.pensionerId === data.pensionerId);
       if (exists) return prev;
       return [...prev, data];
     });
@@ -148,7 +134,6 @@ const AgentVideoPage = () => {
 
   /* ================= ANSWER CALL ================= */
   const answerCall = (callData) => {
-
     if (!stream) return;
 
     setActiveCall(callData);
@@ -175,7 +160,6 @@ const AgentVideoPage = () => {
     });
 
     peer.signal(callData.signalData);
-
     peerRef.current = peer;
 
     setIncomingCalls((prev) =>
@@ -196,7 +180,6 @@ const AgentVideoPage = () => {
 
   /* ================= END CALL ================= */
   const endCall = () => {
-
     if (peerRef.current) {
       peerRef.current.destroy();
       peerRef.current = null;
@@ -217,38 +200,26 @@ const AgentVideoPage = () => {
   /* ================= UI ================= */
   return (
     <div className="agent-page">
-
       {/* LEFT */}
       <div className="queue-panel">
-
         <h2>Incoming Calls</h2>
 
         {incomingCalls.map((call) => (
           <div key={call.pensionerId} className="call-card">
-            <p>{call.pensionerId}</p>
-
-            <button onClick={() => answerCall(call)}>
-              Answer
-            </button>
-
-            <button onClick={() => rejectCall(call)}>
-              Reject
-            </button>
+            <p>{call.pensionerName || call.pensionerId}</p>
+            <button onClick={() => answerCall(call)}>Answer</button>
+            <button onClick={() => rejectCall(call)}>Reject</button>
           </div>
         ))}
 
         <hr />
 
         <h3>Search Pensioner</h3>
-
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-
-        <button onClick={searchPensioner}>
-          Search
-        </button>
+        <button onClick={searchPensioner}>Search</button>
 
         {loading && <p>Loading...</p>}
 
@@ -258,18 +229,15 @@ const AgentVideoPage = () => {
             <p>{pensioner.pensionerId}</p>
           </div>
         )}
-
       </div>
 
       {/* RIGHT */}
       <div className="video-section">
-
         <video
           ref={remoteVideo}
           autoPlay
           playsInline
         />
-
         <video
           ref={myVideo}
           autoPlay
@@ -278,13 +246,9 @@ const AgentVideoPage = () => {
         />
 
         {callConnected && (
-          <button onClick={endCall}>
-            End Call
-          </button>
+          <button onClick={endCall}>End Call</button>
         )}
-
       </div>
-
     </div>
   );
 };
