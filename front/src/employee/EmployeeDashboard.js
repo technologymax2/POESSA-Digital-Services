@@ -123,6 +123,16 @@ function EmployeeDashboard() {
           >
             🔍 {lang === 'am' ? 'መረጃ መፈለጊያና መታወቂያ' : 'Search & ID Card'}
           </button>
+            {/* በ sidebar-menu-items ውስጥ አክይ */}
+<button
+  className={`menu-btn-item ${activeSubPage === 'call-center' ? 'active' : ''}`}
+  onClick={() => {
+    setActiveSubPage('call-center'); // የዳሽቦርዱን ገጽ ይቀይራል
+    setIsMobileMenuOpen(false);
+  }}
+>
+  🎥 {lang === 'am' ? 'የጥሪ ማስተናገጃ' : 'Call Management'}
+</button>
         </div>
 
         <button
