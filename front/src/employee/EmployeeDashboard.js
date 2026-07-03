@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import PensionerRegistration from './PensionerRegistration';
 import IdCardGenerationAndSearch from './IdCardGenerationAndSearch';
-import Report from './Report'; 
-import CallCenterComponent from './CallCenterComponent'; // የጥሪ ማስተናገጃ ኮምፖነንት
-import EmployeeSidebar from './EmployeeSidebar'; // አዲሱ የተስተካከለ Sidebar
+import Report from './Report';
+import AgentVideoPage from './AgentVideoPage'; // AgentVideoPage እንዲጠቀም ተደረገ
+import EmployeeSidebar from './EmployeeSidebar'; 
 import './EmployeeDashboard.css';
 
 function EmployeeDashboard() {
@@ -21,16 +21,9 @@ function EmployeeDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSubPage, setActiveSubPage] = useState('registration');
 
-  // Load employee info
   useEffect(() => {
-    const storedUser =
-      localStorage.getItem('fullName') ||
-      localStorage.getItem('username') ||
-      'የፖኤሳ ሰራተኛ';
-
-    const storedRole =
-      localStorage.getItem('role') ||
-      'ባለሙያ';
+    const storedUser = localStorage.getItem('fullName') || localStorage.getItem('username') || 'የፖኤሳ ሰራተኛ';
+    const storedRole = localStorage.getItem('role') || 'ባለሙያ';
 
     setCurrentEmployee({
       username: storedUser,
@@ -40,13 +33,7 @@ function EmployeeDashboard() {
   }, []);
 
   const handleLogout = () => {
-    if (
-      window.confirm(
-        lang === 'am'
-          ? 'እርግጠኛ ነዎት ከሲስተሙ መውጣት ይፈልጋሉ?'
-          : 'Are you sure you want to logout?'
-      )
-    ) {
+    if (window.confirm(lang === 'am' ? 'እርግጠኛ ነዎት ከሲስተሙ መውጣት ይፈልጋሉ?' : 'Are you sure you want to logout?')) {
       localStorage.clear();
       navigate('/login');
     }
@@ -54,19 +41,11 @@ function EmployeeDashboard() {
 
   return (
     <div className="employee-dashboard-page">
-
-      {/* Mobile Top Bar */}
       <div className="mobile-top-bar no-print">
-        <button
-          className="menu-toggle-btn"
-          onClick={() => setIsMobileMenuOpen(true)}
-        >
-          ☰
-        </button>
+        <button className="menu-toggle-btn" onClick={() => setIsMobileMenuOpen(true)}>☰</button>
         <span className="mobile-portal-title">POESSA INTERNAL PORTAL</span>
       </div>
 
-      {/* Sidebar: አሁን የተስተካከሉትን props ለ EmployeeSidebar እየላክን ነው */}
       <div className={`sidebar-container no-print ${isMobileMenuOpen ? 'open' : ''}`}>
         <EmployeeSidebar 
           onClose={() => setIsMobileMenuOpen(false)} 
@@ -76,7 +55,6 @@ function EmployeeDashboard() {
         />
       </div>
 
-      {/* Main Content */}
       <div className="main-content">
         <div className="dashboard-header">
           <div>
@@ -94,27 +72,16 @@ function EmployeeDashboard() {
 
         <main className="dashboard-body">
           <div className="dynamic-content-area">
-            {activeSubPage === 'registration' && (
-              <PensionerRegistration currentEmployee={currentEmployee.username} />
-            )}
-            {activeSubPage === 'report' && (
-              <Report /> 
-            )}
-            {activeSubPage === 'search' && (
-              <IdCardGenerationAndSearch />
-            )}
-            {activeSubPage === 'call-center' && (
-              <CallCenterComponent /> 
-            )}
+            {activeSubPage === 'registration' && <PensionerRegistration currentEmployee={currentEmployee.username} />}
+            {activeSubPage === 'report' && <Report />}
+            {activeSubPage === 'search' && <IdCardGenerationAndSearch />}
+            {activeSubPage === 'call-center' && <AgentVideoPage />}
           </div>
         </main>
-
         <Footer />
       </div>
 
-      {isMobileMenuOpen && (
-        <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)} />
-      )}
+      {isMobileMenuOpen && <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)} />}
     </div>
   );
 }
