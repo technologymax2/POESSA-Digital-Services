@@ -1,4 +1,4 @@
-const Pensioner = require("../models/UserPensioner.js");
+const Pensioner = require("../models/UserPensioner");
 
 module.exports = (io) => {
 
