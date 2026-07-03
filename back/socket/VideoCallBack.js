@@ -517,3 +517,158 @@ module.exports = (io) => {
   });
 
 };
+    /* =====================================
+       GIVE NEXT WAITING CALL
+    ===================================== */
+
+    const assignWaitingCalls = () => {
+
+      while (
+        waitingQueue.length > 0 &&
+        getFreeEmployees().length > 0
+      ) {
+
+        const call = waitingQueue.shift();
+
+        const employee =
+          getFreeEmployees()[0];
+
+        if (!employee) break;
+
+        io.to(employee.socketId).emit(
+          "incoming-call",
+          {
+            pensionerId:
+              call.pensionerId,
+
+            pensionerName:
+              call.pensionerName,
+
+            signalData:
+              call.signalData,
+          }
+        );
+
+      }
+
+      sendQueueUpdate();
+
+    };
+
+    /* =====================================
+       EMPLOYEE BECAME FREE
+    ===================================== */
+
+    socket.on("employee-ready", ({ agentId }) => {
+
+      setEmployeeFree(agentId);
+
+      assignWaitingCalls();
+
+    });
+
+    /* =====================================
+       HEARTBEAT
+    ===================================== */
+
+    socket.on("heartbeat", ({ userId }) => {
+
+      const employee =
+        employees.get(userId);
+
+      if (employee) {
+
+        employee.lastSeen =
+          Date.now();
+
+        employees.set(
+          userId,
+          employee
+        );
+
+      }
+
+      const pensioner =
+        pensioners.get(userId);
+
+      if (pensioner) {
+
+        pensioner.lastSeen =
+          Date.now();
+
+        pensioners.set(
+          userId,
+          pensioner
+        );
+
+      }
+
+    });
+
+    /* =====================================
+       ONLINE STATUS
+    ===================================== */
+
+    socket.on("get-status", () => {
+
+      socket.emit("status", {
+
+        onlineEmployees:
+          employees.size,
+
+        freeEmployees:
+          getFreeEmployees().length,
+
+        waitingCalls:
+          waitingQueue.length,
+
+        activeCalls:
+          activeCalls.size,
+
+      });
+
+    });
+
+    /* =====================================
+       CLEANUP
+    ===================================== */
+
+    setInterval(() => {
+
+      const now = Date.now();
+
+      for (const [id, emp] of employees) {
+
+        if (
+          emp.lastSeen &&
+          now - emp.lastSeen > 60000
+        ) {
+
+          employees.delete(id);
+
+        }
+
+      }
+
+      for (const [id, pen] of pensioners) {
+
+        if (
+          pen.lastSeen &&
+          now - pen.lastSeen > 60000
+        ) {
+
+          pensioners.delete(id);
+
+          removeWaitingCall(id);
+
+        }
+
+      }
+
+      sendQueueUpdate();
+
+    }, 30000);
+
+  });
+
+};
