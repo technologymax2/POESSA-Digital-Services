@@ -5,7 +5,7 @@ import './EmployeeSidebar.css';
 
 const API_URL = "https://poessa-digital-services-1.onrender.com";
 
-function EmployeeSidebar({ onClose }) {
+function EmployeeSidebar({ onClose, activeSubPage, setActiveSubPage, setIsMobileMenuOpen }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [employee, setEmployee] = useState(null);
@@ -36,7 +36,7 @@ function EmployeeSidebar({ onClose }) {
 
   return (
     <div className="employee-sidebar">
-      {/* የሜኑ መዝጊያ ኤክስ (X) ምልክት */}
+      {/* የሜኑ መዝጊያ */}
       <button className="close-sidebar-btn" onClick={onClose}>✕</button>
 
       {/* ፕሮፋይል ክፍል */}
@@ -57,58 +57,70 @@ function EmployeeSidebar({ onClose }) {
 
       <hr className="sidebar-divider" />
       
-      {/* 📋 የሜኑ ዝርዝር ክፍል */}
+      {/* የሜኑ ዝርዝር */}
       <div className="sidebar-menu">
         
-        {/* 📝 ዳሽቦርድ / ምዝገባ */}
+        {/* ዳሽቦርድ */}
         <button 
-          className={`menu-item ${location.pathname === '/dashboard' ? 'active' : ''}`}
-          onClick={() => navigate('/dashboard')}
+          className={`menu-item ${activeSubPage === 'registration' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveSubPage('registration');
+            if (setIsMobileMenuOpen) setIsMobileMenuOpen(false);
+            if (onClose) onClose();
+          }}
         >
           <span className="menu-icon">📝</span>
           <span className="menu-text">ዳሽቦርድ / ምዝገባ</span>
         </button>
 
-        {/* 📊 የማረጋገጫ ሪፖርት */}
+        {/* ሪፖርት */}
         <button 
-          className={`menu-item ${location.pathname === '/report' ? 'active' : ''}`}
-          onClick={() => navigate('/report')}
+          className={`menu-item ${activeSubPage === 'report' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveSubPage('report');
+            if (setIsMobileMenuOpen) setIsMobileMenuOpen(false);
+            if (onClose) onClose();
+          }}
         >
           <span className="menu-icon">📊</span>
           <span className="menu-text">የማረጋገጫ ሪፖርት</span>
         </button>
 
-        {/* 🔍 መረጃ መፈለጊያና ማስታወቂያ */}
+        {/* መረጃ መፈለጊያ */}
         <button 
-          className={`menu-item ${location.pathname === '/search' ? 'active' : ''}`}
-          onClick={() => navigate('/search')}
+          className={`menu-item ${activeSubPage === 'search' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveSubPage('search');
+            if (setIsMobileMenuOpen) setIsMobileMenuOpen(false);
+            if (onClose) onClose();
+          }}
         >
           <span className="menu-icon">🔍</span>
           <span className="menu-text">መረጃ መፈለጊያና ማስታወቂያ</span>
         </button>
-          {/* አዲሱን ሜኑ በ Sidebar ውስጥ አስገባ */}
-{/* በ sidebar-menu ክፍል ውስጥ */}
-<button 
-  className={`menu-item ${location.pathname === '/agent-call-center' ? 'active' : ''}`}
-  onClick={() => {
-    navigate('/agent-call-center'); 
-    if (onClose) onClose(); // sidebar-ውን ለመዝጋት
-  }}
->
-  <span className="menu-icon">🎥</span>
-  <span className="menu-text">የጥሪ ማስተናገጃ</span>
-</button>
+
+        {/* አዲሱ የጥሪ ማስተናገጃ */}
+        <button 
+          className={`menu-item ${activeSubPage === 'call-center' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveSubPage('call-center');
+            if (setIsMobileMenuOpen) setIsMobileMenuOpen(false);
+            if (onClose) onClose();
+          }}
+        >
+          <span className="menu-icon">🎥</span>
+          <span className="menu-text">የጥሪ ማስተናገጃ</span>
+        </button>
       </div>
 
-      {/* የቋንቋ መቀየሪያ በተን */}
+      {/* የቋንቋ መቀየሪያ */}
       <div className="language-selector-container">
         <button className="language-btn">
           <span className="globe-icon">🌐</span> English
         </button>
       </div>
 
-
-      {/* 🚪 ከሲስተም ውጣ (Logout) */}
+      {/* Logout */}
       <div className="sidebar-footer">
         <button className="logout-btn" onClick={handleLogout}>
           <span className="menu-icon">🚪</span>
