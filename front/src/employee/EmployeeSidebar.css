@@ -1,8 +1,12 @@
-/* ===================================================
-   EMPLOYEE SIDEBAR FULL STYLESHEET
-=================================================== */
+/* 1. የዳሽቦርድ አጠቃላይ አቀማመጥ */
+.dashboard-layout {
+  display: flex;
+  height: 100vh; /* የስክሪኑን ሙሉ ቁመት ይይዛል */
+  overflow: hidden; /* የውጭ Scroll እንዳይኖር ያደርጋል */
+  width: 100%;
+}
 
-/* 1. የሳይድባር ኮንቴይነር */
+/* 2. Sidebar - ፒሲ ላይ ቋሚ ሆኖ እንዲቆይ */
 .employee-sidebar {
   width: 280px;
   min-width: 280px;
@@ -11,17 +15,26 @@
   display: flex;
   flex-direction: column;
   padding: 20px;
-  height: 100vh;
+  height: 100vh; /* የስክሪኑን ቁመት እንዲይዝ */
+  position: sticky; /* አቀማመጡን ቋሚ ያደርገዋል */
+  top: 0;
+  overflow-y: auto; /* ሜኑ ረጅም ከሆነ በውስጥ በኩል ብቻ እንዲንቀሳቀስ */
   z-index: 1000;
-  transition: transform 0.3s ease;
 }
 
-/* 2. የፕሮፋይል ክፍል */
+/* 3. ዋናው ይዘት (Dashboard Main Content) */
+.dashboard-main-content {
+  flex: 1;
+  overflow-y: auto; /* ዋናው ይዘት ብቻ እንዲንቀሳቀስ */
+  padding: 20px;
+  height: 100vh;
+  background-color: #f7fafc;
+}
+
+/* 4. የፕሮፋይል ክፍል */
 .sidebar-profile {
   text-align: center;
   padding: 15px 0;
-  border-bottom: 1px solid #2d3748;
-  margin-bottom: 15px;
 }
 
 .sidebar-profile-img {
@@ -52,7 +65,13 @@
   color: #fff;
 }
 
-/* 3. ሜኑ ክፍል */
+/* 5. ሜኑ እና መለያዎች */
+.sidebar-divider {
+  border: 0;
+  border-top: 1px solid #2d3748;
+  margin: 15px 0;
+}
+
 .sidebar-menu {
   display: flex;
   flex-direction: column;
@@ -69,9 +88,6 @@
   font-size: 14px;
   border-radius: 6px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 12px;
   transition: all 0.2s ease;
 }
 
@@ -86,49 +102,32 @@
   font-weight: bold;
 }
 
-/* 4. መውጫ (Logout) ክፍል */
-.sidebar-footer {
-  margin-top: auto;
-  padding-top: 20px;
-}
-
-.logout-btn {
+.sidebar-logout-btn {
   background-color: #e53e3e;
   color: white;
   border: none;
-  padding: 12px;
-  width: 100%;
+  padding: 10px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  margin-top: auto;
 }
 
-/* 5. የሞባይል ምላሽ ሰጪነት (Responsive Design) */
+/* 6. ለሞባይል መሳሪያዎች (Responsive Design) */
 @media (max-width: 768px) {
+  .dashboard-layout {
+    flex-direction: column; /* ስልክ ላይ Sidebar ከላይ እንዲሆን */
+  }
+  
   .employee-sidebar {
-    position: fixed;
-    left: -280px;
-    top: 0;
-    height: 100%;
-    box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+    width: 100%;
+    height: auto;
+    position: relative;
+    padding: 10px;
   }
 
-  .employee-sidebar.open {
-    left: 0;
-  }
-
-  /* ሜኑ መዝጊያ በተን ለሞባይል */
-  .close-sidebar-btn {
-    display: block;
-    background: none;
-    border: none;
-    color: white;
-    font-size: 20px;
-    margin-bottom: 10px;
+  .dashboard-main-content {
+    height: auto;
+    overflow-y: visible;
   }
 }
-
-.close-sidebar-btn { display: none; }
