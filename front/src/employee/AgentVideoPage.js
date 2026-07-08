@@ -135,29 +135,11 @@ const AgentVideoPage = () => {
   }, []);
 
 
-
-
-
-
-
-  /*
-    ==========================
-        EMPLOYEE LOGIN
-    ==========================
-  */
-
-
   useEffect(()=>{
-
-
     initCamera();
-
-
 
     const stored =
       localStorage.getItem("user");
-
-
 
     if(!stored){
 
