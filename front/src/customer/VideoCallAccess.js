@@ -11,362 +11,999 @@ import io from "socket.io-client";
 
 import "./VideoCallAccess.css";
 
+
 const API =
   process.env.REACT_APP_BACKEND_URL ||
   "https://poessa-digital-services-1.onrender.com";
+
 
 const socket = io(API, {
   transports: ["websocket", "polling"],
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
 });
 
+
 const VideoCallAccess = () => {
+
   const navigate = useNavigate();
 
+
+  // Video references
   const myVideo = useRef(null);
   const remoteVideo = useRef(null);
+
+
+  // WebRTC
   const peerRef = useRef(null);
+
+
+  // Stream
+  const streamRef = useRef(null);
+
+
+  // Timer
+  const timerRef = useRef(null);
+
+
+  // Timeout
   const timeoutRef = useRef(null);
-  const heartbeatRef = useRef(null);
 
-  const [stream, setStream] = useState(null);
-  const [callStatus, setCallStatus] = useState("idle");
-  const [statusMessage, setStatusMessage] = useState("");
-  const [myId, setMyId] = useState("");
-  const [employeeId, setEmployeeId] = useState("");
 
-  /* ==========================
+
+  const [myId,setMyId] = useState("");
+
+  const [employeeId,setEmployeeId] = useState("");
+
+  const [callStatus,setCallStatus] =
+    useState("idle");
+
+
+  const [statusMessage,setStatusMessage] =
+    useState("");
+
+
+  const [cameraOn,setCameraOn] =
+    useState(true);
+
+
+  const [micOn,setMicOn] =
+    useState(true);
+
+
+  const [callTime,setCallTime] =
+    useState(0);
+
+
+
+  const [message,setMessage] =
+    useState("");
+
+
+  const [messages,setMessages] =
+    useState([]);
+  /*
+    ==========================
       CAMERA INITIALIZATION
-  ========================== */
+    ==========================
+  */
+
   const initializeMedia = useCallback(async () => {
     try {
-      const media = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: "user",
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
-      });
 
-      setStream(media);
+      const media =
+        await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: "user",
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
+        });
+
+
+      streamRef.current = media;
+
 
       if (myVideo.current) {
         myVideo.current.srcObject = media;
       }
-    } catch (err) {
-      console.error(err);
-      alert("Camera / Microphone access denied.");
+
+
+    } catch (error) {
+
+      console.error(
+        "Camera Error:",
+        error
+      );
+
+      alert(
+        "ካሜራ ወይም ማይክሮፎን መክፈት አልተቻለም"
+      );
     }
+
   }, []);
 
-  /* ==========================
-      SOCKET INITIALIZATION
-  ========================== */
+
+
+  /*
+    ==========================
+       SOCKET CONNECTION
+    ==========================
+  */
+
+
   useEffect(() => {
+
     initializeMedia();
 
-    socket.on("connect", () => {
-      console.log("Socket Connected:", socket.id);
-    });
 
-    socket.on("disconnect", () => {
-      console.log("Socket Disconnected");
-    });
-
-    socket.on("reconnect", () => {
-      console.log("Socket Reconnected");
-      if (myId) {
-        socket.emit("register-user", {
-          userId: myId,
-          role: "pensioner",
-        });
+    socket.on(
+      "connect",
+      () => {
+        console.log(
+          "Socket Connected:",
+          socket.id
+        );
       }
-    });
+    );
 
-    return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-      socket.off("reconnect");
-    };
-  }, [initializeMedia, myId]);
 
-  /* ==========================
-      HEARTBEAT
-  ========================== */
-  useEffect(() => {
-    if (!myId) return;
+    /*
+       Employee accepted call
+    */
 
-    heartbeatRef.current = setInterval(() => {
-      socket.emit("heartbeat", {
-        userId: myId,
-      });
-    }, 15000);
+    socket.on(
+      "agent-accepted",
+      (data)=>{
 
-    return () => {
-      if (heartbeatRef.current) {
-        clearInterval(heartbeatRef.current);
-      }
-    };
-  }, [myId]);
+        console.log(
+          "Employee accepted",
+          data
+        );
 
-  /* ==========================
-      SOCKET EVENTS
-  ========================== */
-  const handleEmployeeAccepted = useCallback((data) => {
-    console.log("Employee Accepted", data);
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+        setEmployeeId(
+          data.agentId
+        );
 
-    setEmployeeId(data.agentId);
-    setCallStatus("connected");
-    setStatusMessage("");
 
-    if (peerRef.current) {
-      peerRef.current.signal(data.signal);
-    }
-  }, []);
+        setCallStatus(
+          "connected"
+        );
 
-  const handleCallEnded = useCallback(() => {
-    console.log("Call Ended");
 
-    if (peerRef.current) {
-      peerRef.current.destroy();
-      peerRef.current = null;
-    }
+        setStatusMessage(
+          "ጥሪው ተገናኝቷል"
+        );
 
-    if (remoteVideo.current) {
-      remoteVideo.current.srcObject = null;
-    }
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+        if(peerRef.current){
 
-    setEmployeeId("");
-    setCallStatus("idle");
-    setStatusMessage("ጥሪው ተቋርጧል።");
+          peerRef.current.signal(
+            data.signal
+          );
 
-    setTimeout(() => {
-      navigate("/");
-    }, 5000);
-  }, [navigate]);
-
-  const handleRejected = useCallback(() => {
-    if (peerRef.current) {
-      peerRef.current.destroy();
-      peerRef.current = null;
-    }
-
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    setEmployeeId("");
-    setCallStatus("idle");
-    setStatusMessage("ጥሪው ውድቅ ተደርጓል።");
-  }, []);
-
-  const handleQueueUpdate = useCallback((data) => {
-    if (callStatus !== "connected") {
-      setStatusMessage(`በመጠባበቂያ ውስጥ ነዎት። ከፊትዎ ${data.waitingCalls || 0} ሰው(ዎች) አሉ።`);
-    }
-  }, [callStatus]);
-
-  useEffect(() => {
-    socket.on("agent-accepted", handleEmployeeAccepted);
-    socket.on("call-ended", handleCallEnded);
-    socket.on("call-rejected", handleRejected);
-    socket.on("queue-updated", handleQueueUpdate);
-
-    socket.on("all-agents-busy", (data) => {
-      if (peerRef.current) {
-        peerRef.current.destroy();
-        peerRef.current = null;
-      }
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      setCallStatus("idle");
-      setStatusMessage(data.message || "ሁሉም ሰራተኞች በስራ ላይ ናቸው።");
-    });
-
-    return () => {
-      socket.off("agent-accepted", handleEmployeeAccepted);
-      socket.off("call-ended", handleCallEnded);
-      socket.off("call-rejected", handleRejected);
-      socket.off("queue-updated", handleQueueUpdate);
-      socket.off("all-agents-busy");
-    };
-  }, [handleEmployeeAccepted, handleCallEnded, handleRejected, handleQueueUpdate]);
-
-  /* ==========================
-      START CALL
-  ========================== */
-  const startCall = (userId) => {
-    if (!stream) {
-      alert("Camera not ready.");
-      return;
-    }
-
-    if (callStatus !== "idle") return;
-
-    setCallStatus("waiting");
-    setStatusMessage("ለሰራተኛ በመደወል ላይ...");
-
-    const peer = new Peer({
-      initiator: true,
-      trickle: false,
-      stream,
-    });
-
-    peer.on("signal", (signalData) => {
-      socket.emit("request-agent-call", {
-        pensionerId: userId,
-        signalData,
-      });
-    });
-
-    peer.on("stream", (remoteStream) => {
-      if (remoteVideo.current) {
-        remoteVideo.current.srcObject = remoteStream;
-      }
-    });
-
-    peer.on("error", (err) => {
-      console.error("Peer Error:", err);
-    });
-
-    peer.on("close", () => {
-      console.log("Peer Closed");
-    });
-
-    peerRef.current = peer;
-
-    timeoutRef.current = setTimeout(() => {
-      if (callStatus !== "connected") {
-        if (peerRef.current) {
-          peerRef.current.destroy();
-          peerRef.current = null;
         }
 
-        setCallStatus("idle");
-        setStatusMessage("30 ሰከንድ ውስጥ ምንም ሰራተኛ አልተገኘም።");
       }
-    }, 30000);
-  };
+    );
 
-  const startCallWithoutTin = () => {
-    if (!socket.connected) {
-      alert("Server not connected.");
-      return;
+
+
+    /*
+       Call rejected
+    */
+
+    socket.on(
+      "call-rejected",
+      ()=>{
+
+        setCallStatus(
+          "idle"
+        );
+
+
+        setStatusMessage(
+          "ጥሪው ውድቅ ተደርጓል"
+        );
+
+
+        destroyPeer();
+
+      }
+    );
+
+
+
+    /*
+       Call ended from server
+    */
+
+    socket.on(
+      "call-ended",
+      ()=>{
+
+        setStatusMessage(
+          "ጥሪው ተቋርጧል"
+        );
+
+
+        destroyPeer();
+
+      }
+    );
+
+
+
+    /*
+       Queue update
+    */
+
+    socket.on(
+      "queue-updated",
+      (data)=>{
+
+        if(
+          callStatus !== "connected"
+        ){
+
+          setStatusMessage(
+            `በመጠባበቂያ ውስጥ ነዎት። 
+             ${data.waitingCalls || 0} ሰው ቀድሞዎት አለ`
+          );
+
+        }
+
+      }
+    );
+
+
+
+    /*
+       Chat messages
+    */
+
+    socket.on(
+      "chat-message",
+      (data)=>{
+
+        setMessages(
+          prev=>[
+            ...prev,
+            data
+          ]
+        );
+
+      }
+    );
+
+
+
+    return ()=>{
+
+      socket.off(
+        "agent-accepted"
+      );
+
+      socket.off(
+        "call-ended"
+      );
+
+      socket.off(
+        "call-rejected"
+      );
+
+      socket.off(
+        "queue-updated"
+      );
+
+      socket.off(
+        "chat-message"
+      );
+
+    };
+
+
+  },[
+    initializeMedia,
+    callStatus
+  ]);
+
+
+
+  /*
+    ==========================
+        TIMER
+    ==========================
+  */
+
+
+  useEffect(()=>{
+
+    if(
+      callStatus === "connected"
+    ){
+
+      timerRef.current =
+        setInterval(()=>{
+
+          setCallTime(
+            prev=>prev+1
+          );
+
+        },1000);
+
     }
 
-    const pensionerId = socket.id;
-    setMyId(pensionerId);
 
-    socket.emit("register-user", {
-      userId: pensionerId,
-      role: "pensioner",
-    });
+    return ()=>{
 
-    startCall(pensionerId);
-  };
+      if(timerRef.current){
 
-  /* ==========================
-      END CALL
-  ========================== */
-  const endCall = () => {
+        clearInterval(
+          timerRef.current
+        );
+
+      }
+
+    };
+
+
+  },[
+    callStatus
+  ]);
+  /*
+    ==========================
+       DESTROY PEER
+    ==========================
+  */
+
+  const destroyPeer = () => {
+
     if (peerRef.current) {
+
       peerRef.current.destroy();
+
       peerRef.current = null;
     }
 
-    socket.emit("end-call", {
-      pensionerId: myId || socket.id,
-    });
 
     if (remoteVideo.current) {
+
       remoteVideo.current.srcObject = null;
+
     }
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
 
     setEmployeeId("");
-    setCallStatus("idle");
-    setStatusMessage("ጥሪው ተቋርጧል።");
 
-    setTimeout(() => {
-      navigate("/");
-    }, 2000);
+    setCallStatus("idle");
+
+    setCallTime(0);
+
   };
 
-  /* ==========================
-      UI
-  ========================== */
+
+
+
+  /*
+    ==========================
+        START CALL
+    ==========================
+  */
+
+
+  const startCall = () => {
+
+
+    if (!streamRef.current) {
+
+      alert(
+        "Camera is not ready"
+      );
+
+      return;
+
+    }
+
+
+
+    if (
+      callStatus !== "idle"
+    ) {
+
+      return;
+
+    }
+
+
+
+    const pensionerId =
+      socket.id;
+
+
+
+    setMyId(
+      pensionerId
+    );
+
+
+    socket.emit(
+      "register-user",
+      {
+        userId: pensionerId,
+        role: "pensioner"
+      }
+    );
+
+
+
+    setCallStatus(
+      "waiting"
+    );
+
+
+    setStatusMessage(
+      "ለሰራተኛ በመደወል ላይ..."
+    );
+
+
+
+    const peer =
+      new Peer({
+
+        initiator:true,
+
+        trickle:false,
+
+        stream:
+          streamRef.current
+
+      });
+
+
+
+    /*
+       Send WebRTC signal
+    */
+
+    peer.on(
+      "signal",
+      (signalData)=>{
+
+
+        socket.emit(
+          "request-agent-call",
+          {
+
+            pensionerId,
+
+            signalData
+
+          }
+        );
+
+
+      }
+    );
+
+
+
+    /*
+       Receive remote video
+    */
+
+    peer.on(
+      "stream",
+      (remoteStream)=>{
+
+
+        if(remoteVideo.current){
+
+          remoteVideo.current.srcObject =
+            remoteStream;
+
+        }
+
+
+      }
+    );
+
+
+
+    peer.on(
+      "error",
+      (error)=>{
+
+        console.error(
+          "Peer Error:",
+          error
+        );
+
+      }
+    );
+
+
+
+    peerRef.current =
+      peer;
+
+
+
+  };
+
+
+
+
+
+  /*
+    ==========================
+       CAMERA ON / OFF
+    ==========================
+  */
+
+
+  const toggleCamera = ()=>{
+
+
+    const videoTrack =
+      streamRef.current
+      ?.getVideoTracks()[0];
+
+
+
+    if(videoTrack){
+
+
+      videoTrack.enabled =
+        !videoTrack.enabled;
+
+
+
+      setCameraOn(
+        videoTrack.enabled
+      );
+
+
+    }
+
+
+  };
+
+
+
+
+
+  /*
+    ==========================
+       MICROPHONE ON / OFF
+    ==========================
+  */
+
+
+  const toggleMic = ()=>{
+
+
+    const audioTrack =
+      streamRef.current
+      ?.getAudioTracks()[0];
+
+
+
+    if(audioTrack){
+
+
+      audioTrack.enabled =
+        !audioTrack.enabled;
+
+
+
+      setMicOn(
+        audioTrack.enabled
+      );
+
+
+    }
+
+
+  };
+
+
+
+
+
+
+  /*
+    ==========================
+          CHAT SEND
+    ==========================
+  */
+
+
+  const sendMessage = ()=>{
+
+
+    if(!message.trim())
+      return;
+
+
+
+    const data = {
+
+      sender:"Pensioner",
+
+      message,
+
+      time:
+        new Date()
+        .toLocaleTimeString()
+
+    };
+
+
+
+    socket.emit(
+      "chat-message",
+      data
+    );
+
+
+
+    setMessages(
+      prev=>[
+        ...prev,
+        data
+      ]
+    );
+
+
+
+    setMessage("");
+
+  };
+
+
+
+
+
+
+  /*
+    ==========================
+          END CALL
+    ==========================
+  */
+
+
+  const endCall = ()=>{
+
+
+    socket.emit(
+      "end-call",
+      {
+
+        pensionerId:
+          myId || socket.id
+
+      }
+    );
+
+
+
+    destroyPeer();
+
+
+
+    if(streamRef.current){
+
+      streamRef.current
+      .getTracks()
+      .forEach(
+        track=>track.stop()
+      );
+
+    }
+
+
+
+    setStatusMessage(
+      "ጥሪው ተዘግቷል"
+    );
+
+
+  };
+    /*
+    ==========================
+             UI
+    ==========================
+  */
+
+
   return (
+
     <div className="video-call-page">
+
       <div className="video-call-container">
-        <h1 className="page-title">የቀጥታ ቪዲዮ ጥሪ</h1>
+
+
+        <h1 className="page-title">
+          የቀጥታ ቪዲዮ ጥሪ
+        </h1>
+
+
 
         <div className="status-box">
-          {statusMessage ||
-            (callStatus === "idle"
+
+          {
+            statusMessage ||
+            (
+              callStatus === "idle"
               ? "ዝግጁ"
-              : callStatus === "waiting"
-              ? "ለሰራተኛ በመደወል ላይ..."
-              : "ጥሪው ተገናኝቷል")}
+              :
+              callStatus === "waiting"
+              ? "ሰራተኛ በመፈለግ ላይ..."
+              :
+              "ጥሪው ተገናኝቷል"
+            )
+          }
+
         </div>
+
+
+
+
 
         <div className="video-layout">
-          {/* Employee Video */}
+
+
+          {/* Employee video */}
+
           <div className="remote-video-wrapper">
+
+            <h3>
+              ሰራተኛ
+            </h3>
+
+
             <video
+
               ref={remoteVideo}
+
               autoPlay
+
               playsInline
+
               className="remote-video"
+
             />
+
           </div>
 
-          {/* Pensioner Video */}
+
+
+
+
+          {/* Pensioner video */}
+
           <div className="local-video-wrapper">
+
+            <h3>
+              እርስዎ
+            </h3>
+
+
             <video
+
               ref={myVideo}
+
               autoPlay
+
               muted
+
               playsInline
+
               className="local-video"
+
             />
+
           </div>
+
+
+
         </div>
+
+
 
         <div className="button-group">
-          {callStatus === "idle" ? (
-            <button className="call-btn" onClick={startCallWithoutTin}>
+
+
+          {
+            callStatus === "idle"
+
+            ?
+
+            <button
+
+              className="call-btn"
+
+              onClick={startCall}
+
+            >
+
               📞 ደውል
+
             </button>
-          ) : (
-            <button className="end-btn" onClick={endCall}>
+
+
+            :
+
+
+            <button
+
+              className="end-btn"
+
+              onClick={endCall}
+
+            >
+
               ❌ ጥሪ ዝጋ
+
             </button>
-          )}
+
+          }
+
+
+
+
+
+          <button
+
+            className="control-btn"
+
+            onClick={toggleCamera}
+
+          >
+
+            {
+              cameraOn
+              ?
+              "📷 ካሜራ አጥፋ"
+              :
+              "📷 ካሜራ አብራ"
+            }
+
+          </button>
+
+
+          <button
+
+            className="control-btn"
+
+            onClick={toggleMic}
+
+          >
+
+            {
+              micOn
+              ?
+              "🎤 ድምፅ አጥፋ"
+              :
+              "🎤 ድምፅ አብራ"
+            }
+
+          </button>
+
+
+
         </div>
+
+
+        <div className="call-time">
+
+
+          ⏱️ የጥሪ ጊዜ:
+
+          {" "}
+
+          {Math.floor(callTime / 60)}
+
+          :
+
+          {
+            String(callTime % 60)
+            .padStart(2,"0")
+          }
+
+
+        </div>
+
+
+        <div className="chat-box">
+
+
+          <h2>
+            መልዕክት
+          </h2>
+
+          <div className="messages">
+
+
+            {
+              messages.map(
+                (msg,index)=>(
+
+                  <div
+                    key={index}
+                    className="message"
+                  >
+
+                    <b>
+                      {msg.sender}
+                    </b>
+
+                    :
+
+                    {" "}
+
+                    {msg.message}
+
+
+                  </div>
+
+                )
+              )
+
+            }
+
+
+          </div>
+
+
+          <div className="chat-input">
+
+
+            <input
+
+              value={message}
+
+              onChange={
+                e=>setMessage(e.target.value)
+              }
+
+              placeholder="መልዕክት ጻፍ..."
+
+            />
+
+
+
+            <button
+
+              onClick={sendMessage}
+
+            >
+
+              ላክ
+
+            </button>
+
+
+
+          </div>
+
+
+        </div>
+
       </div>
+
+
     </div>
+
   );
+
 };
 
 export default VideoCallAccess;
