@@ -215,23 +215,32 @@ const AgentVideoPage = () => {
       </div>
 
       <div className="video-section">
-        <video ref={remoteVideo} autoPlay playsInline />
-        <video ref={myVideo} autoPlay muted playsInline />
-        <div>
-          <button onClick={toggleCamera}>{cameraOn ? "Camera Off" : "Camera On"}</button>
-          <button onClick={toggleMic}>{micOn ? "Mute" : "Unmute"}</button>
-          <button onClick={captureEvidence}>Capture</button>
-          {callConnected && <button onClick={endCall}>End Call</button>}
-        </div>
-        <div>⏱️ {Math.floor(callTime / 60)}:{String(callTime % 60).padStart(2, "0")}</div>
-        <div className="chat">
-          {messages.map((msg, index) => (
-            <p key={index}><b>{msg.sender}</b>: {msg.message}</p>
-          ))}
-          <input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Message..." />
-          <button onClick={sendMessage}>Send</button>
-        </div>
-      </div>
+  {/* የጡረተኛው ቪዲዮ (ዋና) */}
+  <video 
+    ref={remoteVideo} 
+    autoPlay 
+    playsInline 
+    className="remote-video" 
+  />
+  
+  {/* የሰራተኛው ቪዲዮ (overlay) */}
+  <video 
+    ref={myVideo} 
+    autoPlay 
+    muted 
+    playsInline 
+    className="local-video" 
+  />
+
+  {/* የቁጥጥር ቁልፎች */}
+  <div className="controls">
+    <button onClick={toggleCamera}>{cameraOn ? "📷 ካሜራ አጥፋ" : "📷 ካሜራ አብራ"}</button>
+    <button onClick={toggleMic}>{micOn ? "🎤 ድምፅ አጥፋ" : "🎤 ድምፅ አብራ"}</button>
+    <button onClick={captureEvidence}>📷 ፎቶ አንሳ</button>
+    {callConnected && <button onClick={endCall}>❌ ጥሪ ዝጋ</button>}
+  </div>
+</div>
+
     </div>
   );
 };
