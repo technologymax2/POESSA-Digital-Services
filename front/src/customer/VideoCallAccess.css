@@ -1,60 +1,59 @@
-/* VideoCallAccess.css */
+/* ዋናው ገጽ */
 .video-call-page {
   display: flex;
   justify-content: center;
-  padding: 20px;
-  background-color: #f0f2f5;
+  align-items: center;
   min-height: 100vh;
+  background-color: #0b0e14;
+  padding: 10px;
+  font-family: sans-serif;
 }
 
 .video-call-container {
   width: 100%;
   max-width: 800px;
-  background: white;
+  background: #1a1d23;
   padding: 20px;
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  color: white;
 }
 
 .page-title {
   text-align: center;
-  color: #333;
+  font-size: 1.5rem;
+  margin-bottom: 15px;
 }
 
-.status-box {
-  background: #e7f3ff;
-  padding: 10px;
-  text-align: center;
-  border-radius: 5px;
-  margin-bottom: 20px;
-  font-weight: bold;
-}
-
-/* VideoCallAccess.css */
+/* የቪዲዮ አቀማመጥ */
 .video-layout {
-  position: relative; /* ለ overlay ወሳኝ ነው */
+  position: relative;
   width: 100%;
-  height: 500px;
+  height: 450px;
   background: #000;
   border-radius: 15px;
   overflow: hidden;
 }
 
+/* የርቀት ቪዲዮ (ሙሉ ስክሪን) */
 .remote-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
+/* የአካባቢ ቪዲዮ (overlay) */
 .local-video-wrapper {
   position: absolute;
   bottom: 20px;
   right: 20px;
-  width: 150px; /* ትንሽዬ መጠን */
+  width: 140px;
   height: 200px;
-  border: 2px solid white;
-  border-radius: 10px;
+  border: 3px solid #ffffff;
+  border-radius: 12px;
   z-index: 10;
+  overflow: hidden;
+  background: #333;
 }
 
 .local-video {
@@ -63,79 +62,54 @@
   object-fit: cover;
 }
 
-/* ሌሎች የነበሩት ዲዛይኖች እንደነበሩ ይቆዩ */
-
-
+/* የቁጥጥር ቁልፎች */
 .button-group {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: 15px;
+  margin-top: 20px;
 }
 
-.call-btn { background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-.end-btn { background-color: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-.control-btn { background-color: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
 
+.call-btn { background-color: #28a745; color: white; }
+.end-btn { background-color: #dc3545; color: white; }
+.control-btn { background-color: #444; color: white; }
+
+/* የጥሪ ጊዜ እና ሁኔታ */
 .call-time {
   text-align: center;
-  font-size: 1.2rem;
-  margin-bottom: 15px;
+  margin-top: 10px;
+  font-size: 1.1rem;
 }
 
-.chat-box {
-  border-top: 1px solid #ddd;
-  padding-top: 15px;
-}
-
-.messages {
-  height: 150px;
-  overflow-y: auto;
-  border: 1px solid #eee;
-  padding: 10px;
+.status-box {
+  text-align: center;
+  padding: 8px;
   margin-bottom: 10px;
-  background: #fafafa;
-}
-
-.chat-input {
-  display: flex;
-  gap: 10px;
-}
-
-.chat-input input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ccc;
   border-radius: 5px;
+  background: #333;
 }
 
-/* ለሞባይል ስክሪን የሚሆን ማስተካከያ */
+/* ለሞባይል ስክሪን የሚደረግ ማስተካከያ */
 @media screen and (max-width: 600px) {
-  .video-call-container, .agent-page {
-    flex-direction: column;
-    padding: 10px;
+  .video-layout {
+    height: 300px;
   }
-
-  .video-layout, .video-section {
-    height: 300px; /* በሞባይል ትንሽ እንዲል እንዲያንስ */
-    width: 100%;
+  
+  .local-video-wrapper {
+    width: 100px;
+    height: 140px;
   }
-
-  .remote-video, .local-video {
-    width: 100%;
-    height: auto;
-  }
-
-  .local-video {
-    width: 100px; /* በሞባይል ላይ ትንሽ እንዲሆን */
-    height: 150px;
-    bottom: 60px;
-    right: 10px;
-  }
-
-  .button-group, .controls {
-    flex-wrap: wrap; /* ቁልፎቹ ከታች እንዲደረደሩ */
-    gap: 5px;
+  
+  .button-group {
+    flex-wrap: wrap;
   }
 }
-
