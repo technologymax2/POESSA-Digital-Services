@@ -756,65 +756,28 @@ const VideoCallAccess = () => {
 
 
 
+{/* በቪዲዮ ክፍል ውስጥ የሚከተለውን ተጠቀም */}
+<div className="video-layout">
+  {/* የሰራተኛው ቪዲዮ (ዋና) */}
+  <video
+    ref={remoteVideo}
+    autoPlay
+    playsInline
+    className="remote-video"
+  />
 
-        <div className="video-layout">
+  {/* የራስህ ቪዲዮ (በስተቀኝ ከታች የሚደራረብ) */}
+  <div className="local-video-wrapper">
+    <video
+      ref={myVideo}
+      autoPlay
+      muted
+      playsInline
+      className="local-video"
+    />
+  </div>
+</div>
 
-
-          {/* Employee video */}
-
-          <div className="remote-video-wrapper">
-
-            <h3>
-              ሰራተኛ
-            </h3>
-
-
-            <video
-
-              ref={remoteVideo}
-
-              autoPlay
-
-              playsInline
-
-              className="remote-video"
-
-            />
-
-          </div>
-
-
-
-
-
-          {/* Pensioner video */}
-
-          <div className="local-video-wrapper">
-
-            <h3>
-              እርስዎ
-            </h3>
-
-
-            <video
-
-              ref={myVideo}
-
-              autoPlay
-
-              muted
-
-              playsInline
-
-              className="local-video"
-
-            />
-
-          </div>
-
-
-
-        </div>
 
 
 
