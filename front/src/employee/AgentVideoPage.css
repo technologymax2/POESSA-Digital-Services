@@ -1,4 +1,14 @@
+/* AgentVideoPage.css */
 
+.agent-page {
+  display: flex;
+  height: 100vh;
+  padding: 20px;
+  gap: 20px;
+  background-color: #f4f7f6;
+}
+
+/* የግራው ፓነል (Calls/Search) */
 .queue-panel {
   width: 300px;
   background: white;
@@ -16,15 +26,6 @@
   background: #fafafa;
 }
 
-./* AgentVideoPage.css */
-.agent-page {
-  display: flex;
-  height: 100vh;
-  padding: 20px;
-  gap: 20px;
-  background-color: #f4f7f6;
-}
-
 /* የቪዲዮ ክፍል አቀማመጥ */
 .video-section {
   flex: 1;
@@ -33,6 +34,8 @@
   border-radius: 12px;
   overflow: hidden;
   height: 500px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ዋናው ቪዲዮ (የጡረተኛው) */
@@ -42,10 +45,10 @@
   object-fit: cover;
 }
 
-/* የሰራተኛው ቪዲዮ (በስተቀኝ ከታች) */
+/* የሰራተኛው ቪዲዮ (በስተቀኝ ከታች የሚደራረብ) */
 .local-video {
   position: absolute;
-  bottom: 20px;
+  bottom: 80px; /* ከቁልፎች በላይ እንዲሆን */
   right: 20px;
   width: 160px;
   height: 120px;
@@ -55,25 +58,27 @@
   background: #333;
 }
 
-
-
-.chat {
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  flex-grow: 1;
+/* የቁጥጥር ቁልፎች */
+.controls {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  width: 100%;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  z-index: 20;
 }
 
+/* አጠቃላይ ስታይል */
 button {
-  margin: 5px;
   padding: 8px 15px;
   cursor: pointer;
   background-color: #007bff;
   color: white;
   border: none;
   border-radius: 4px;
+  font-size: 14px;
 }
 
 button:hover {
@@ -85,4 +90,14 @@ input {
   margin: 5px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  width: 90%;
+}
+
+.chat {
+  margin-top: 10px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
 }
