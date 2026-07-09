@@ -101,3 +101,35 @@ input {
   display: flex;
   flex-direction: column;
 }
+
+/* ለሞባይል ስክሪን የሚሆን ማስተካከያ */
+@media screen and (max-width: 600px) {
+  .video-call-container, .agent-page {
+    flex-direction: column;
+    padding: 10px;
+  }
+
+  .video-layout, .video-section {
+    height: 300px; /* በሞባይል ትንሽ እንዲል እንዲያንስ */
+    width: 100%;
+  }
+
+  .remote-video, .local-video {
+    width: 100%;
+    height: auto;
+  }
+
+  .local-video {
+    width: 100px; /* በሞባይል ላይ ትንሽ እንዲሆን */
+    height: 150px;
+    bottom: 60px;
+    right: 10px;
+  }
+
+  .button-group, .controls {
+    flex-wrap: wrap; /* ቁልፎቹ ከታች እንዲደረደሩ */
+    gap: 5px;
+  }
+}
+
+
