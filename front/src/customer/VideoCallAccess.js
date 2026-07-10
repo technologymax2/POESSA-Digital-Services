@@ -623,44 +623,33 @@ const VideoCallAccess = () => {
 
   return (
 
-<div className="flex flex-col md:flex-row h-screen p-4 gap-4 bg-gray-100">
-  {/* የጥሪዎች ዝርዝር */}
-  <div className="w-full md:w-80 bg-white p-4 rounded-xl shadow-lg overflow-y-auto max-h-[40vh] md:max-h-full">
-    <h2 className="text-xl font-bold mb-4 border-b pb-2">Incoming Calls</h2>
-    {incomingCalls.map((call) => (
-      <div key={call.pensionerId} className="bg-gray-50 border p-3 rounded-lg mb-3 flex flex-col gap-2">
-        <p className="font-semibold text-sm truncate">{call.pensionerName || call.pensionerId}</p>
-        <div className="flex gap-2">
-          <button className="flex-1 bg-green-500 text-white py-1 rounded text-xs font-bold" onClick={() => answerCall(call)}>Accept</button>
-          <button className="flex-1 bg-red-500 text-white py-1 rounded text-xs font-bold" onClick={() => rejectCall(call)}>Reject</button>
-        </div>
+<div className="min-h-screen flex justify-center items-center bg-gray-900 p-4 font-sans">
+  <div className="w-full max-w-lg bg-gray-800 p-5 rounded-3xl shadow-2xl text-white">
+    <h1 className="text-xl font-bold text-center mb-5">የቀጥታ ቪዲዮ ጥሪ</h1>
+    
+    {/* የቪዲዮ ቦታ */}
+    <div className="relative w-full h-[350px] bg-black rounded-2xl overflow-hidden mb-5">
+      <video ref={remoteVideo} className="w-full h-full object-cover" autoPlay playsInline />
+      <div className="absolute bottom-5 right-5 w-24 h-32 border-4 border-white rounded-xl overflow-hidden z-10 shadow-lg">
+        <video ref={myVideo} className="w-full h-full object-cover" autoPlay muted playsInline />
       </div>
-    ))}
-    
-    <div className="mt-6 pt-4 border-t">
-      <h3 className="font-bold mb-2">Search Pensioner</h3>
-      <input className="w-full p-2 border rounded text-sm mb-2" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Fayda / ID" />
-      <button className="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold" onClick={searchPensioner}>Search</button>
     </div>
-  </div>
 
-  {/* የቪዲዮ ማሳያ */}
-  <div className="flex-1 relative bg-black rounded-2xl overflow-hidden shadow-2xl">
-    <video ref={remoteVideo} className="w-full h-full object-cover" autoPlay playsInline />
-    
-    {/* የሰራተኛው ቪዲዮ (Overlay) */}
-    <video ref={myVideo} className="absolute bottom-24 right-5 w-28 h-40 border-4 border-white rounded-lg z-10 object-cover shadow-lg" autoPlay muted playsInline />
-
-    {/* የቁጥጥር ቁልፎች */}
-    <div className="absolute bottom-4 left-0 w-full flex justify-center gap-3 px-2 flex-wrap z-20">
-      <button className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm" onClick={toggleCamera}>{cameraOn ? "📷 ካሜራ አጥፋ" : "📷 ካሜራ አብራ"}</button>
-      <button className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm" onClick={toggleMic}>{micOn ? "🎤 ድምፅ አጥፋ" : "🎤 ድምፅ አብራ"}</button>
-      <button className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm" onClick={captureEvidence}>📷 ፎቶ አንሳ</button>
-      {callConnected && <button className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm" onClick={endCall}>❌ ዝጋ</button>}
+    {/* የጥሪ ቁልፎች */}
+    <div className="flex justify-center gap-4 flex-wrap">
+      {callStatus === "idle" ? (
+        <button className="bg-green-600 px-8 py-3 rounded-xl font-bold text-lg" onClick={startCall}>📞 ደውል</button>
+      ) : (
+        <button className="bg-red-600 px-8 py-3 rounded-xl font-bold text-lg" onClick={endCall}>❌ ጥሪ ዝጋ</button>
+      )}
+      <button className="bg-gray-700 px-5 py-3 rounded-xl" onClick={toggleCamera}>📷 ካሜራ</button>
+      <button className="bg-gray-700 px-5 py-3 rounded-xl" onClick={toggleMic}>🎤 ድምፅ</button>
     </div>
+
+    {/* የጥሪ ጊዜ */}
+    <div className="text-center mt-4 text-gray-400">⏱️ የጥሪ ጊዜ: {Math.floor(callTime / 60)}:{String(callTime % 60).padStart(2, "0")}</div>
   </div>
 </div>
-
   );
 
 };
