@@ -1,59 +1,46 @@
-/* ዋናው ገጽ */
 .video-call-page {
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #0b0e14;
   padding: 10px;
-  font-family: sans-serif;
+  background-color: #0b0e14;
+  min-height: 100vh;
 }
 
 .video-call-container {
   width: 100%;
-  max-width: 800px;
+  max-width: 600px;
   background: #1a1d23;
-  padding: 20px;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  padding: 15px;
+  border-radius: 15px;
   color: white;
 }
 
-.page-title {
-  text-align: center;
-  font-size: 1.5rem;
-  margin-bottom: 15px;
-}
-
-/* የቪዲዮ አቀማመጥ */
+/* የቪዲዮ መያዣ */
 .video-layout {
   position: relative;
   width: 100%;
-  height: 450px;
+  height: 350px; /* ለሞባይል የሚመጥን ቁመት */
   background: #000;
-  border-radius: 15px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
-/* የርቀት ቪዲዮ (ሙሉ ስክሪን) */
 .remote-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-/* የአካባቢ ቪዲዮ (overlay) */
 .local-video-wrapper {
   position: absolute;
   bottom: 20px;
   right: 20px;
-  width: 140px;
-  height: 200px;
-  border: 3px solid #ffffff;
-  border-radius: 12px;
+  width: 100px;
+  height: 140px;
+  border: 2px solid white;
+  border-radius: 8px;
   z-index: 10;
   overflow: hidden;
-  background: #333;
 }
 
 .local-video {
@@ -62,54 +49,10 @@
   object-fit: cover;
 }
 
-/* የቁጥጥር ቁልፎች */
 .button-group {
   display: flex;
   justify-content: center;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-button {
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.3s;
-}
-
-.call-btn { background-color: #28a745; color: white; }
-.end-btn { background-color: #dc3545; color: white; }
-.control-btn { background-color: #444; color: white; }
-
-/* የጥሪ ጊዜ እና ሁኔታ */
-.call-time {
-  text-align: center;
-  margin-top: 10px;
-  font-size: 1.1rem;
-}
-
-.status-box {
-  text-align: center;
-  padding: 8px;
-  margin-bottom: 10px;
-  border-radius: 5px;
-  background: #333;
-}
-
-/* ለሞባይል ስክሪን የሚደረግ ማስተካከያ */
-@media screen and (max-width: 600px) {
-  .video-layout {
-    height: 300px;
-  }
-  
-  .local-video-wrapper {
-    width: 100px;
-    height: 140px;
-  }
-  
-  .button-group {
-    flex-wrap: wrap;
-  }
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap; /* ቁልፎች በሞባይል እንዳይጨናነቁ */
 }
