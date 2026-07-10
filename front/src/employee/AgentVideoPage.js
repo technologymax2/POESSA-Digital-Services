@@ -192,56 +192,43 @@ const AgentVideoPage = () => {
   }, [callConnected]);
 
   return (
-    <div className="agent-page">
-      <div className="queue-panel">
-        <h2>Incoming Calls</h2>
-        {incomingCalls.map((call) => (
-          <div key={call.pensionerId} className="call-card">
-            <p>{call.pensionerName || call.pensionerId}</p>
-            <button onClick={() => answerCall(call)}>Accept</button>
-            <button onClick={() => rejectCall(call)}>Reject</button>
-          </div>
-        ))}
-        <hr />
-        <h3>Search Pensioner</h3>
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Fayda / ID" />
-        <button onClick={searchPensioner}>Search</button>
-        {pensioner && (
-          <div>
-            <p>{pensioner.nameEng}</p>
-            <p>{pensioner.faydaNumber}</p>
-          </div>
-        )}
+   <div className="flex flex-col md:flex-row h-screen p-4 gap-4 bg-gray-100">
+  {/* የጥሪዎች ዝርዝር */}
+  <div className="w-full md:w-80 bg-white p-4 rounded-xl shadow-lg overflow-y-auto max-h-[40vh] md:max-h-full">
+    <h2 className="text-xl font-bold mb-4 border-b pb-2">Incoming Calls</h2>
+    {incomingCalls.map((call) => (
+      <div key={call.pensionerId} className="bg-gray-50 border p-3 rounded-lg mb-3 flex flex-col gap-2">
+        <p className="font-semibold text-sm truncate">{call.pensionerName || call.pensionerId}</p>
+        <div className="flex gap-2">
+          <button className="flex-1 bg-green-500 text-white py-1 rounded text-xs font-bold" onClick={() => answerCall(call)}>Accept</button>
+          <button className="flex-1 bg-red-500 text-white py-1 rounded text-xs font-bold" onClick={() => rejectCall(call)}>Reject</button>
+        </div>
       </div>
+    ))}
+    
+    <div className="mt-6 pt-4 border-t">
+      <h3 className="font-bold mb-2">Search Pensioner</h3>
+      <input className="w-full p-2 border rounded text-sm mb-2" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Fayda / ID" />
+      <button className="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold" onClick={searchPensioner}>Search</button>
+    </div>
+  </div>
 
-      <div className="video-section">
-  {/* የጡረተኛው ቪዲዮ (ዋና) */}
-  <video 
-    ref={remoteVideo} 
-    autoPlay 
-    playsInline 
-    className="remote-video" 
-  />
-  
-  {/* የሰራተኛው ቪዲዮ (overlay) */}
-  <video 
-    ref={myVideo} 
-    autoPlay 
-    muted 
-    playsInline 
-    className="local-video" 
-  />
+  {/* የቪዲዮ ማሳያ */}
+  <div className="flex-1 relative bg-black rounded-2xl overflow-hidden shadow-2xl">
+    <video ref={remoteVideo} className="w-full h-full object-cover" autoPlay playsInline />
+    
+    {/* የሰራተኛው ቪዲዮ (Overlay) */}
+    <video ref={myVideo} className="absolute bottom-24 right-5 w-28 h-40 border-4 border-white rounded-lg z-10 object-cover shadow-lg" autoPlay muted playsInline />
 
-  {/* የቁጥጥር ቁልፎች */}
-  <div className="controls">
-    <button onClick={toggleCamera}>{cameraOn ? "📷 ካሜራ አጥፋ" : "📷 ካሜራ አብራ"}</button>
-    <button onClick={toggleMic}>{micOn ? "🎤 ድምፅ አጥፋ" : "🎤 ድምፅ አብራ"}</button>
-    <button onClick={captureEvidence}>📷 ፎቶ አንሳ</button>
-    {callConnected && <button onClick={endCall}>❌ ጥሪ ዝጋ</button>}
+    {/* የቁጥጥር ቁልፎች */}
+    <div className="absolute bottom-4 left-0 w-full flex justify-center gap-3 px-2 flex-wrap z-20">
+      <button className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm" onClick={toggleCamera}>{cameraOn ? "📷 ካሜራ አጥፋ" : "📷 ካሜራ አብራ"}</button>
+      <button className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm" onClick={toggleMic}>{micOn ? "🎤 ድምፅ አጥፋ" : "🎤 ድምፅ አብራ"}</button>
+      <button className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm" onClick={captureEvidence}>📷 ፎቶ አንሳ</button>
+      {callConnected && <button className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm" onClick={endCall}>❌ ዝጋ</button>}
+    </div>
   </div>
 </div>
-
-    </div>
   );
 };
 
