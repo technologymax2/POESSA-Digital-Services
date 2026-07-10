@@ -1,57 +1,33 @@
-/* AgentVideoPage.css - የተሟላ እና ለሞባይል የተስተካከለ */
-
 .agent-page {
   display: flex;
   height: 100vh;
   padding: 10px;
-  gap: 15px;
+  gap: 10px;
   background-color: #f4f7f6;
-  flex-direction: column; /* ለሞባይል መጀመሪያ ቀጥ ብሎ እንዲደረደር */
+  flex-direction: column; /* ለሞባይል */
 }
 
 /* ስክሪኑ ሲሰፋ (Desktop) ጎን ለጎን እንዲሆኑ */
 @media (min-width: 768px) {
-  .agent-page {
-    flex-direction: row;
-  }
+  .agent-page { flex-direction: row; }
 }
 
 .queue-panel {
   width: 100%;
   background: white;
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  overflow-y: auto;
-  max-height: 40vh; /* ለሞባይል ስክሪን የሚመጥን */
-}
-
-@media (min-width: 768px) {
-  .queue-panel {
-    width: 300px;
-    max-height: 100vh;
-  }
-}
-
-.call-card {
-  border: 1px solid #ddd;
   padding: 10px;
-  margin-bottom: 10px;
   border-radius: 8px;
-  background: #f9f9f9;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
-/* የቪዲዮ ክፍል አቀማመጥ */
 .video-section {
   flex: 1;
   position: relative;
   background: #000;
   border-radius: 12px;
   overflow: hidden;
-  min-height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 350px; /* ለሞባይል */
 }
 
 .remote-video {
@@ -60,50 +36,24 @@
   object-fit: cover;
 }
 
-/* የሰራተኛው ቪዲዮ (Overlay) */
 .local-video {
   position: absolute;
-  bottom: 80px;
+  bottom: 20px;
   right: 20px;
-  width: 120px;
-  height: 160px;
-  border: 3px solid #ffffff;
-  border-radius: 10px;
+  width: 100px;
+  height: 140px;
+  border: 2px solid white;
+  border-radius: 8px;
   z-index: 10;
-  background: #333;
   object-fit: cover;
 }
 
-/* የቁጥጥር ቁልፎች */
 .controls {
   position: absolute;
-  bottom: 15px;
+  bottom: 5px;
   width: 100%;
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 5px;
   z-index: 20;
-}
-
-button {
-  padding: 10px 15px;
-  border-radius: 6px;
-  border: none;
-  background: #007bff;
-  color: white;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: bold;
-}
-
-button:hover {
-  background: #0056b3;
-}
-
-input {
-  width: 80%;
-  padding: 10px;
-  margin-bottom: 5px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
 }
