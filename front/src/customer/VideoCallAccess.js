@@ -129,14 +129,6 @@ const VideoCallAccess = () => {
   }, []);
 
 
-
-  /*
-    ==========================
-       SOCKET CONNECTION
-    ==========================
-  */
-
-
   useEffect(() => {
 
     initializeMedia();
@@ -153,9 +145,6 @@ const VideoCallAccess = () => {
     );
 
 
-    /*
-       Employee accepted call
-    */
 
     socket.on(
       "agent-accepted",
@@ -195,10 +184,6 @@ const VideoCallAccess = () => {
 
 
 
-    /*
-       Call rejected
-    */
-
     socket.on(
       "call-rejected",
       ()=>{
@@ -220,10 +205,6 @@ const VideoCallAccess = () => {
 
 
 
-    /*
-       Call ended from server
-    */
-
     socket.on(
       "call-ended",
       ()=>{
@@ -238,11 +219,6 @@ const VideoCallAccess = () => {
       }
     );
 
-
-
-    /*
-       Queue update
-    */
 
     socket.on(
       "queue-updated",
@@ -262,11 +238,6 @@ const VideoCallAccess = () => {
       }
     );
 
-
-
-    /*
-       Chat messages
-    */
 
     socket.on(
       "chat-message",
@@ -315,14 +286,6 @@ const VideoCallAccess = () => {
   ]);
 
 
-
-  /*
-    ==========================
-        TIMER
-    ==========================
-  */
-
-
   useEffect(()=>{
 
     if(
@@ -357,12 +320,7 @@ const VideoCallAccess = () => {
   },[
     callStatus
   ]);
-  /*
-    ==========================
-       DESTROY PEER
-    ==========================
-  */
-
+ 
   const destroyPeer = () => {
 
     if (peerRef.current) {
@@ -387,15 +345,6 @@ const VideoCallAccess = () => {
     setCallTime(0);
 
   };
-
-
-
-
-  /*
-    ==========================
-        START CALL
-    ==========================
-  */
 
 
   const startCall = () => {
@@ -467,11 +416,6 @@ const VideoCallAccess = () => {
       });
 
 
-
-    /*
-       Send WebRTC signal
-    */
-
     peer.on(
       "signal",
       (signalData)=>{
@@ -493,10 +437,6 @@ const VideoCallAccess = () => {
     );
 
 
-
-    /*
-       Receive remote video
-    */
 
     peer.on(
       "stream",
@@ -538,16 +478,6 @@ const VideoCallAccess = () => {
   };
 
 
-
-
-
-  /*
-    ==========================
-       CAMERA ON / OFF
-    ==========================
-  */
-
-
   const toggleCamera = ()=>{
 
 
@@ -578,14 +508,6 @@ const VideoCallAccess = () => {
 
 
 
-
-  /*
-    ==========================
-       MICROPHONE ON / OFF
-    ==========================
-  */
-
-
   const toggleMic = ()=>{
 
 
@@ -614,15 +536,6 @@ const VideoCallAccess = () => {
   };
 
 
-
-
-
-
-  /*
-    ==========================
-          CHAT SEND
-    ==========================
-  */
 
 
   const sendMessage = ()=>{
@@ -669,16 +582,6 @@ const VideoCallAccess = () => {
 
 
 
-
-
-
-  /*
-    ==========================
-          END CALL
-    ==========================
-  */
-
-
   const endCall = ()=>{
 
 
@@ -716,254 +619,47 @@ const VideoCallAccess = () => {
 
 
   };
-    /*
-    ==========================
-             UI
-    ==========================
-  */
-
+ 
 
   return (
 
-    <div className="video-call-page">
-
-      <div className="video-call-container">
-
-
-        <h1 className="page-title">
-          የቀጥታ ቪዲዮ ጥሪ
-        </h1>
-
-
-
-        <div className="status-box">
-
-          {
-            statusMessage ||
-            (
-              callStatus === "idle"
-              ? "ዝግጁ"
-              :
-              callStatus === "waiting"
-              ? "ሰራተኛ በመፈለግ ላይ..."
-              :
-              "ጥሪው ተገናኝቷል"
-            )
-          }
-
+<div className="flex flex-col md:flex-row h-screen p-4 gap-4 bg-gray-100">
+  {/* የጥሪዎች ዝርዝር */}
+  <div className="w-full md:w-80 bg-white p-4 rounded-xl shadow-lg overflow-y-auto max-h-[40vh] md:max-h-full">
+    <h2 className="text-xl font-bold mb-4 border-b pb-2">Incoming Calls</h2>
+    {incomingCalls.map((call) => (
+      <div key={call.pensionerId} className="bg-gray-50 border p-3 rounded-lg mb-3 flex flex-col gap-2">
+        <p className="font-semibold text-sm truncate">{call.pensionerName || call.pensionerId}</p>
+        <div className="flex gap-2">
+          <button className="flex-1 bg-green-500 text-white py-1 rounded text-xs font-bold" onClick={() => answerCall(call)}>Accept</button>
+          <button className="flex-1 bg-red-500 text-white py-1 rounded text-xs font-bold" onClick={() => rejectCall(call)}>Reject</button>
         </div>
+      </div>
+    ))}
+    
+    <div className="mt-6 pt-4 border-t">
+      <h3 className="font-bold mb-2">Search Pensioner</h3>
+      <input className="w-full p-2 border rounded text-sm mb-2" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Fayda / ID" />
+      <button className="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold" onClick={searchPensioner}>Search</button>
+    </div>
+  </div>
 
+  {/* የቪዲዮ ማሳያ */}
+  <div className="flex-1 relative bg-black rounded-2xl overflow-hidden shadow-2xl">
+    <video ref={remoteVideo} className="w-full h-full object-cover" autoPlay playsInline />
+    
+    {/* የሰራተኛው ቪዲዮ (Overlay) */}
+    <video ref={myVideo} className="absolute bottom-24 right-5 w-28 h-40 border-4 border-white rounded-lg z-10 object-cover shadow-lg" autoPlay muted playsInline />
 
-
-
-{/* በቪዲዮ ክፍል ውስጥ የሚከተለውን ተጠቀም */}
-<div className="video-layout">
-  {/* የሰራተኛው ቪዲዮ (ዋና) */}
-  <video
-    ref={remoteVideo}
-    autoPlay
-    playsInline
-    className="remote-video"
-  />
-
-  {/* የራስህ ቪዲዮ (በስተቀኝ ከታች የሚደራረብ) */}
-  <div className="local-video-wrapper">
-    <video
-      ref={myVideo}
-      autoPlay
-      muted
-      playsInline
-      className="local-video"
-    />
+    {/* የቁጥጥር ቁልፎች */}
+    <div className="absolute bottom-4 left-0 w-full flex justify-center gap-3 px-2 flex-wrap z-20">
+      <button className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm" onClick={toggleCamera}>{cameraOn ? "📷 ካሜራ አጥፋ" : "📷 ካሜራ አብራ"}</button>
+      <button className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm" onClick={toggleMic}>{micOn ? "🎤 ድምፅ አጥፋ" : "🎤 ድምፅ አብራ"}</button>
+      <button className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm" onClick={captureEvidence}>📷 ፎቶ አንሳ</button>
+      {callConnected && <button className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm" onClick={endCall}>❌ ዝጋ</button>}
+    </div>
   </div>
 </div>
-
-
-
-
-        <div className="button-group">
-
-
-          {
-            callStatus === "idle"
-
-            ?
-
-            <button
-
-              className="call-btn"
-
-              onClick={startCall}
-
-            >
-
-              📞 ደውል
-
-            </button>
-
-
-            :
-
-
-            <button
-
-              className="end-btn"
-
-              onClick={endCall}
-
-            >
-
-              ❌ ጥሪ ዝጋ
-
-            </button>
-
-          }
-
-
-
-
-
-          <button
-
-            className="control-btn"
-
-            onClick={toggleCamera}
-
-          >
-
-            {
-              cameraOn
-              ?
-              "📷 ካሜራ አጥፋ"
-              :
-              "📷 ካሜራ አብራ"
-            }
-
-          </button>
-
-
-          <button
-
-            className="control-btn"
-
-            onClick={toggleMic}
-
-          >
-
-            {
-              micOn
-              ?
-              "🎤 ድምፅ አጥፋ"
-              :
-              "🎤 ድምፅ አብራ"
-            }
-
-          </button>
-
-
-
-        </div>
-
-
-        <div className="call-time">
-
-
-          ⏱️ የጥሪ ጊዜ:
-
-          {" "}
-
-          {Math.floor(callTime / 60)}
-
-          :
-
-          {
-            String(callTime % 60)
-            .padStart(2,"0")
-          }
-
-
-        </div>
-
-
-        <div className="chat-box">
-
-
-          <h2>
-            መልዕክት
-          </h2>
-
-          <div className="messages">
-
-
-            {
-              messages.map(
-                (msg,index)=>(
-
-                  <div
-                    key={index}
-                    className="message"
-                  >
-
-                    <b>
-                      {msg.sender}
-                    </b>
-
-                    :
-
-                    {" "}
-
-                    {msg.message}
-
-
-                  </div>
-
-                )
-              )
-
-            }
-
-
-          </div>
-
-
-          <div className="chat-input">
-
-
-            <input
-
-              value={message}
-
-              onChange={
-                e=>setMessage(e.target.value)
-              }
-
-              placeholder="መልዕክት ጻፍ..."
-
-            />
-
-
-
-            <button
-
-              onClick={sendMessage}
-
-            >
-
-              ላክ
-
-            </button>
-
-
-
-          </div>
-
-
-        </div>
-
-      </div>
-
-
-    </div>
 
   );
 
