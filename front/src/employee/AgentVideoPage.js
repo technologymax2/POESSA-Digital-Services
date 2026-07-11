@@ -111,7 +111,6 @@ const AgentVideoPage = () => {
     if (!streamRef.current) return alert("Camera not ready");
     setActiveCall(callData);
     setCallConnected(true);
-// ይህንን iceConfig በፋይሉ ውስጥ ከላይ ወይም function ውስጥ ያስቀምጡት
 const iceConfig = {
   iceServers: [
     {
@@ -121,21 +120,24 @@ const iceConfig = {
       ]
     },
     {
-      urls: 'turn:global.relay.metered.ca:80',
+      // ይህንን URL እና 443ን በመጠቀም የኢትዮ ቴሌኮም Firewall ን እንደ ድረ-ገጽ ትራፊክ እናልፋለን
+      urls: 'turns:global.relay.metered.ca:443?transport=tcp', 
       username: '766dd2f336f70eea0ec7cd66',
       credential: 'ZAggeZx3LEb0xHc4'
     }
-  ],
-  iceTransportPolicy: 'relay' // በጣም አስፈላጊው ክፍል ይህ ነው!
+  ]
+  // iceTransportPolicy ን እዚህ ጨርሶ አይጨምሩት!
 };
+
 
 // Peer ን በሚያስጀምሩበት ጊዜ ይህንን config ተጠቅመው ያዘምኑት
 const peer = new Peer({ 
-  initiator: false, // (ለAgentVideoPage) ወይም true (ለVideoCallAccess)
+  initiator: false, // ይህ ተቀባይ ስለሆኑ 'false' መሆን አለበት
   trickle: false, 
   stream: streamRef.current,
-  config: iceConfig // ኮንፊግሬሽኑ እዚህ ይገባል
+  config: iceConfig 
 });
+
 
 
     peer.on("signal", (signal) => {
