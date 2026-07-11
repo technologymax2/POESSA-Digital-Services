@@ -402,18 +402,25 @@ const VideoCallAccess = () => {
     );
 
 
+const iceConfig = {
+  iceServers: [
+    {
+      urls: [
+        'stun:stun.l.google.com:19302',
+        'stun:stun1.l.google.com:19302',
+        'stun:stun2.l.google.com:19302'
+      ]
+    }
+  ]
+};
 
-    const peer =
-      new Peer({
+    const peer = new Peer({
+  initiator: true,
+  trickle: false,
+  stream: streamRef.current,
+  config: iceConfig // ይህንን መስመር ጨምሩ
+});
 
-        initiator:true,
-
-        trickle:false,
-
-        stream:
-          streamRef.current
-
-      });
 
 
     peer.on(
