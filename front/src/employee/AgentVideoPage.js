@@ -113,6 +113,7 @@ const AgentVideoPage = () => {
     setCallConnected(true);
 
     
+// ይህንን iceConfig በፋይሉ ውስጥ ከላይ ወይም function ውስጥ ያስቀምጡት
 const iceConfig = {
   iceServers: [
     {
@@ -122,28 +123,34 @@ const iceConfig = {
       ]
     },
     {
-      // ለጊዜው 500mg
-      urls: 'turn:global.relay.metered.ca:80', 
+      urls: 'turn:global.relay.metered.ca:80',
       username: '766dd2f336f70eea0ec7cd66',
       credential: 'ZAggeZx3LEb0xHc4'
     }
-  ]
+  ],
+  iceTransportPolicy: 'relay' // በጣም አስፈላጊው ክፍል ይህ ነው!
 };
 
-
-    const peer = new Peer({ 
-  initiator: false, 
+// Peer ን በሚያስጀምሩበት ጊዜ ይህንን config ተጠቅመው ያዘምኑት
+const peer = new Peer({ 
+  initiator: false, // (ለAgentVideoPage) ወይም true (ለVideoCallAccess)
   trickle: false, 
   stream: streamRef.current,
-  config: iceConfig // ይህንን መስመር ጨምሩ
+  config: iceConfig // ኮንፊግሬሽኑ እዚህ ይገባል
 });
+
 
     peer.on("signal", (signal) => {
       socket.emit("answer-call", { signal, pensionerId: callData.pensionerId, agentId: employeeId });
     });
     peer.on("stream", (remoteStream) => {
-      if (remoteVideo.current) remoteVideo.current.srcObject = remoteStream;
-    });
+  if (remoteVideo.current) {
+    remoteVideo.current.srcObject = remoteStream;
+    // ይህ ትእዛዝ በኢንተርኔት ችግር ጊዜ ምስሉ እንዲጫን ይረዳዋል
+    remoteVideo.current.play().catch(e => console.error("Playback error:", e));
+  }
+});
+
     peer.signal(callData.signalData);
     peerRef.current = peer;
     setIncomingCalls((prev) => prev.filter((c) => c.pensionerId !== callData.pensionerId));
