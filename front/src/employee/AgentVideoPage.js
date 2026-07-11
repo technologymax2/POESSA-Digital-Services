@@ -142,8 +142,13 @@ const peer = new Peer({
       socket.emit("answer-call", { signal, pensionerId: callData.pensionerId, agentId: employeeId });
     });
     peer.on("stream", (remoteStream) => {
-      if (remoteVideo.current) remoteVideo.current.srcObject = remoteStream;
-    });
+  if (remoteVideo.current) {
+    remoteVideo.current.srcObject = remoteStream;
+    // ይህ ትእዛዝ በኢንተርኔት ችግር ጊዜ ምስሉ እንዲጫን ይረዳዋል
+    remoteVideo.current.play().catch(e => console.error("Playback error:", e));
+  }
+});
+
     peer.signal(callData.signalData);
     peerRef.current = peer;
     setIncomingCalls((prev) => prev.filter((c) => c.pensionerId !== callData.pensionerId));
