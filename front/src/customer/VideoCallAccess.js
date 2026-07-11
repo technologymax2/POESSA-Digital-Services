@@ -636,7 +636,14 @@ const peer = new Peer({
     
     {/* የቪዲዮ ቦታ */}
     <div className="relative w-full h-[350px] bg-black rounded-2xl overflow-hidden mb-5">
-      <video ref={remoteVideo} className="w-full h-full object-cover" autoPlay playsInline />
+      <video 
+  ref={remoteVideo} 
+  className="w-full h-full object-cover" 
+  autoPlay 
+  playsInline 
+  muted // <--- ለሙከራ እንዲሰራ ሙት ያድርጉት
+/>
+
       <div className="absolute bottom-5 right-5 w-24 h-32 border-4 border-white rounded-xl overflow-hidden z-10 shadow-lg">
         <video ref={myVideo} className="w-full h-full object-cover" autoPlay muted playsInline />
       </div>
