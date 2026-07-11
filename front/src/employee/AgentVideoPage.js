@@ -247,9 +247,14 @@ const peer = new Peer({
 
   {/* የቪዲዮ ማሳያ */}
   <div className="flex-1 relative bg-black rounded-2xl overflow-hidden shadow-2xl">
-    <video ref={remoteVideo} className="w-full h-full object-cover" autoPlay playsInline />
-    
-    {/* የሰራተኛው ቪዲዮ (Overlay) */}
+    <video 
+  ref={remoteVideo} 
+  className="w-full h-full object-cover" 
+  autoPlay 
+  playsInline 
+  muted // <--- ለሙከራ እንዲሰራ ሙት ያድርጉት
+/>
+
     <video ref={myVideo} className="absolute bottom-24 right-5 w-28 h-40 border-4 border-white rounded-lg z-10 object-cover shadow-lg" autoPlay muted playsInline />
 
     {/* የቁጥጥር ቁልፎች */}
