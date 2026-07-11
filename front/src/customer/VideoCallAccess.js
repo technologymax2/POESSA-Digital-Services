@@ -407,12 +407,18 @@ const iceConfig = {
     {
       urls: [
         'stun:stun.l.google.com:19302',
-        'stun:stun1.l.google.com:19302',
-        'stun:stun2.l.google.com:19302'
+        'stun:stun1.l.google.com:19302'
       ]
+    },
+    {
+      // ለጊዜው በነፃ
+      urls: 'turn:global.relay.metered.ca:80', 
+      username: '766dd2f336f70eea0ec7cd66',
+      credential: 'ZAggeZx3LEb0xHc4'
     }
   ]
 };
+
 
     const peer = new Peer({
   initiator: true,
