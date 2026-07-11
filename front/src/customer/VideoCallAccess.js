@@ -402,32 +402,24 @@ const VideoCallAccess = () => {
     );
 
 
-// ይህንን iceConfig በፋይሉ ውስጥ ከላይ ወይም function ውስጥ ያስቀምጡት
 const iceConfig = {
   iceServers: [
     {
       urls: [
         'stun:stun.l.google.com:19302',
-        'stun:stun1.l.google.com:19302'
+        'stun:stun1.l.google.com:19302',
+        'stun:stun2.l.google.com:19302'
       ]
-    },
-    {
-      urls: 'turn:global.relay.metered.ca:80',
-      username: '766dd2f336f70eea0ec7cd66',
-      credential: 'ZAggeZx3LEb0xHc4'
     }
-  ],
-  
+  ]
 };
 
-// Peer ን በሚያስጀምሩበት ጊዜ ይህንን config ተጠቅመው ያዘምኑት
-const peer = new Peer({ 
-  initiator: false, // (ለAgentVideoPage) ወይም true (ለVideoCallAccess)
-  trickle: false, 
+    const peer = new Peer({
+  initiator: true,
+  trickle: false,
   stream: streamRef.current,
-  config: iceConfig // ኮንፊግሬሽኑ እዚህ ይገባል
+  config: iceConfig // ይህንን መስመር ጨምሩ
 });
-
 
 
 
@@ -453,13 +445,21 @@ const peer = new Peer({
 
 
 
-    peer.on("stream", (remoteStream) => {
-  if (remoteVideo.current) {
-    remoteVideo.current.srcObject = remoteStream;
-    // ይህ ትእዛዝ በኢንተርኔት ችግር ጊዜ ምስሉ እንዲጫን ይረዳዋል
-    remoteVideo.current.play().catch(e => console.error("Playback error:", e));
-  }
-});
+    peer.on(
+      "stream",
+      (remoteStream)=>{
+
+
+        if(remoteVideo.current){
+
+          remoteVideo.current.srcObject =
+            remoteStream;
+
+        }
+
+
+      }
+    );
 
 
 
@@ -636,14 +636,7 @@ const peer = new Peer({
     
     {/* የቪዲዮ ቦታ */}
     <div className="relative w-full h-[350px] bg-black rounded-2xl overflow-hidden mb-5">
-      <video 
-  ref={remoteVideo} 
-  className="w-full h-full object-cover" 
-  autoPlay 
-  playsInline 
-  muted // <--- ለሙከራ እንዲሰራ ሙት ያድርጉት
-/>
-
+      <video ref={remoteVideo} className="w-full h-full object-cover" autoPlay playsInline />
       <div className="absolute bottom-5 right-5 w-24 h-32 border-4 border-white rounded-xl overflow-hidden z-10 shadow-lg">
         <video ref={myVideo} className="w-full h-full object-cover" autoPlay muted playsInline />
       </div>
@@ -668,4 +661,4 @@ const peer = new Peer({
 
 };
 
-export default VideoCallAccess;
+export default VideoCallAccess; 
