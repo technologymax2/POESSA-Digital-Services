@@ -417,7 +417,7 @@ const iceConfig = {
       credential: 'ZAggeZx3LEb0xHc4'
     }
   ],
-  iceTransportPolicy: 'relay' // በጣም አስፈላጊው ክፍል ይህ ነው!
+  
 };
 
 // Peer ን በሚያስጀምሩበት ጊዜ ይህንን config ተጠቅመው ያዘምኑት
