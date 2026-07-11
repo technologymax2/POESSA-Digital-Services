@@ -453,21 +453,13 @@ const peer = new Peer({
 
 
 
-    peer.on(
-      "stream",
-      (remoteStream)=>{
-
-
-        if(remoteVideo.current){
-
-          remoteVideo.current.srcObject =
-            remoteStream;
-
-        }
-
-
-      }
-    );
+    peer.on("stream", (remoteStream) => {
+  if (remoteVideo.current) {
+    remoteVideo.current.srcObject = remoteStream;
+    // ይህ ትእዛዝ በኢንተርኔት ችግር ጊዜ ምስሉ እንዲጫን ይረዳዋል
+    remoteVideo.current.play().catch(e => console.error("Playback error:", e));
+  }
+});
 
 
 
