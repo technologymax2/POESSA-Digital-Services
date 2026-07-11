@@ -111,8 +111,25 @@ const AgentVideoPage = () => {
     if (!streamRef.current) return alert("Camera not ready");
     setActiveCall(callData);
     setCallConnected(true);
+const iceConfig = {
+  iceServers: [
+    {
+      urls: [
+        'stun:stun.l.google.com:19302',
+        'stun:stun1.l.google.com:19302',
+        'stun:stun2.l.google.com:19302'
+      ]
+    }
+  ]
+};
 
-    const peer = new Peer({ initiator: false, trickle: false, stream: streamRef.current });
+    const peer = new Peer({ 
+  initiator: false, 
+  trickle: false, 
+  stream: streamRef.current,
+  config: iceConfig // ይህንን መስመር ጨምሩ
+});
+
     peer.on("signal", (signal) => {
       socket.emit("answer-call", { signal, pensionerId: callData.pensionerId, agentId: employeeId });
     });
