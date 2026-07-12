@@ -158,10 +158,7 @@ const VideoCallAccess = () => {
       socket.off("call-ended");
     };
   }, [initializeMedia, callStatus, myId]);
-,[
-    initializeMedia,
-    callStatus
-  ]);
+
 
 
   useEffect(()=>{
