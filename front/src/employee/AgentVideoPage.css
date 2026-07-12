@@ -57,3 +57,13 @@
   gap: 5px;
   z-index: 20;
 }
+/* AgentVideoPage.css */
+video {
+  transform: scaleX(-1); /* ኦፊሰሩ የራሱን ቪዲዮ በመስታወት መልክ እንዲያይ */
+}
+
+/* የጡረተኛው ቪዲዮ ጥራት እንዲጠብቅ */
+video {
+  image-rendering: high-quality;
+  object-fit: cover;
+}
