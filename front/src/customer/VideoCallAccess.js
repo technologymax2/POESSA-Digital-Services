@@ -130,165 +130,35 @@ const VideoCallAccess = () => {
 
 
   useEffect(() => {
-
     initializeMedia();
 
-
-  // 1. የልብ ምት (Heartbeat) መቆጣጠሪያ - ግንኙነቱ እንዳይቋረጥ
+    // የልብ ምት (Heartbeat)
     const hb = setInterval(() => {
-        if (callStatus !== "idle") {
-            socket.emit("heartbeat", { userId: myId });
-        }
+      if (callStatus === "connected" && myId) {
+        socket.emit("heartbeat", { userId: myId });
+      }
     }, 5000);
+
+    socket.on("connect", () => console.log("Socket Connected:", socket.id));
+    socket.on("agent-accepted", (data) => {
+      setEmployeeId(data.agentId);
+      setCallStatus("connected");
+      setStatusMessage("ጥሪው ተገናኝቷል");
+      if (peerRef.current) peerRef.current.signal(data.signal);
+    });
     
+    socket.on("call-rejected", () => { setCallStatus("idle"); destroyPeer(); });
+    socket.on("call-ended", () => { setStatusMessage("ጥሪው ተቋርጧል"); destroyPeer(); });
 
-    socket.on(
-      "connect",
-      () => {
-        console.log(
-          "Socket Connected:",
-          socket.id
-        );
-      }
-    );
-
-
-
-    socket.on(
-      "agent-accepted",
-      (data)=>{
-
-        console.log(
-          "Employee accepted",
-          data
-        );
-
-
-        setEmployeeId(
-          data.agentId
-        );
-
-
-        setCallStatus(
-          "connected"
-        );
-
-
-        setStatusMessage(
-          "ጥሪው ተገናኝቷል"
-        );
-
-
-        if(peerRef.current){
-
-          peerRef.current.signal(
-            data.signal
-          );
-
-        }
-
-      }
-    );
-
-
-
-    socket.on(
-      "call-rejected",
-      ()=>{
-
-        setCallStatus(
-          "idle"
-        );
-
-
-        setStatusMessage(
-          "ጥሪው ውድቅ ተደርጓል"
-        );
-
-
-        destroyPeer();
-
-      }
-    );
-
-
-
-    socket.on(
-      "call-ended",
-      ()=>{
-
-        setStatusMessage(
-          "ጥሪው ተቋርጧል"
-        );
-
-
-        destroyPeer();
-
-      }
-    );
-
-
-    socket.on(
-      "queue-updated",
-      (data)=>{
-
-        if(
-          callStatus !== "connected"
-        ){
-
-          setStatusMessage(
-            `በመጠባበቂያ ውስጥ ነዎት። 
-             ${data.waitingCalls || 0} ሰው ቀድሞዎት አለ`
-          );
-
-        }
-
-      }
-    );
-
-
-    socket.on(
-      "chat-message",
-      (data)=>{
-
-        setMessages(
-          prev=>[
-            ...prev,
-            data
-          ]
-        );
-
-      }
-    );
-
-
-
-    return ()=>{
-
-      socket.off(
-        "agent-accepted"
-      );
-
-      socket.off(
-        "call-ended"
-      );
-
-      socket.off(
-        "call-rejected"
-      );
-
-      socket.off(
-        "queue-updated"
-      );
-
-      socket.off(
-        "chat-message"
-      );
-
+    return () => {
+      clearInterval(hb);
+      socket.off("connect");
+      socket.off("agent-accepted");
+      socket.off("call-rejected");
+      socket.off("call-ended");
     };
-
-
-  },[
+  }, [initializeMedia, callStatus, myId]);
+,[
     initializeMedia,
     callStatus
   ]);
