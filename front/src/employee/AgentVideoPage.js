@@ -88,6 +88,13 @@ const AgentVideoPage = () => {
       });
     };
 
+
+socket.on("ice-candidate", ({ candidate }) => {
+  if (peerRef.current) {
+    peerRef.current.addIceCandidate(candidate);
+  }
+});
+   
     socket.on("incoming-call", handleIncomingCall);
     socket.on("call-ended", () => {
       if (peerRef.current) {
@@ -138,7 +145,10 @@ const peer = new Peer({
   config: iceConfig 
 });
 
-
+// answerCall ውስጥ peer ከተፈጠረ በኋላ
+peer.on("ice", (candidate) => {
+  socket.emit("ice-candidate", { candidate, to: callData.pensionerId });
+});
 
     peer.on("signal", (signal) => {
       socket.emit("answer-call", { signal, pensionerId: callData.pensionerId, agentId: employeeId });
