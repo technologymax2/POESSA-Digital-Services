@@ -45,6 +45,13 @@ module.exports = (io) => {
   io.on("connection", (socket) => {
     console.log("Video Socket Connected:", socket.id);
 
+socket.on("ice-candidate", ({ candidate, to }) => {
+  const targetUser = users.get(to);
+  if (targetUser) {
+    io.to(targetUser.socketId).emit("ice-candidate", { candidate });
+  }
+});
+    
     socket.on("register-user", async (data) => {
       const { userId, role, fullName } = data;
       users.set(userId, { socketId: socket.id, userId, role });
