@@ -134,6 +134,14 @@ const VideoCallAccess = () => {
     initializeMedia();
 
 
+  // 1. የልብ ምት (Heartbeat) መቆጣጠሪያ - ግንኙነቱ እንዳይቋረጥ
+    const hb = setInterval(() => {
+        if (callStatus !== "idle") {
+            socket.emit("heartbeat", { userId: myId });
+        }
+    }, 5000);
+    
+
     socket.on(
       "connect",
       () => {
