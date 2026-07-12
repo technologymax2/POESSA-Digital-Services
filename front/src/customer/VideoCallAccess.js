@@ -139,6 +139,12 @@ const VideoCallAccess = () => {
       }
     }, 5000);
 
+socket.on("ice-candidate", ({ candidate }) => {
+  if (peerRef.current) {
+    peerRef.current.addIceCandidate(candidate);
+  }
+});
+    
     socket.on("connect", () => console.log("Socket Connected:", socket.id));
     socket.on("agent-accepted", (data) => {
       setEmployeeId(data.agentId);
@@ -305,7 +311,9 @@ const peer = new Peer({
 });
 
 
-
+peer.on("ice", (candidate) => {
+  socket.emit("ice-candidate", { candidate, to: employeeId });
+});
 
 
     peer.on(
