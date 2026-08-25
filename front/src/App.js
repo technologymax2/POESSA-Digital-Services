@@ -11,8 +11,8 @@ import AdminDashboard from "./admin/AdminDashboard";
 import CustomerDashboard from "./customer/CustomerDashboard";
 
 // አዳዲስ የተስተካከሉ የ Verify እና Liveness ገጾች
-import Verify from "./pages/Verify";
-import Liveness from "./pages/Liveness";
+import Verify from "./customer/Verify";
+import Liveness from "./customer/Liveness";
 
 import PensionerRegistration from "./employee/PensionerRegistration";
 import IdCardGenerationAndSearch from "./employee/IdCardGenerationAndSearch";
