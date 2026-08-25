@@ -10,16 +10,15 @@ import EmployeeDashboard from "./employee/EmployeeDashboard";
 import AdminDashboard from "./admin/AdminDashboard";
 import CustomerDashboard from "./customer/CustomerDashboard";
 
-import WebcamCapture from "../components/WebcamCapture";
-import ImageUpload from "../components/ImageUpload";
-import CaptureIDCard from "../components/CaptureIDCard";
+// አዳዲስ የተስተካከሉ የ Verify እና Liveness ገጾች
+import Verify from "./pages/Verify";
+import Liveness from "./pages/Liveness";
 
 import PensionerRegistration from "./employee/PensionerRegistration";
 import IdCardGenerationAndSearch from "./employee/IdCardGenerationAndSearch";
 import ScanVerify from "./employee/ScanVerify";
-import CheckStatus from "./customer/CheckStatus"; // Imported correctly here
+import CheckStatus from "./customer/CheckStatus";
 import Report from "./employee/Report";
-
 
 import "./App.css";
 
@@ -28,9 +27,9 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-
           {/* Home */}
           <Route path="/" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
 
           {/* Authentication */}
           <Route path="/login" element={<Login />} />
@@ -40,10 +39,6 @@ function App() {
           <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/customer-dashboard" element={<CustomerDashboard />} />
-
-          {/* Video Call */}
-          <Route path="/video-call" element={<VideoCallAccess />} />
-          <Route path="/agent-call-center" element={<AgentVideoPage />} />
 
           {/* Pension Registration */}
           <Route
@@ -63,26 +58,17 @@ function App() {
             element={<ScanVerify />}
           />
 
-          {/* Full Life Verification Process */}
-          <Route
-            path="/verification"
-            element={<VerificationWizard />}
-          />
+          {/* Main Verification & Liveness Flow */}
+          <Route path="/verify" element={<Verify />} />
+          <Route path="/liveness" element={<Liveness />} />
 
-          {/* Direct Liveness Test (Optional) */}
-          <Route
-            path="/liveness"
-            element={<LivenessTest />}
-          />
-
-          {/* Status Check (Fixed syntax and spelling) */}
+          {/* Status Check & Reports */}
           <Route
             path="/check-status"
             element={<CheckStatus />}
           />
-              <Route path="/report" element={<Report />} />
+          <Route path="/report" element={<Report />} />
         </Routes>
-        
       </div>
     </Router>
   );
