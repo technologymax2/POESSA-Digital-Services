@@ -50,9 +50,7 @@ const handleLivenessNavigation = () => {
         <div className="poessa-sidebar__menu-item" onClick={() => handleNavigation("/admin-dashboard")}>
           <Assessment /> <span>{currentLang === "am" ? "ሪፖርቶች" : "Reports"}</span>
         </div>
-        <div className="poessa-sidebar__menu-item" onClick={() => handleNavigation("/agent-call-center")}>
-          <Videocam /> <span>{currentLang === "am" ? "የጥሪ ማስተናገጃ" : "Call Management"}</span>
-        </div>
+        
       </nav>
 
       <div className="poessa-sidebar__footer">
