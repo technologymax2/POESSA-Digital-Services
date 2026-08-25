@@ -6,15 +6,13 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-
-import VideoCallAccess from "./customer/VideoCallAccess";
-import AgentVideoPage from "./employee/AgentVideoPage";
 import EmployeeDashboard from "./employee/EmployeeDashboard";
 import AdminDashboard from "./admin/AdminDashboard";
 import CustomerDashboard from "./customer/CustomerDashboard";
 
-import LivenessTest from "./customer/LivenessTest";
-import VerificationWizard from "./customer/VerificationWizard";
+import WebcamCapture from "../components/WebcamCapture";
+import ImageUpload from "../components/ImageUpload";
+import CaptureIDCard from "../components/CaptureIDCard";
 
 import PensionerRegistration from "./employee/PensionerRegistration";
 import IdCardGenerationAndSearch from "./employee/IdCardGenerationAndSearch";
