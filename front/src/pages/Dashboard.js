@@ -3,7 +3,6 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import DashboardContent from "./DashboardContent";
 import Footer from "../components/Footer";
-import "./Dashboard.css";
 
 const Dashboard = () => {
   const [lang, setLang] = useState("am");
@@ -14,14 +13,18 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="poessa-dashboard">
-      {/* ሜኑ መክፈቻ */}
+    <div className="flex h-screen bg-gray-100 overflow-hidden relative">
+      {/* Mobile Menu Button (Hidden on desktop because sidebar is always visible via md:translate-x-0) */}
       {collapsed && (
-        <button className="poessa-dashboard__menu-open-btn" onClick={() => setCollapsed(false)}>
+        <button 
+          className="fixed top-4 left-4 z-30 bg-[#162447] text-white p-2 rounded-lg text-xl shadow-md md:hidden cursor-pointer" 
+          onClick={() => setCollapsed(false)}
+        >
           ☰
         </button>
       )}
 
+      {/* Sidebar Component */}
       <Sidebar
         currentLang={lang}
         toggleLanguage={toggleLanguage}
@@ -29,17 +32,23 @@ const Dashboard = () => {
         setCollapsed={setCollapsed}
       />
 
-      <div className="poessa-dashboard__main-content">
+      {/* Main Content Area (Pushed right on desktop with md:pl-72 to make room for the sidebar) */}
+      <div className="flex flex-col flex-1 h-full overflow-y-auto md:pl-72">
         <Header
           title={lang === "am" ? "POESSA | ዲጂታል አገልግሎቶች" : "POESSA | Digital Services"}
         />
-        <DashboardContent />
+        <div className="flex-1">
+          <DashboardContent />
+        </div>
         <Footer />
       </div>
 
-      {/* ማደብዘዣ (Overlay) */}
+      {/* Semi-transparent Overlay for mobile screens when the sidebar is open */}
       {!collapsed && (
-        <div className="poessa-dashboard__overlay" onClick={() => setCollapsed(true)} />
+        <div 
+          className="fixed inset-0 bg-black/40 z-40 md:hidden" 
+          onClick={() => setCollapsed(true)} 
+        />
       )}
     </div>
   );
