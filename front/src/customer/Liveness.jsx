@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Webcam from "react-webcam";
 import Navbar from "../components/Sidebar";
-import { verifyPensioner } from "../services/api";
+
 
 const faceapi = window.faceapi;
 
