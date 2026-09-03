@@ -1,4 +1,4 @@
-import React from 'react'; // 'import' በትንሽ ፊደል ተስተካክሏል
+import React from 'react';
 import { Videocam } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import './DashboardContent.css';
@@ -19,7 +19,7 @@ const DashboardContent = () => {
         </p>
         <button 
           className="video-btn" 
-          onClick={() => navigate('/video-call')}
+          onClick={() => navigate('/video-call')} // Make sure to add path="/video-call" in App.js if you use this
         >
           ቪዲዮ ጥሪ ይጀምሩ
         </button>
@@ -33,7 +33,7 @@ const DashboardContent = () => {
           <p>Liveness Proof</p>
           <button 
             className="video-btn" 
-            onClick={() => navigate('/verification')}
+            onClick={() => navigate('/verify')} // Changed from '/verification' to match App.js route
           >
             አሁኑኑ ይጀምሩ
           </button>
@@ -50,7 +50,6 @@ const DashboardContent = () => {
           <div className="icon-box">📂</div>
           <h3>የጉዳይ ክትትል</h3>
           <p>Case Tracking</p>
-          {/* የApp.js መንገድን እንዲመስል ወደ '/check-status' ተቀይሯል */}
           <button onClick={() => navigate('/check-status')}>
             ሁኔታውን ይፈትሹ
           </button>
