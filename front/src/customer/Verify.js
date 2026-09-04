@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Sidebar";
 import WebcamCapture from "../components/WebcamCapture";
 import ImageUpload from "../components/ImageUpload";
-import CaptureIDCard from "../components/CaptureIDCard";
+import CaptureIDCard from "./CaptureIDCard";
 
 const API_BASE_URL = "https://poessa-digital-services-1.onrender.com";
 
