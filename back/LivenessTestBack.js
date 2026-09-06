@@ -55,97 +55,394 @@ router.post("/verify-success", async (req, res) => {
       selfiePhotoUrl,
       smilePassed,
       nodPassed,
-      turnPassed
+      turnPassed,
     } = req.body;
 
     if (!faydaNumber) {
-      return res.status(400).json({ success: false, message: "Fayda number is required" });
+      return res.status(400).json({
+        success: false,
+        message: "Fayda number is required",
+      });
     }
 
-    // 1. ጡረተኛውን ከዳታቤዝ መፈለግ
-    const pensioner = await UserPensioner.findOne({ faydaNumber });
+    /*
+     * =========================
+     * FIND PENSIONER
+     * =========================
+     */
+    const pensioner =
+      await UserPensioner.findOne({
+        faydaNumber: String(
+          faydaNumber
+        ).trim(),
+      });
+
     if (!pensioner) {
-      return res.status(404).json({ success: false, message: "Pensioner not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Pensioner not found",
+      });
     }
 
-    // 🎯 ማስተካከያ 2፦ በቀጥታ በዳታቤዝ ያለውን እውነተኛ የሲስተም ፎቶ (System Photo) ብቻ እንወስዳለን
-    let finalDbPhotoUrl = pensioner.photoUrl || ""; 
-    let finalSelfieUrl = selfiePhotoUrl || "";
+    /*
+     * =========================
+     * SYSTEM PHOTO
+     * =========================
+     *
+     * IMPORTANT:
+     * This is the REAL registered
+     * pensioner photo from DB.
+     */
+    let finalDbPhotoUrl =
+      pensioner.photoUrl || "";
 
     if (!finalDbPhotoUrl) {
-      return res.status(400).json({ success: false, message: "System photo (pensioner.photoUrl) is missing in database" });
+      return res.status(400).json({
+        success: false,
+        message:
+          "System photo is missing in database",
+      });
     }
 
-    let finalMatch = 0; 
+    /*
+     * =========================
+     * SELFIE
+     * =========================
+     */
+    let finalSelfieUrl =
+      selfiePhotoUrl || "";
+
+    if (!finalSelfieUrl) {
+      return res.status(400).json({
+        success: false,
+        message: "Selfie photo is required",
+      });
+    }
+
+    /*
+     * =========================
+     * UPLOAD BASE64 SELFIE
+     * =========================
+     */
+    if (
+      typeof finalSelfieUrl === "string" &&
+      finalSelfieUrl.startsWith("data:image")
+    ) {
+      finalSelfieUrl =
+        await uploadToImgBB(
+          finalSelfieUrl
+        );
+    }
+
+    if (!finalSelfieUrl) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Unable to store selfie image",
+      });
+    }
+
+    /*
+     * =========================
+     * FACE MATCH
+     * =========================
+     */
+    let finalMatch = 0;
 
     try {
-      // ሞዴሎቹ መጫናቸውን ማረጋገጥ
       await loadServerModels();
-      console.log(`⏳ የሲስተም ፎቶን (${finalDbPhotoUrl}) እና ሴልፊን አውርዶ እያነጻጸረ ነው...`);
-      
-      // ምስሎቹን ከአገናኝ ዩአርኤል (URL) በ Arraybuffer ማውረድ
-      const [idResponse, selfieResponse] = await Promise.all([
-        axios.get(finalDbPhotoUrl, { responseType: "arraybuffer", timeout: 15000 }),
-        axios.get(finalSelfieUrl, { responseType: "arraybuffer", timeout: 15000 })
+
+      console.log(
+        "========================================"
+      );
+
+      console.log(
+        "🔍 FACE MATCH STARTED"
+      );
+
+      console.log(
+        "System Photo:",
+        finalDbPhotoUrl
+      );
+
+      console.log(
+        "Selfie:",
+        finalSelfieUrl
+      );
+
+      /*
+       * Download both images
+       */
+      const [
+        idResponse,
+        selfieResponse,
+      ] = await Promise.all([
+        axios.get(
+          finalDbPhotoUrl,
+          {
+            responseType:
+              "arraybuffer",
+            timeout: 20000,
+          }
+        ),
+
+        axios.get(
+          finalSelfieUrl,
+          {
+            responseType:
+              "arraybuffer",
+            timeout: 20000,
+          }
+        ),
       ]);
 
-      // ምስሎቹን ወደ Canvas መጫን
-      const imgId = await canvas.loadImage(Buffer.from(idResponse.data));
-      const imgSelfie = await canvas.loadImage(Buffer.from(selfieResponse.data));
+      /*
+       * Load images
+       */
+      const imgId =
+        await canvas.loadImage(
+          Buffer.from(
+            idResponse.data
+          )
+        );
 
-      // የ TinyFaceDetector መፈለጊያ መስፈርት (scoreThreshold: 0.1 ፊትን በፍጥነት እንዲያገኝ)
-      const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.1 });
+      const imgSelfie =
+        await canvas.loadImage(
+          Buffer.from(
+            selfieResponse.data
+          )
+        );
 
-      const idResult = await faceapi.detectSingleFace(imgId, detectorOptions).withFaceLandmarks().withFaceDescriptor();
-      const selfieResult = await faceapi.detectSingleFace(imgSelfie, detectorOptions).withFaceLandmarks().withFaceDescriptor();
+      /*
+       * Face detector
+       */
+      const detectorOptions =
+        new faceapi.TinyFaceDetectorOptions({
+          inputSize: 224,
+          scoreThreshold: 0.15,
+        });
 
-      if (idResult && selfieResult) {
-        const distance = faceapi.euclideanDistance(idResult.descriptor, selfieResult.descriptor);
-        finalMatch = Math.round((1 - distance) * 100);
-        finalMatch = Math.max(0, Math.min(100, finalMatch));
-        console.log(`📊 [MATCH FOUND] ከሲስተም ፎቶ ጋር ያለው የንጽጽር ውጤት፦ ${finalMatch}%`);
-      } else {
-        if (!idResult) console.warn("⚠️ በዳታቤዙ (System) ፎቶ ላይ ፊት አልተገኘም!");
-        if (!selfieResult) console.warn("⚠️ በሴልፊው ፎቶ ላይ ፊት አልተገኘም!");
-        finalMatch = 0; 
+      /*
+       * Detect DB face
+       */
+      const idResult =
+        await faceapi
+          .detectSingleFace(
+            imgId,
+            detectorOptions
+          )
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+
+      /*
+       * Detect selfie face
+       */
+      const selfieResult =
+        await faceapi
+          .detectSingleFace(
+            imgSelfie,
+            detectorOptions
+          )
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+
+      if (!idResult) {
+        console.warn(
+          "⚠️ Face not detected in DB photo"
+        );
       }
-    } catch (faceErr) {
-      console.error("❌ የፊት ማነጻጸር ዝርዝር ስህተት፦", faceErr);
-      finalMatch = 0; 
+
+      if (!selfieResult) {
+        console.warn(
+          "⚠️ Face not detected in selfie"
+        );
+      }
+
+      /*
+       * =========================
+       * COMPARE
+       * =========================
+       */
+      if (
+        idResult &&
+        selfieResult
+      ) {
+        const distance =
+          faceapi.euclideanDistance(
+            idResult.descriptor,
+            selfieResult.descriptor
+          );
+
+        /*
+         * Convert distance to percentage.
+         *
+         * Lower distance = better match.
+         */
+        finalMatch = Math.round(
+          Math.max(
+            0,
+            Math.min(
+              100,
+              (1 - distance) * 100
+            )
+          )
+        );
+
+        console.log(
+          `📊 Face Match: ${finalMatch}%`
+        );
+        console.log(
+          `📏 Distance: ${distance}`
+        );
+      } else {
+        finalMatch = 0;
+      }
+    } catch (faceError) {
+      console.error(
+        "❌ Face Match Error:",
+        faceError
+      );
+
+      finalMatch = 0;
     }
 
-    // ምስሎቹ የቤዝ64 ዳታ ከሆኑ ወደ ማከማቻ (ImgBB) መስቀል
-    if (finalDbPhotoUrl.startsWith("data:image")) finalDbPhotoUrl = await uploadToImgBB(finalDbPhotoUrl);
-    if (finalSelfieUrl.startsWith("data:image")) finalSelfieUrl = await uploadToImgBB(finalSelfieUrl);
+    /*
+     * =========================
+     * LIVENESS
+     * =========================
+     */
+    const smile =
+      !!smilePassed;
 
-    // የድርጅት መስፈርት ማረጋገጫ (ከ 70% በላይ ከሆነ ብቻ ነው የሚማሳሰሉት)
-    const faceMatched = finalMatch >= 70;
-    const livenessPassed = !!smilePassed && !!nodPassed && !!turnPassed;
+    const nod =
+      !!nodPassed;
 
-    let verificationStatus = "Failed";
-    if (faceMatched && livenessPassed) {
-      verificationStatus = "Verified";
+    const turn =
+      !!turnPassed;
+
+    const livenessPassed =
+      smile &&
+      nod &&
+      turn;
+
+    /*
+     * =========================
+     * FACE MATCH THRESHOLD
+     * =========================
+     */
+    const faceMatched =
+      finalMatch >= 70;
+
+    /*
+     * =========================
+     * FINAL STATUS
+     * =========================
+     */
+    let verificationStatus =
+      "Failed";
+
+    if (
+      faceMatched &&
+      livenessPassed
+    ) {
+      verificationStatus =
+        "Verified";
     }
 
-    const record = new LivenessVerification({
-      faydaNumber,
-      name: pensioner.nameAmh || pensioner.nameEng || pensioner.name || "ስም አልተጠቀሰም",
-      dbPhotoUrl: finalDbPhotoUrl, 
-      selfiePhotoUrl: finalSelfieUrl,
-      matchPercentage: finalMatch, 
-      faceMatched,
-      smilePassed: !!smilePassed,
-      nodPassed: !!nodPassed,
-      turnPassed: !!turnPassed,
-      verificationStatus
-    });
+    /*
+     * =========================
+     * SAVE RESULT
+     * =========================
+     */
+    const record =
+      new LivenessVerification({
+        faydaNumber:
+          String(faydaNumber).trim(),
+
+        name:
+          pensioner.nameAmh ||
+          pensioner.nameEng ||
+          pensioner.name ||
+          "ስም አልተጠቀሰም",
+
+        /*
+         * REAL DB SYSTEM PHOTO
+         */
+        dbPhotoUrl:
+          finalDbPhotoUrl,
+
+        /*
+         * SELFIE URL
+         */
+        selfiePhotoUrl:
+          finalSelfieUrl,
+
+        matchPercentage:
+          finalMatch,
+
+        faceMatched,
+
+        smilePassed:
+          smile,
+
+        nodPassed:
+          nod,
+
+        turnPassed:
+          turn,
+
+        verificationStatus,
+      });
 
     await record.save();
-    return res.status(200).json({ success: true, message: "Liveness verification completed with system photo", data: record });
 
+    console.log(
+      "========================================"
+    );
+
+    console.log(
+      "✅ VERIFICATION COMPLETED"
+    );
+
+    console.log(
+      "Status:",
+      verificationStatus
+    );
+
+    console.log(
+      "Face Match:",
+      `${finalMatch}%`
+    );
+
+    console.log(
+      "Liveness:",
+      livenessPassed
+    );
+
+    console.log(
+      "========================================"
+    );
+
+    return res.status(200).json({
+      success: true,
+
+      message:
+        "Liveness and face verification completed",
+
+      data: record,
+    });
   } catch (error) {
-    console.error("Liveness Global Error:", error);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error(
+      "Liveness Global Error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Internal server error",
+    });
   }
 });
 
